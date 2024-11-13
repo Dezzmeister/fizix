@@ -12,6 +12,9 @@ phys::collision_algorithm::collision_algorithm(
 {}
 
 phys::contact_generator::contact_generator() {
+	// TODO: Move this somewhere else
+	phys::algorithms::init_algorithms();
+
 	register_collision_algorithm(
 		shape_type::Sphere,
 		shape_type::Sphere,

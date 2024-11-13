@@ -18,3 +18,4 @@ add_subdirectory(core)
 link_libraries(core)
 
 add_subdirectory(phong_demo)
+add_subdirectory(tests)

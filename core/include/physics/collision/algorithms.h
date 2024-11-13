@@ -3,4 +3,6 @@
 
 namespace phys::algorithms {
 	extern collision_algorithm_func sphere_sphere_collision;
+
+	void init_algorithms();
 }
