@@ -103,7 +103,7 @@ phys::plane_collision_constraint_generator<particle_container>::plane_collision_
 
 template <typename particle_container>
 void phys::plane_collision_constraint_generator<particle_container>::generate_constraints(
-	real dt,
+	real,
 	std::vector<std::unique_ptr<constraint>> &constraints
 ) {
 	using namespace phys::literals;
