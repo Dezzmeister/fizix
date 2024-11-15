@@ -1,3 +1,4 @@
+#include "logging.h"
 #include "shader_program.h"
 
 shader_program::shader_program(
@@ -25,7 +26,7 @@ shader_program::shader_program(
 		char info_log[512];
 
 		glGetProgramInfoLog(id, 512, NULL, info_log);
-		std::cout << "Shader linking failed\n" << info_log << std::endl;
+		logger::error("Shader linking failed: " + std::string(info_log));
 
 		// TODO: Proper errors
 		throw "Shader linking failed";

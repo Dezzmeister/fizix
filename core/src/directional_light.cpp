@@ -1,5 +1,6 @@
 #include "directional_light.h"
 #include "gl.h"
+#include "logging.h"
 #include "shader_constants.h"
 #include "util.h"
 
@@ -128,7 +129,7 @@ void directional_light::set_casts_shadow(bool enabled) {
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 		// TODO: Better errors
-		printf("Error: framebuffer is not complete\n");
+		logger::error("Error: framebuffer is not complete");
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

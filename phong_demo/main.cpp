@@ -10,8 +10,9 @@
 #include "gdi_plus_context.h"
 #include "controllers.h"
 #include "hardware_constants.h"
-#include "physics/math.h"
+#include "logging.h"
 #include "mesh.h"
+#include "physics/math.h"
 #include "phong_color_material.h"
 #include "phong_map_material.h"
 #include "physical_particle_emitter.h"
@@ -473,6 +474,8 @@ static void on_window_resize(GLFWwindow *, int width, int height) {
 }
 
 int main(int, const char * const * const) {
+	logger::init();
+
 	event_buses buses;
 	gdi_plus_context gdi_plus;
 	glfwInit();
@@ -482,7 +485,7 @@ int main(int, const char * const * const) {
 
 	GLFWwindow * window = glfwCreateWindow(800, 600, "Phong Materials Demo", NULL, NULL);
 	if (!window) {
-		std::cout << "Failed to create window" << std::endl;
+		logger::error("Failed to create window");
 		glfwTerminate();
 		return -1;
 	}
@@ -546,7 +549,7 @@ int main(int, const char * const * const) {
 
 	flashlight lc(buses, pl, w, GLFW_KEY_F);
 
-	printf(help_text);
+	logger::info(help_text);
 
 	while (! glfwWindowShouldClose(window)) {
 		buses.render.fire(pre_render_event);

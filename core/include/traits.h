@@ -20,6 +20,11 @@ namespace traits {
 		{ traits::to_string(t, 0) } -> std::convertible_to<std::string>;
 	} || native_stringifiable<T>;
 
+	template <typename T>
+	concept pointer_type = requires(const T t) {
+		*t;
+	};
+
 	template <native_stringifiable T>
 	std::string to_string(const T &t, size_t indent = 0);
 
@@ -30,8 +35,17 @@ namespace traits {
 	// The compiler accepts a call to to_string with T=const P *, but instantiates
 	// a function with T=P *, and the linker fails to find the correct function.
 	// With T non-const, the compiler can deduce T=const P * or T=P * as necessary.
-	template <typename T>
-	std::string to_string(T * const &p, size_t indent = 0);
+	template <pointer_type T>
+	std::string to_string(T const &p, size_t indent = 0);
+
+	template <const size_t N>
+	std::string to_string(const char(&s)[N], size_t indent = 0);
+
+	template <>
+	std::string to_string(const char * const &s, size_t indent);
+
+	template <>
+	std::string to_string(const std::string &s, size_t indent);
 
 	template <>
 	std::string to_string(const glm::vec3 &v, size_t indent);
@@ -82,13 +96,18 @@ std::string traits::to_string(const std::vector<T> &v, size_t indent) {
 	return out.str();
 }
 
-template <typename T>
-std::string traits::to_string(T * const &p, size_t) {
+template <traits::pointer_type T>
+std::string traits::to_string(T const &p, size_t) {
 	std::stringstream out{};
 
-	out << std::hex << p;
+	out << std::hex << (uintptr_t)p;
 
 	return out.str();
+}
+
+template <const size_t N>
+std::string traits::to_string(const char(&s)[N], size_t) {
+	return std::string(s);
 }
 
 template <traits::stringifiable T>

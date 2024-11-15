@@ -1,29 +1,30 @@
 #include <Windows.h>
 #include <GLFW/glfw3.h>
 #include <chrono>
-#include "shapes.h"
+#include "controllers.h"
+#include "custom_events.h"
+#include "directional_light.h"
+#include "draw2d.h"
 #include "events.h"
 #include "flashlight.h"
 #include "gdi_plus_context.h"
-#include "controllers.h"
+#include "gui.h"
+#include "logging.h"
 #include "hardware_constants.h"
-#include "physics/math.h"
 #include "mesh.h"
+#include "object_world.h"
 #include "phong_color_material.h"
 #include "phong_map_material.h"
 #include "physical_particle_emitter.h"
+#include "physics/math.h"
 #include "player.h"
-#include "directional_light.h"
 #include "shader_store.h"
+#include "shapes.h"
 #include "spotlight.h"
-#include "draw2d.h"
 #include "texture_store.h"
+#include "tools.h"
 #include "util.h"
 #include "world.h"
-#include "custom_events.h"
-#include "gui.h"
-#include "object_world.h"
-#include "tools.h"
 
 using namespace phys::literals;
 using namespace std::literals::chrono_literals;
@@ -62,7 +63,7 @@ int main(int, const char * const * const) {
 
 	GLFWwindow * window = glfwCreateWindow(800, 600, "Physics Demo", NULL, NULL);
 	if (!window) {
-		std::cout << "Failed to create window" << std::endl;
+		logger::error("Failed to create window");
 		glfwTerminate();
 		return -1;
 	}
@@ -137,7 +138,7 @@ int main(int, const char * const * const) {
 
 	flashlight lc(buses, pl, w, GLFW_KEY_F);
 
-	printf(help_text);
+	logger::info(help_text);
 
 	while (! glfwWindowShouldClose(window)) {
 		buses.render.fire(pre_render_event);

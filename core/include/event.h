@@ -42,6 +42,7 @@
 #include <string>
 #include <iostream>
 #endif
+#include "logging.h"
 
 // An "effectful" event is one that does something before and/or after it's fired
 template <typename EventType>
@@ -79,7 +80,7 @@ private:
 public:
 	event_listener<EventType> * _subscribe(event_listener<EventType> * listener, int pos) {
 #ifdef DEBUG_LOGS
-		std::cout << "[DEBUG] Event listener subscribed to " << event_type_name << " channel with priority " << pos << std::endl;
+		logger::debug("Event listener subscribed to " + event_type_name + " channel with priority " + traits::to_string(pos));
 #endif
 
 		listener_key key(listener, pos);
@@ -92,7 +93,7 @@ public:
 
 	void _unsubscribe(event_listener<EventType> * listener) {
 #ifdef DEBUG_LOGS
-		std::cout << "[DEBUG] Event listener unsubscribed from " << event_type_name << " channel" << std::endl;
+		logger::debug("Event listener unsubscribed from " + event_type_name + " channel");
 #endif
 
 		listener_key key(listener, 0);
@@ -109,7 +110,7 @@ public:
 
 	int _fire(EventType &event) {
 #ifdef DEBUG_LOGS
-		std::cout << "[DEBUG] Event fired on " + event_type_name << " channel with " << listeners.size() << " handler(s)" << std::endl;
+		logger::debug("Event fired on " + event_type_name + " channel with " + traits::to_string(listeners.size()) + " handler(s)");
 #endif
 		for (auto listener : listeners) {
 			int status = listener.listener->handle(event);
@@ -117,7 +118,7 @@ public:
 			// TODO: Meaningful status codes
 			if (status) {
 #ifdef DEBUG_LOGS
-				std::cout << "[DEBUG] Event cancelled on " + event_type_name << " channel after handler returned " + status << std::endl;
+				logger::debug("Event cancelled on " + event_type_name + " channel after handler returned " + traits::to_string(status));
 #endif
 				return status;
 			}
@@ -241,12 +242,12 @@ public:
 	// TODO: Throw errors
 	void subscribe() {
 		if (channel == nullptr) {
-			printf("No event channel to subscribe to\n");
+			logger::error("No event channel to subscribe to");
 			return;
 		}
 
 		if (id != nullptr) {
-			printf("Already subscribed\n");
+			logger::error("Already subscribed");
 			return;
 		}
 
@@ -255,12 +256,12 @@ public:
 
 	void unsubscribe() {
 		if (channel == nullptr) {
-			printf("No channel to unsubscribe from\n");
+			logger::error("No channel to unsubscribe from");
 			return;
 		}
 
 		if (id == nullptr) {
-			printf("Not subscribed\n");
+			logger::error("Not subscribed");
 			return;
 		}
 

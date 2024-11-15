@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <string>
 #include "gl.h"
+#include "logging.h"
 #include "unique_handle.h"
 #include "util.h"
 
@@ -32,8 +33,8 @@ class shader {
 public:
 	shader(const char * const path, const std::string directives = "\n") :
 		id(0, [](unsigned int _handle) {
-		glDeleteShader(_handle);
-			})
+			glDeleteShader(_handle);
+		})
 	{
 		constexpr unsigned int gl_shader_type = get_gl_shader_type(ShaderType);
 
@@ -52,7 +53,7 @@ public:
 
 			shader_code = shader_stream.str();
 		} catch (std::ifstream::failure e) {
-			std::cout << "Failed to read shader file: \"" << path << "\"" << std::endl;
+			logger::error("Failed to read shader file: " + std::string(path));
 			throw e;
 		}
 
@@ -82,7 +83,7 @@ public:
 				type_str = "fragment";
 			}
 
-			std::cout << "Failed to compile " << type_str << " shader (" << path << "): " << info_log << std::endl;
+			logger::error("Failed to compile " + type_str + " shader (" + std::string(path) + "): " + std::string(info_log));
 			// TODO: Proper error classes
 			throw "Shader compilation error";
 		}

@@ -5,6 +5,7 @@
 #include <memory>
 #include "events.h"
 #include "instanced_mesh.h"
+#include "logging.h"
 #include "phong_color_material.h"
 #include "physics/constraints.h"
 #include "physics/particle.h"
@@ -543,7 +544,7 @@ int object_world<N>::handle(particle_spawn_event &event) {
 	int64_t i = next_inactive_particle();
 
 	if (i == -1) {
-		std::cout << "Max particles reached (" << N << ")" << std::endl;
+		logger::warn("Max particles reached (" + traits::to_string(N) + ")");
 		// TODO: Do something in the game world
 		return 1;
 	}
