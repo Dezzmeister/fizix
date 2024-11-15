@@ -20,6 +20,16 @@ phys::contact_generator::contact_generator() {
 		shape_type::Sphere,
 		phys::algorithms::sphere_sphere_collision
 	);
+	register_collision_algorithm(
+		shape_type::Sphere,
+		shape_type::Plane,
+		phys::algorithms::sphere_plane_collision
+	);
+	register_collision_algorithm(
+		shape_type::Plane,
+		shape_type::Plane,
+		phys::algorithms::plane_plane_collision
+	);
 }
 
 void phys::contact_generator::generate_contacts(
@@ -34,6 +44,11 @@ void phys::contact_generator::generate_contacts(
 
 	int shape_type_1 = std::min(a.type, b.type);
 	int shape_type_2 = std::max(a.type, b.type);
+	primitive &shape_1 = a.type == shape_type_1 ? a : b;
+	primitive &shape_2 = b.type == shape_type_2 ? b : a;
+
+	assert(shape_type_1 < max_shapes);
+	assert(shape_type_2 < max_shapes);
 
 	const collision_algorithm &alg = algs[shape_type_1][shape_type_2];
 
@@ -42,7 +57,7 @@ void phys::contact_generator::generate_contacts(
 		throw "No collision algorithm";
 	}
 
-	alg.algorithm(a, b, contacts);
+	alg.algorithm(shape_1, shape_2, contacts);
 }
 
 void phys::contact_generator::register_collision_algorithm(

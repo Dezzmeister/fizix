@@ -8,3 +8,11 @@ phys::sphere::sphere(
 	primitive(shape_type::Sphere, _body, _offset),
 	radius(_radius)
 {}
+
+phys::plane::plane(
+	rigid_body * _body,
+	const vec3 &_dir
+) :
+	primitive(shape_type::Plane, _body, identity<mat4>()),
+	dir(_dir)
+{}

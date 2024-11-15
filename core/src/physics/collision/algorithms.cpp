@@ -8,6 +8,8 @@ namespace {
 }
 
 phys::collision_algorithm_func phys::algorithms::sphere_sphere_collision;
+phys::collision_algorithm_func phys::algorithms::sphere_plane_collision;
+phys::collision_algorithm_func phys::algorithms::plane_plane_collision;
 
 void phys::algorithms::init_algorithms() {
 	if (initialized) {
@@ -40,5 +42,41 @@ void phys::algorithms::init_algorithms() {
 			);
 
 			contacts.insert(std::end(contacts), c);
+		};
+
+	sphere_plane_collision =
+		[](primitive &_a, primitive &_b, contact_container &contacts) {
+			sphere &s = static_cast<sphere&>(_a);
+			plane &p = static_cast<plane&>(_b);
+
+			vec3 s_pos = s.body->pos + truncate(s.offset[3]);
+			// TODO: Memoize
+			real p_len = std::sqrt(dot(p.dir, p.dir));
+			real overlap = dot(s_pos, p.dir) / p_len;
+			real diff = std::abs(overlap - p_len);
+
+			if (s.radius < diff) {
+				return;
+			}
+
+			vec3 contact_norm = normalize(p.dir);
+			vec3 contact_pt = s_pos + contact_norm * diff;
+
+			contact c(
+				s.body,
+				p.body,
+				contact_pt,
+				contact_norm,
+				s.radius - diff
+			);
+
+			contacts.insert(std::end(contacts), c);
+		};
+
+	plane_plane_collision =
+		[](primitive&, primitive&, contact_container&) {
+			// Infinite planes are always in contact unless they're perfectly
+			// parallel, so this type of collision probably isn't very useful
+			// and we can ignore it
 		};
 }
