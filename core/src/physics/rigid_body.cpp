@@ -94,3 +94,7 @@ void phys::rigid_body::integrate(real dt) {
 	calculate_derived_data();
 	setup();
 }
+
+const phys::mat4& phys::rigid_body::get_transform() const {
+	return local_to_world;
+}

@@ -6,6 +6,7 @@ namespace phys {
 	enum class shape_type {
 		Sphere = 0,
 		Plane,
+		Box,
 		// Not a primitive - indicates the end of known shape types. Consumers can implement
 		// their own shape types with `type` starting at `shape_type::Max`
 		Max

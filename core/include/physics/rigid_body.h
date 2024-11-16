@@ -24,6 +24,8 @@ namespace phys {
 		void add_force_at_world(const vec3 &f_world, const vec3 &at_world);
 		void add_force_at_local(const vec3 &f_world, const vec3 &at_local);
 		void integrate(real dt);
+		// Returns the local-to-world transformation matrix
+		const mat4& get_transform() const;
 
 	private:
 		mat4 local_to_world;

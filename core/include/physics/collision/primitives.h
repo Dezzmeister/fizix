@@ -11,10 +11,16 @@ namespace phys {
 
 	class plane : public primitive {
 	public:
-		// The direction of the plane. The length of this vector gives the
-		// "position" of the plane along the direction.
-		vec3 dir;
+		vec3 normal;
+		real offset;
 
-		plane(rigid_body * _body, const vec3 &_dir);
+		plane(rigid_body * _body, const vec3 &_normal, real _offset);
+	};
+
+	class box : public primitive {
+	public:
+		vec3 half_size;
+
+		box(rigid_body * _body, const mat4 &_offset, const vec3 &_half_size);
 	};
 }

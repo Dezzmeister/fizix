@@ -11,8 +11,19 @@ phys::sphere::sphere(
 
 phys::plane::plane(
 	rigid_body * _body,
-	const vec3 &_dir
+	const vec3 &_normal,
+	real _offset
 ) :
 	primitive(shape_type::Plane, _body, identity<mat4>()),
-	dir(_dir)
+	normal(_normal),
+	offset(_offset)
+{}
+
+phys::box::box(
+	rigid_body * _body,
+	const mat4 &_offset,
+	const vec3 &_half_size
+) :
+	primitive(shape_type::Box, _body, _offset),
+	half_size(_half_size)
 {}

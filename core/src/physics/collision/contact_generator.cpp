@@ -30,6 +30,11 @@ phys::contact_generator::contact_generator() {
 		shape_type::Plane,
 		phys::algorithms::plane_plane_collision
 	);
+	register_collision_algorithm(
+		shape_type::Plane,
+		shape_type::Box,
+		phys::algorithms::plane_box_collision
+	);
 }
 
 void phys::contact_generator::generate_contacts(
