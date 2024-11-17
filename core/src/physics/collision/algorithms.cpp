@@ -118,7 +118,7 @@ void phys::algorithms::init_algorithms() {
 			plane_dists[6].pos = vec3(-b.half_size.x, -b.half_size.y, b.half_size.z);
 			plane_dists[7].pos = -b.half_size;
 
-			mat4 transform = b.offset * b.body->get_transform();
+			mat4 transform = b.body->get_transform() * b.offset;
 
 			for (size_t i = 0; i < 8; i++) {
 				plane_dists[i].pos = vec3(transform * vec4(plane_dists[i].pos, 1.0_r));

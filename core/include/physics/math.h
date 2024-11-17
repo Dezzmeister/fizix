@@ -63,4 +63,7 @@ namespace phys {
 
 	vec3 truncate(const vec4 &v);
 	mat3 truncate(const mat4 &m);
+
+	mat4 quat_to_mat4(const quat &q);
+	mat4 translate(const vec3 &v);
 }

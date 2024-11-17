@@ -1,3 +1,4 @@
+#include <glm/gtx/quaternion.hpp>
 #include "physics/math.h"
 
 phys::real phys::dot(const vec3 &a, const vec3 &b) {
@@ -66,4 +67,12 @@ phys::mat3 phys::truncate(const mat4 &m) {
 		truncate(m[1]),
 		truncate(m[2])
 	);
+}
+
+phys::mat4 phys::quat_to_mat4(const phys::quat &q) {
+	return glm::toMat4(q);
+}
+
+phys::mat4 phys::translate(const phys::vec3 &v) {
+	return glm::translate(glm::identity<glm::mat4>(), v);
 }

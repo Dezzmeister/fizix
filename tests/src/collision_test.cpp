@@ -538,6 +538,115 @@ void setup_collision_tests() {
 						));
 				});
 			});
+
+			describe("with an offset", []() {
+				after_each([&]() {
+					contacts.clear();
+					box_body_1 = {};
+				});
+
+				it("generates contacts for a box offset by a translation", [&]() {
+					box_body_1.pos.y = 2.0_r;
+					box_body_1.calculate_derived_data();
+
+					phys::plane p(nullptr, phys::vec3(0.0_r, 1.0_r, 0.0_r), 0.1_r);
+					phys::box b(&box_body_1, phys::translate(phys::vec3(0.0_r, -1.0_r, 0.0_r)), phys::vec3(1.0_r));
+
+					collider.generate_contacts(p, b, contacts);
+
+					expect(contacts).to_have_size(4).annd()
+						.to_have_item(phys::contact(
+							&box_body_1,
+							nullptr,
+							phys::vec3(1.0_r, 0.0_r, 1.0_r),
+							phys::vec3(0.0_r, -1.0_r, 0.0_r),
+							0.1_r
+						)).annd()
+						.to_have_item(phys::contact(
+							&box_body_1,
+							nullptr,
+							phys::vec3(-1.0_r, 0.0_r, 1.0_r),
+							phys::vec3(0.0_r, -1.0_r, 0.0_r),
+							0.1_r
+						)).annd()
+						.to_have_item(phys::contact(
+							&box_body_1,
+							nullptr,
+							phys::vec3(1.0_r, 0.0_r, -1.0_r),
+							phys::vec3(0.0_r, -1.0_r, 0.0_r),
+							0.1_r
+						)).annd()
+						.to_have_item(phys::contact(
+							&box_body_1,
+							nullptr,
+							phys::vec3(-1.0_r, 0.0_r, -1.0_r),
+							phys::vec3(0.0_r, -1.0_r, 0.0_r),
+							0.1_r
+						));
+				});
+
+				it("generates contacts for a box offset by a rotation", [&]() {
+					constexpr phys::real angle = (phys::real)M_PI / 4.0_r;
+					phys::vec3 axis(0.0_r, 0.0_r, 1.0_r);
+
+					// The box is offset from the rigid body by a rotation, but
+					// the rigid body is translated in the +y direction
+					box_body_1.pos.y = 1.0_r;
+					phys::quat rot = phys::quat(std::cos(angle / 2.0_r), std::sin(angle / 2.0_r) * axis);
+					box_body_1.calculate_derived_data();
+
+					phys::plane p(nullptr, phys::vec3(0.0_r, 1.0_r, 0.0_r), 0.0_r);
+					phys::box b(&box_body_1, phys::quat_to_mat4(rot), phys::vec3(1.0_r));
+
+					collider.generate_contacts(p, b, contacts);
+
+					expect(contacts).to_have_size(2).annd()
+						.to_have_item(phys::contact(
+							&box_body_1,
+							nullptr,
+							phys::vec3(0.0_r, 1.0_r - std::sqrt(2.0_r), -1.0_r),
+							phys::vec3(0.0_r, -1.0_r, 0.0_r),
+							std::sqrt(2.0_r) - 1.0_r
+						)).annd()
+						.to_have_item(phys::contact(
+							&box_body_1,
+							nullptr,
+							phys::vec3(0.0_r, 1.0_r - std::sqrt(2.0_r), 1.0_r),
+							phys::vec3(0.0_r, -1.0_r, 0.0_r),
+							std::sqrt(2.0_r) - 1.0_r
+						));
+				});
+
+				it("generates contacts for a box offset by a translation and a rotation", [&]() {
+					constexpr phys::real angle = (phys::real)M_PI / 4.0_r;
+					phys::vec3 axis(0.0_r, 0.0_r, 1.0_r);
+
+					box_body_1.pos.y = 0.5_r;
+					phys::quat rot = phys::quat(std::cos(angle / 2.0_r), std::sin(angle / 2.0_r) * axis);
+					box_body_1.calculate_derived_data();
+
+					phys::plane p(nullptr, phys::vec3(0.0_r, 1.0_r, 0.0_r), 0.0_r);
+					phys::box b(&box_body_1, phys::translate(phys::vec3(0.0_r, 0.5_r, 0.0_r)) * phys::quat_to_mat4(rot), phys::vec3(1.0_r));
+
+					collider.generate_contacts(p, b, contacts);
+
+					expect(contacts).to_have_size(2).annd()
+						.to_have_item(phys::contact(
+							&box_body_1,
+							nullptr,
+							phys::vec3(0.0_r, 1.0_r - std::sqrt(2.0_r), -1.0_r),
+							phys::vec3(0.0_r, -1.0_r, 0.0_r),
+							std::sqrt(2.0_r) - 1.0_r
+						)).annd()
+						.to_have_item(phys::contact(
+							&box_body_1,
+							nullptr,
+							phys::vec3(0.0_r, 1.0_r - std::sqrt(2.0_r), 1.0_r),
+							phys::vec3(0.0_r, -1.0_r, 0.0_r),
+							std::sqrt(2.0_r) - 1.0_r
+						));
+				});
+			});
 		});
 	});
 }
