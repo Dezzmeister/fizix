@@ -21,6 +21,8 @@ namespace phys {
 
 		virtual ~primitive() = default;
 
+		const mat4& get_inv_offset() const;
+
 	protected:
 		primitive(
 			shape_type _type,
@@ -33,5 +35,8 @@ namespace phys {
 			rigid_body * _body,
 			const mat4 &_offset
 		);
+
+	private:
+		mat4 inv_offset;
 	};
 }

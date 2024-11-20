@@ -31,6 +31,7 @@ namespace phys {
 	mat4 transpose(const mat4 &m);
 	mat4 inverse(const mat4 &m);
 	mat3 inverse(const mat3 &m);
+	vec3 clamp(const vec3 &v, const vec3 &min, const vec3 &max);
 
 	template <typename T>
 	inline const auto &to_glm = ident<T>;

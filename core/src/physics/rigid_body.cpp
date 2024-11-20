@@ -8,6 +8,7 @@ phys::rigid_body::rigid_body() :
 	linear_damping{ 0.995_r },
 	angular_damping{ 0.995_r },
 	local_to_world(identity<mat4>()),
+	world_to_local(identity<mat4>()),
 	inv_inertia_tensor(identity<mat3>()),
 	inv_inertia_tensor_world(identity<mat3>()),
 	inv_mass(1.0_r)
@@ -64,6 +65,8 @@ void phys::rigid_body::add_force_at_local(const vec3 &f_world, const vec3 &at_lo
 
 void phys::rigid_body::calculate_derived_data() {
 	calculate_local_to_world();
+	// TODO: Calculate this only when needed
+	calculate_world_to_local();
 	calculate_inv_inertia_tensor_world();
 }
 
@@ -72,6 +75,10 @@ void phys::rigid_body::calculate_local_to_world() {
 	local_to_world[1] = rot * vec4(0.0_r, 1.0_r, 0.0_r, 0.0_r);
 	local_to_world[2] = rot * vec4(0.0_r, 0.0_r, 1.0_r, 0.0_r);
 	local_to_world[3] = vec4(pos, 1.0_r);
+}
+
+void phys::rigid_body::calculate_world_to_local() {
+	world_to_local = inverse(local_to_world);
 }
 
 void phys::rigid_body::calculate_inv_inertia_tensor_world() {
@@ -97,4 +104,8 @@ void phys::rigid_body::integrate(real dt) {
 
 const phys::mat4& phys::rigid_body::get_transform() const {
 	return local_to_world;
+}
+
+const phys::mat4& phys::rigid_body::get_inv_transform() const {
+	return world_to_local;
 }

@@ -27,6 +27,8 @@ phys::collision_algorithm_func phys::algorithms::sphere_sphere_collision;
 phys::collision_algorithm_func phys::algorithms::sphere_plane_collision;
 phys::collision_algorithm_func phys::algorithms::plane_plane_collision;
 phys::collision_algorithm_func phys::algorithms::plane_box_collision;
+phys::collision_algorithm_func phys::algorithms::sphere_box_collision;
+phys::collision_algorithm_func phys::algorithms::box_box_collision;
 
 void phys::algorithms::init_algorithms() {
 	if (initialized) {
@@ -148,5 +150,56 @@ void phys::algorithms::init_algorithms() {
 
 				contacts.insert(std::end(contacts), c);
 			}
+		};
+
+	sphere_box_collision =
+		[](primitive &a, primitive &_b, contact_container &contacts) {
+			sphere &s = static_cast<sphere&>(a);
+			box &b = static_cast<box&>(_b);
+
+			vec3 s_pos_w = s.body->pos + truncate(s.offset[3]);
+			// Sphere pos in the box frame
+			vec3 s_pos_b = truncate(
+				b.get_inv_offset() * b.body->get_inv_transform() * vec4(s_pos_w, 1.0_r)
+			);
+
+			// In the box frame, the box is aligned with the Cartesian axes, and the box
+			// is at the origin
+
+			// TODO: Transform the radius as a direction to account for scaling
+			// transforms
+			if (
+				std::abs(s_pos_b.x) - s.radius > b.half_size.x ||
+				std::abs(s_pos_b.y) - s.radius > b.half_size.y ||
+				std::abs(s_pos_b.z) - s.radius > b.half_size.z
+			) {
+				return;
+			}
+
+			vec3 closest_pt_b = clamp(s_pos_b, -b.half_size, b.half_size);
+			vec3 diff_b = s_pos_b - closest_pt_b;
+			real dist_sqr_b = dot(diff_b, diff_b);
+
+			if (dist_sqr_b >= s.radius * s.radius) {
+				return;
+			}
+
+			vec3 closest_pt_w = truncate(b.body->get_transform() * b.offset * vec4(closest_pt_b, 1.0_r));
+			vec3 diff_w = closest_pt_w - s_pos_w;
+
+			contact c(
+				s.body,
+				b.body,
+				closest_pt_w,
+				normalize(diff_w),
+				s.radius - std::sqrt(dot(diff_w, diff_w))
+			);
+
+			contacts.insert(std::end(contacts), c);
+		};
+
+	box_box_collision =
+		[](primitive&, primitive&, contact_container&) {
+			// TODO: Implement this
 		};
 }

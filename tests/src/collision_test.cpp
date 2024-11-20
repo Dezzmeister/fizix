@@ -47,7 +47,7 @@ void setup_collision_tests() {
 					));
 			});
 
-			it("detects two interpenetrating spheres when the args are switched", [&]() {
+			it("detects two interpenetrating spheres when the arguments are swapped", [&]() {
 				sphere_body_2.pos.y = 1.8_r;
 
 				phys::sphere s1(&sphere_body_1, phys::identity<phys::mat4>(), 1.0_r);
@@ -195,7 +195,7 @@ void setup_collision_tests() {
 				expect(contacts).to_have_size(0);
 			});
 
-			it("generates a contact when the arguments are switched", [&]() {
+			it("generates a contact when the arguments are swapped", [&]() {
 				sphere_body_1.pos.y = 5.0_r;
 
 				phys::sphere s(&sphere_body_1, phys::identity<phys::mat4>(), 1.0_r);
@@ -622,7 +622,7 @@ void setup_collision_tests() {
 					phys::vec3 axis(0.0_r, 0.0_r, 1.0_r);
 
 					box_body_1.pos.y = 0.5_r;
-					phys::quat rot = phys::quat(std::cos(angle / 2.0_r), std::sin(angle / 2.0_r) * axis);
+					phys::quat rot(std::cos(angle / 2.0_r), std::sin(angle / 2.0_r) * axis);
 					box_body_1.calculate_derived_data();
 
 					phys::plane p(nullptr, phys::vec3(0.0_r, 1.0_r, 0.0_r), 0.0_r);
@@ -644,6 +644,153 @@ void setup_collision_tests() {
 							phys::vec3(0.0_r, 1.0_r - std::sqrt(2.0_r), 1.0_r),
 							phys::vec3(0.0_r, -1.0_r, 0.0_r),
 							std::sqrt(2.0_r) - 1.0_r
+						));
+				});
+			});
+		});
+
+		describe("between a sphere and a box", []() {
+			describe("with no offset", []() {
+				after_each([&]() {
+					contacts.clear();
+					sphere_body_1 = {};
+					box_body_1 = {};
+				});
+
+				it("generates a contact for a sphere touching the face of a box and within the box's shadow", [&]() {
+					sphere_body_1.pos.y = 1.8_r;
+
+					phys::sphere s(&sphere_body_1, phys::identity<phys::mat4>(), 1.0_r);
+					phys::box b(&box_body_1, phys::identity<phys::mat4>(), phys::vec3(2.0_r, 1.0_r, 2.0_r));
+
+					collider.generate_contacts(s, b, contacts);
+
+					expect(contacts).to_have_size(1).annd()
+						.to_have_item(phys::contact(
+							&sphere_body_1,
+							&box_body_1,
+							phys::vec3(0.0_r, 1.0_r, 0.0_r),
+							phys::vec3(0.0_r, -1.0_r, 0.0_r),
+							0.2_r
+						));
+				});
+
+				it("generates a contact for a sphere touching the face of a box and partially outside of the box's shadow", [&]() {
+					sphere_body_1.pos = phys::vec3(1.8_r, 1.8_r, 0.0_r);
+
+					phys::sphere s(&sphere_body_1, phys::identity<phys::mat4>(), 1.0_r);
+					phys::box b(&box_body_1, phys::identity<phys::mat4>(), phys::vec3(2.0_r, 1.0_r, 2.0_r));
+
+					collider.generate_contacts(s, b, contacts);
+
+					expect(contacts).to_have_size(1).annd()
+						.to_have_item(phys::contact(
+							&sphere_body_1,
+							&box_body_1,
+							phys::vec3(1.8_r, 1.0_r, 0.0_r),
+							phys::vec3(0.0_r, -1.0_r, 0.0_r),
+							0.2_r
+						));
+				});
+
+				it("generates a contact for a sphere touching the edge of a box", [&]() {
+					sphere_body_1.pos = phys::vec3(2.0_r, 2.0_r, 0.0_r);
+
+					phys::sphere s(&sphere_body_1, phys::identity<phys::mat4>(), 1.8_r);
+					phys::box b(&box_body_1, phys::identity<phys::mat4>(), phys::vec3(1.0_r));
+
+					collider.generate_contacts(s, b, contacts);
+
+					expect(contacts).to_have_size(1).annd()
+						.to_have_item(phys::contact(
+							&sphere_body_1,
+							&box_body_1,
+							phys::vec3(1.0_r, 1.0_r, 0.0_r),
+							phys::normalize(phys::vec3(-1.0_r, -1.0_r, 0.0_r)),
+							1.8_r - std::sqrt(2.0_r)
+						));
+				});
+
+				it("generates a contact for a sphere touching the corner of a box", [&]() {
+					sphere_body_1.pos = phys::vec3(2.0_r);
+
+					phys::sphere s(&sphere_body_1, phys::identity<phys::mat4>(), 1.8_r);
+					phys::box b(&box_body_1, phys::identity<phys::mat4>(), phys::vec3(1.0_r));
+
+					collider.generate_contacts(s, b, contacts);
+
+					expect(contacts).to_have_size(1).annd()
+						.to_have_item(phys::contact(
+							&sphere_body_1,
+							&box_body_1,
+							phys::vec3(1.0_r),
+							phys::normalize(phys::vec3(-1.0_r)),
+							1.8_r - std::sqrt(3.0_r)
+						));
+				});
+
+				it("generates a contact for a sphere touching a translated box", [&]() {
+					sphere_body_1.pos = phys::vec3(10.0_r, 1.8_r, 0.0_r);
+					box_body_1.pos.x = 10.0_r;
+
+					sphere_body_1.calculate_derived_data();
+					box_body_1.calculate_derived_data();
+
+					phys::sphere s(&sphere_body_1, phys::identity<phys::mat4>(), 1.0_r);
+					phys::box b(&box_body_1, phys::identity<phys::mat4>(), phys::vec3(2.0_r, 1.0_r, 2.0_r));
+
+					collider.generate_contacts(s, b, contacts);
+
+					expect(contacts).to_have_size(1).annd()
+						.to_have_item(phys::contact(
+							&sphere_body_1,
+							&box_body_1,
+							phys::vec3(10.0_r, 1.0_r, 0.0_r),
+							phys::vec3(0.0_r, -1.0_r, 0.0_r),
+							0.2_r
+						));
+				});
+
+				it("generates a contact for a sphere touching a rotated box", [&]() {
+					constexpr phys::real angle = (phys::real)M_PI / 4.0_r;
+					phys::vec3 axis(1.0_r, 0.0_r, 0.0_r);
+
+					box_body_1.rot = phys::quat(std::cos(angle / 2.0_r), std::sin(angle / 2.0_r) * axis);
+					sphere_body_1.pos = phys::vec3(0.0_r, 1.5_r, 1.5_r);
+
+					sphere_body_1.calculate_derived_data();
+					box_body_1.calculate_derived_data();
+
+					phys::sphere s(&sphere_body_1, phys::identity<phys::mat4>(), 1.5_r);
+					phys::box b(&box_body_1, phys::identity<phys::mat4>(), phys::vec3(1.0_r));
+
+					collider.generate_contacts(s, b, contacts);
+
+					expect(contacts).to_have_size(1).annd()
+						.to_have_item(phys::contact(
+							&sphere_body_1,
+							&box_body_1,
+							phys::vec3(0.0_r, std::sqrt(2.0_r) / 2.0_r, std::sqrt(2.0_r) / 2.0_r),
+							phys::normalize(phys::vec3(0.0_r, -1.0_r, -1.0_r)),
+							1.0_r + 1.5_r * (1.0_r - std::sqrt(2.0_r))
+						));
+				});
+
+				it("generates a contact when the arguments are swapped", [&]() {
+					sphere_body_1.pos.y = 1.8_r;
+
+					phys::sphere s(&sphere_body_1, phys::identity<phys::mat4>(), 1.0_r);
+					phys::box b(&box_body_1, phys::identity<phys::mat4>(), phys::vec3(2.0_r, 1.0_r, 2.0_r));
+
+					collider.generate_contacts(b, s, contacts);
+
+					expect(contacts).to_have_size(1).annd()
+						.to_have_item(phys::contact(
+							&sphere_body_1,
+							&box_body_1,
+							phys::vec3(0.0_r, 1.0_r, 0.0_r),
+							phys::vec3(0.0_r, -1.0_r, 0.0_r),
+							0.2_r
 						));
 				});
 			});

@@ -13,5 +13,10 @@ phys::primitive::primitive(
 ) :
 	type(_type),
 	body(_body),
-	offset(_offset)
+	offset(_offset),
+	inv_offset(inverse(_offset))
 {}
+
+const phys::mat4& phys::primitive::get_inv_offset() const {
+	return inv_offset;
+}

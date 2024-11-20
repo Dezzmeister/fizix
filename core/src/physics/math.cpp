@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <glm/gtx/quaternion.hpp>
 #include "physics/math.h"
 
@@ -27,6 +28,14 @@ phys::mat4 phys::inverse(const mat4 &m) {
 
 phys::mat3 phys::inverse(const mat3 &m) {
 	return glm::inverse(m);
+}
+
+phys::vec3 phys::clamp(const vec3 &v, const vec3 &min, const vec3 &max) {
+	return vec3(
+		std::clamp(v.x, min.x, max.x),
+		std::clamp(v.y, min.y, max.y),
+		std::clamp(v.z, min.z, max.z)
+	);
 }
 
 phys::decomposed_vec3 phys::decompose_vec3(const vec3 &v, const vec3 &n) {

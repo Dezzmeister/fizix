@@ -26,9 +26,11 @@ namespace phys {
 		void integrate(real dt);
 		// Returns the local-to-world transformation matrix
 		const mat4& get_transform() const;
+		const mat4& get_inv_transform() const;
 
 	private:
 		mat4 local_to_world;
+		mat4 world_to_local;
 		mat3 inv_inertia_tensor;
 		mat3 inv_inertia_tensor_world;
 		vec3 force{};
@@ -36,6 +38,7 @@ namespace phys {
 		real inv_mass;
 
 		void calculate_local_to_world();
+		void calculate_world_to_local();
 		void calculate_inv_inertia_tensor_world();
 	};
 }
