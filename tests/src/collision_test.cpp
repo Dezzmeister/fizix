@@ -793,6 +793,135 @@ void setup_collision_tests() {
 							0.2_r
 						));
 				});
+
+				it("does not generate a contact for a sphere far from a box", [&]() {
+					sphere_body_1.pos.y = 10.0_r;
+
+					sphere_body_1.calculate_derived_data();
+
+					phys::sphere s(&sphere_body_1, phys::identity<phys::mat4>(), 1.0_r);
+					phys::box b(&box_body_1, phys::identity<phys::mat4>(), phys::vec3(1.0_r));
+
+					collider.generate_contacts(s, b, contacts);
+
+					expect(contacts).to_have_size(0);
+				});
+			});
+
+			describe("with an offset", []() {
+				after_each([&]() {
+					contacts.clear();
+					sphere_body_1 = {};
+					box_body_1 = {};
+				});
+
+				it("generates a contact for a box offset by a translation", [&]() {
+					sphere_body_1.pos = phys::vec3(10.0_r, 1.8_r, 0.0_r);
+
+					sphere_body_1.calculate_derived_data();
+
+					phys::sphere s(&sphere_body_1, phys::identity<phys::mat4>(), 1.0_r);
+					phys::box b(
+						&box_body_1,
+						phys::translate(phys::vec3(10.0_r, 0.0_r, 0.0_r)),
+						phys::vec3(2.0_r, 1.0_r, 2.0_r)
+					);
+
+					collider.generate_contacts(s, b, contacts);
+
+					expect(contacts).to_have_size(1).annd()
+						.to_have_item(phys::contact(
+							&sphere_body_1,
+							&box_body_1,
+							phys::vec3(10.0_r, 1.0_r, 0.0_r),
+							phys::vec3(0.0_r, -1.0_r, 0.0_r),
+							0.2_r
+						));
+				});
+
+				it("generates a contact for a box offset by a rotation", [&]() {
+					constexpr phys::real angle = (phys::real)M_PI / 4.0_r;
+					phys::vec3 axis(1.0_r, 0.0_r, 0.0_r);
+
+					phys::quat rot(std::cos(angle / 2.0_r), std::sin(angle / 2.0_r) * axis);
+					sphere_body_1.pos = phys::vec3(0.0_r, 1.5_r, 1.5_r);
+
+					sphere_body_1.calculate_derived_data();
+					box_body_1.calculate_derived_data();
+
+					phys::sphere s(&sphere_body_1, phys::identity<phys::mat4>(), 1.5_r);
+					phys::box b(&box_body_1, phys::quat_to_mat4(rot), phys::vec3(1.0_r));
+
+					collider.generate_contacts(s, b, contacts);
+
+					expect(contacts).to_have_size(1).annd()
+						.to_have_item(phys::contact(
+							&sphere_body_1,
+							&box_body_1,
+							phys::vec3(0.0_r, std::sqrt(2.0_r) / 2.0_r, std::sqrt(2.0_r) / 2.0_r),
+							phys::normalize(phys::vec3(0.0_r, -1.0_r, -1.0_r)),
+							1.0_r + 1.5_r * (1.0_r - std::sqrt(2.0_r))
+						));
+				});
+
+				it("generates a contact for a box offset by a translation and a rotation", [&]() {
+					constexpr phys::real angle = (phys::real)M_PI / 4.0_r;
+					phys::vec3 axis(1.0_r, 0.0_r, 0.0_r);
+
+					phys::quat rot(std::cos(angle / 2.0_r), std::sin(angle / 2.0_r) * axis);
+					sphere_body_1.pos = phys::vec3(10.0_r, 1.5_r, 1.5_r);
+
+					sphere_body_1.calculate_derived_data();
+					box_body_1.calculate_derived_data();
+
+					phys::sphere s(&sphere_body_1, phys::identity<phys::mat4>(), 1.5_r);
+					phys::box b(
+						&box_body_1,
+						phys::translate(phys::vec3(10.0_r, 0.0_r, 0.0_r)) * phys::quat_to_mat4(rot),
+						phys::vec3(1.0_r)
+					);
+
+					collider.generate_contacts(s, b, contacts);
+
+					expect(contacts).to_have_size(1).annd()
+						.to_have_item(phys::contact(
+							&sphere_body_1,
+							&box_body_1,
+							phys::vec3(10.0_r, std::sqrt(2.0_r) / 2.0_r, std::sqrt(2.0_r) / 2.0_r),
+							phys::normalize(phys::vec3(0.0_r, -1.0_r, -1.0_r)),
+							1.0_r + 1.5_r * (1.0_r - std::sqrt(2.0_r))
+						));
+				});
+
+				it("generates a contact for a box offset by a translation and a rotation after a translation", [&]() {
+					constexpr phys::real angle = (phys::real)M_PI / 4.0_r;
+					phys::vec3 axis(1.0_r, 0.0_r, 0.0_r);
+
+					phys::quat rot(std::cos(angle / 2.0_r), std::sin(angle / 2.0_r) * axis);
+					sphere_body_1.pos = phys::vec3(5.0_r, 6.5_r, 1.5_r);
+					box_body_1.pos.y = 5.0_r;
+
+					sphere_body_1.calculate_derived_data();
+					box_body_1.calculate_derived_data();
+
+					phys::sphere s(&sphere_body_1, phys::identity<phys::mat4>(), 1.5_r);
+					phys::box b(
+						&box_body_1,
+						phys::translate(phys::vec3(5.0_r, 0.0_r, 0.0_r)) * phys::quat_to_mat4(rot),
+						phys::vec3(1.0_r)
+					);
+
+					collider.generate_contacts(s, b, contacts);
+
+					expect(contacts).to_have_size(1).annd()
+						.to_have_item(phys::contact(
+							&sphere_body_1,
+							&box_body_1,
+							phys::vec3(5.0_r, 5.0_r + std::sqrt(2.0_r) / 2.0_r, std::sqrt(2.0_r) / 2.0_r),
+							phys::normalize(phys::vec3(0.0_r, -1.0_r, -1.0_r)),
+							1.0_r + 1.5_r * (1.0_r - std::sqrt(2.0_r))
+						));
+				});
 			});
 		});
 	});
