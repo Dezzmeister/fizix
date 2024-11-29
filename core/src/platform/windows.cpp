@@ -1,6 +1,12 @@
+#ifdef _WIN32
 #include <string>
 #include <Windows.h>
-#include "platform/windows.h"
+#include "platform/platform.h"
+
+extern "C" {
+	__declspec(dllexport) DWORD NvOptimusEnablement = 0;
+	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 0;
+}
 
 namespace {
 	HANDLE std_out = INVALID_HANDLE_VALUE;
@@ -48,3 +54,15 @@ void platform::enable_stdout_colors() {
 bool platform::stdout_colors_enabled() {
 	return can_use_colors;
 }
+
+void platform::set_gpu_preference(gpu_preference pref) {
+	if (pref == gpu_preference::Default) {
+		NvOptimusEnablement = 0;
+		AmdPowerXpressRequestHighPerformance = 0;
+	} else if (pref == gpu_preference::Discrete) {
+		NvOptimusEnablement = 1;
+		AmdPowerXpressRequestHighPerformance = 1;
+	}
+}
+
+#endif

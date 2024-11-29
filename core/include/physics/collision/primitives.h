@@ -1,5 +1,6 @@
 #pragma once
 #include "primitive.h"
+#include "vclip.h"
 
 namespace phys {
 	class sphere : public primitive {
@@ -22,5 +23,9 @@ namespace phys {
 		vec3 half_size;
 
 		box(rigid_body * _body, const mat4 &_offset, const vec3 &_half_size);
+
+		// Converts the box to a VClip polyhedron. The polyhedron is expressed in
+		// world space.
+		vclip::polyhedron to_polyhedron() const;
 	};
 }

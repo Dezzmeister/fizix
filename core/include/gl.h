@@ -59,6 +59,10 @@
 #define GL_CLAMP_TO_EDGE                    0x812F
 
 #define GL_MAX_TEXTURE_IMAGE_UNITS          0x8872
+#define GL_SHADING_LANGUAGE_VERSION         0x8B8C
+#define GL_MAX_VERTEX_UNIFORM_COMPONENTS    0x8B4A
+#define GL_MAX_FRAGMENT_UNIFORM_COMPONENTS  0x8B49
+#define GL_MAX_GEOMETRY_UNIFORM_COMPONENTS  0x8DDF
 
 #define GL_TEXTURE_CUBE_MAP					0x8513
 #define GL_TEXTURE_CUBE_MAP_POSITIVE_X      0x8515
@@ -70,10 +74,10 @@
 
 #define GL_TEXTURE_WRAP_R                   0x8072
 
-#define GL_BGR                            0x80E0
-#define GL_BGRA                           0x80E1
+#define GL_BGR                              0x80E0
+#define GL_BGRA                             0x80E1
 
-#define GL_VERTEX_PROGRAM_POINT_SIZE      0x8642
+#define GL_VERTEX_PROGRAM_POINT_SIZE        0x8642
 
 using GLchar = char;
 using GLintptr = intptr_t;

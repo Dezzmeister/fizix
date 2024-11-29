@@ -1,4 +1,7 @@
 #pragma once
+#include <coroutine>
+#include <experimental/generator>
+#include <ranges>
 #include <stdexcept>
 #include <string>
 
@@ -59,5 +62,23 @@ namespace util {
 		}
 
 		return true;
+	}
+
+	template <typename LeftView, typename RightView>
+	requires std::same_as<std::ranges::range_value_t<LeftView>, std::ranges::range_value_t<RightView>>
+	std::experimental::generator<std::ranges::range_value_t<LeftView>> concat_views(LeftView l, RightView r) {
+		auto it1 = std::begin(l);
+
+		while (it1 != std::end(l)) {
+			co_yield *it1;
+			++it1;
+		}
+
+		auto it2 = std::begin(r);
+
+		while (it2 != std::end(r)) {
+			co_yield *it2;
+			++it2;
+		}
 	}
 };

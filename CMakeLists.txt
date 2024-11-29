@@ -10,7 +10,7 @@ add_subdirectory(glm)
 
 add_definitions(-DGLFW_INCLUDE_NONE -DGLM_FORCE_QUAT_DATA_XYZW -DGLM_ENABLE_EXPERIMENTAL)
 include_directories(${CMAKE_SOURCE_DIR}/core/include)
-add_compile_options(/W4 /WX /fp:strict)
+add_compile_options(/W4 /WX /fp:strict /await:strict)
 link_libraries(glfw glm opengl32 Gdiplus)
 
 add_subdirectory(core)

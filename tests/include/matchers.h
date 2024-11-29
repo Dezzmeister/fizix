@@ -7,6 +7,7 @@
 #include "traits.h"
 #include "util.h"
 #include "setup.h"
+#include "physics/collision/vclip.h"
 
 #define expect(arg) test::expect_impl((arg), __FILE__, __LINE__)
 
@@ -53,6 +54,8 @@ namespace test {
 		{}
 
 		auto to_be(const ActualType &expected) -> decltype(*this)& {
+			using traits::to_string;
+
 			if (this->is_done()) {
 				return *this;
 			}
@@ -60,11 +63,8 @@ namespace test {
 			bool is_match = actual == expected;
 
 			if (this->is_inverted && is_match) {
-				std::string message = "Expected objects to be unequal";
-
-				if constexpr (traits::stringifiable<ActualType>) {
-					message += "\nExpected/Actual: " + traits::to_string(actual);
-				}
+				std::string message = "Expected objects to be unequal\nExpected/Actual: " +
+					to_string(actual);
 
 				this->err = assertion_failure(
 					message,
@@ -72,12 +72,9 @@ namespace test {
 					line
 				);
 			} else if (! this->is_inverted && ! is_match) {
-				std::string message = "Expected objects to be equal";
-
-				if constexpr (traits::stringifiable<ActualType>) {
-					message += "\nExpected: " + traits::to_string(expected) +
-						"\nActual: " + traits::to_string(actual);
-				}
+				std::string message = "Expected objects to be equal\nExpected: " +
+					to_string(expected) +
+					"\nActual: " + to_string(actual);
 
 				this->err = assertion_failure(
 					message,
@@ -162,6 +159,25 @@ namespace test {
 		const std::vector<T> &actual;
 		const char * const file;
 		const int line;
+	};
+
+	template <std::ranges::range R>
+	class matchers<R> :
+		public matchers<std::vector<std::ranges::range_value_t<R>>>
+	{
+		using value_t = std::ranges::range_value_t<R>;
+	public:
+		matchers(R &r, const char * const _file, int _line) :
+			matchers<std::vector<value_t>>(
+				vec,
+				_file,
+				_line
+			),
+			vec(r | std::ranges::to<std::vector<value_t>>())
+		{}
+
+	private:
+		std::vector<value_t> vec{};
 	};
 
 	template <typename T>
@@ -249,6 +265,8 @@ test::matchers<ActualType>::matchers(
 
 template <util::numeric ActualType>
 auto test::matchers<ActualType>::to_be(const ActualType expected) -> decltype(*this)& {
+	using traits::to_string;
+
 	if (this->is_done()) {
 		return *this;
 	}
@@ -257,13 +275,13 @@ auto test::matchers<ActualType>::to_be(const ActualType expected) -> decltype(*t
 
 	if (this->is_inverted && is_match) {
 		this->err = assertion_failure(
-			"Expected " + traits::to_string(actual) + " not to be " + traits::to_string(expected),
+			"Expected " + to_string(actual) + " not to be " + to_string(expected),
 			file,
 			line
 		);
 	} else if (! this->is_inverted && ! is_match) {
 		this->err = assertion_failure(
-			"Expected " + traits::to_string(actual) + " to be " + traits::to_string(expected),
+			"Expected " + to_string(actual) + " to be " + to_string(expected),
 			file,
 			line
 		);
@@ -285,6 +303,8 @@ test::matchers<std::vector<T>>::matchers(
 
 template <typename T>
 auto test::matchers<std::vector<T>>::to_have_item(const T &item) -> decltype(*this)& {
+	using traits::to_string;
+
 	if (this->is_done()) {
 		return *this;
 	}
@@ -292,11 +312,8 @@ auto test::matchers<std::vector<T>>::to_have_item(const T &item) -> decltype(*th
 	bool was_found = std::find(std::begin(actual), std::end(actual), item) != std::end(actual);
 
 	if (this->is_inverted && was_found) {
-		std::string message = "Expected not to find item in vector";
-
-		if constexpr (traits::stringifiable<T>) {
-			message += "\nItem: " + traits::to_string(item);
-		}
+		std::string message = "Expected not to find item in vector\nItem: " +
+			to_string(item);
 
 		this->err = assertion_failure(
 			message,
@@ -304,14 +321,11 @@ auto test::matchers<std::vector<T>>::to_have_item(const T &item) -> decltype(*th
 			line
 		);
 	} else if (! this->is_inverted && ! was_found) {
-		std::string message = "Expected to find item in vector";
+		std::string message = "Expected to find item in vector\nItem: " +
+			to_string(item);
 
-		if constexpr (traits::stringifiable<T>) {
-			message += "\nItem: " + traits::to_string(item);
-
-			if (actual.size() <= 4) {
-				message += "\nVector: " + traits::to_string(actual);
-			}
+		if (actual.size() <= 4) {
+			message += "\nVector: " + to_string(actual);
 		}
 
 		this->err = assertion_failure(
@@ -326,6 +340,8 @@ auto test::matchers<std::vector<T>>::to_have_item(const T &item) -> decltype(*th
 
 template <typename T>
 auto test::matchers<std::vector<T>>::to_have_size(size_t size) -> decltype(*this)& {
+	using traits::to_string;
+
 	if (this->is_done()) {
 		return *this;
 	}
@@ -334,14 +350,14 @@ auto test::matchers<std::vector<T>>::to_have_size(size_t size) -> decltype(*this
 
 	if (this->is_inverted && has_size) {
 		this->err = assertion_failure(
-			"Expected vector not to have size " + std::to_string(size),
+			"Expected vector not to have size " + to_string(size),
 			file,
 			line
 		);
 	} else if (! this->is_inverted && ! has_size) {
 		this->err = assertion_failure(
-			"Expected vector to have size " + std::to_string(size) +
-			", actual size is " + std::to_string(actual.size()),
+			"Expected vector to have size " + to_string(size) +
+			", actual size is " + to_string(actual.size()),
 			file,
 			line
 		);
@@ -363,17 +379,16 @@ test::matchers<std::optional<T>>::matchers(
 
 template <typename T>
 auto test::matchers<std::optional<T>>::to_have_value(const T &expected) -> decltype(*this)& {
+	using traits::to_string;
+
 	if (this->is_done()) {
 		return *this;
 	}
 
 	if (this->is_inverted) {
 		if (actual && expected == *actual) {
-			std::string message = "Expected optional not to have a specific value";
-
-			if constexpr (traits::stringifiable<T>) {
-				message += ":\n" + traits::to_string(expected);
-			}
+			std::string message = "Expected optional not to have a specific value:\n" +
+				to_string(expected);
 
 			this->err = assertion_failure(
 				message,
@@ -384,12 +399,9 @@ auto test::matchers<std::optional<T>>::to_have_value(const T &expected) -> declt
 	} else {
 		if (actual) {
 			if (expected != *actual) {
-				std::string message = "Expected optional to have a specific value";
-
-				if constexpr (traits::stringifiable<T>) {
-					message += "\nExpected: " + traits::to_string(expected) +
-						"\nActual: " + traits::to_string(actual.value());
-				}
+				std::string message = "Expected optional to have a specific value\nExpected: " +
+					to_string(expected) +
+					"\nActual: " + to_string(actual.value());
 
 				this->err = assertion_failure(
 					message,
@@ -398,11 +410,8 @@ auto test::matchers<std::optional<T>>::to_have_value(const T &expected) -> declt
 				);
 			}
 		} else {
-			std::string message = "Expected optional to have a specific value, but it was empty";
-
-			if constexpr (traits::stringifiable<T>) {
-				message += "\nExpected: " + traits::to_string(expected);
-			}
+			std::string message = "Expected optional to have a specific value, but it was empty\nExpected: " +
+				to_string(expected);
 
 			this->err = assertion_failure(
 				message,
@@ -417,6 +426,8 @@ auto test::matchers<std::optional<T>>::to_have_value(const T &expected) -> declt
 
 template <typename T>
 auto test::matchers<std::optional<T>>::to_be_empty() -> decltype(*this)& {
+	using traits::to_string;
+
 	if (this->is_done()) {
 		return *this;
 	}
@@ -428,11 +439,8 @@ auto test::matchers<std::optional<T>>::to_be_empty() -> decltype(*this)& {
 			line
 		);
 	} else if (! this->is_inverted && actual) {
-		std::string message = "Expected optional to be empty";
-
-		if constexpr (traits::stringifiable<T>) {
-			message += "\nValue: " + traits::to_string(actual.value());
-		}
+		std::string message = "Expected optional to be empty\nValue: " +
+			to_string(actual.value());
 
 		this->err = assertion_failure(
 			message,

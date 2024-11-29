@@ -52,6 +52,7 @@ test::test_count test::test_tree::run(int tabs) {
 	}
 
 	const auto start = std::chrono::steady_clock::now();
+	prev_err = {};
 
 	try {
 		if (before_all) {
@@ -63,7 +64,6 @@ test::test_count test::test_tree::run(int tabs) {
 
 			if (prev_err) {
 				const assertion_failure err = prev_err.value();
-				prev_err = {};
 
 				throw err;
 			}

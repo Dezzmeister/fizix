@@ -1,17 +1,34 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include "logging.h"
 #include "physics/collision/contact_generator.h"
 #include "physics/collision/primitives.h"
+#include "physics/collision/vclip.h"
 #include "test.h"
 
 using namespace test;
 using namespace phys::literals;
 
-const phys::contact_generator collider{};
-std::vector<phys::contact> contacts{};
-phys::rigid_body sphere_body_1{};
-phys::rigid_body sphere_body_2{};
-phys::rigid_body box_body_1{};
+namespace {
+	const phys::contact_generator collider{};
+	std::vector<phys::contact> contacts{};
+	phys::rigid_body sphere_body_1{};
+	phys::rigid_body sphere_body_2{};
+	phys::rigid_body box_body_1{};
+	phys::rigid_body box_body_2{};
+
+	phys::box box_1(&box_body_1, phys::identity<phys::mat4>(), phys::vec3(1.0_r));
+	phys::box box_2(&box_body_2, phys::identity<phys::mat4>(), phys::vec3(1.0_r));
+
+	template <std::ranges::view V>
+	auto to_vec(const V &v) -> decltype(std::vector(std::begin(v), std::end(v))) {
+		return std::vector(std::begin(v), std::end(v));
+	}
+
+	phys::quat make_rot(phys::real angle, const phys::vec3 &axis) {
+		return phys::quat(std::cos(angle / 2.0_r), std::sin(angle / 2.0_r) * axis);
+	}
+}
 
 void setup_collision_tests() {
 	describe("Rigid body collisions", []() {
@@ -921,6 +938,1232 @@ void setup_collision_tests() {
 							phys::normalize(phys::vec3(0.0_r, -1.0_r, -1.0_r)),
 							1.0_r + 1.5_r * (1.0_r - std::sqrt(2.0_r))
 						));
+				});
+			});
+		});
+
+		describe("VClip", []() {
+			describe("auxiliary", []() {
+				it("compares edges when the vertices are swapped", []() {
+					phys::vclip::edge e(4, 9);
+
+					expect(e).to_be(phys::vclip::edge(9, 4));
+				});
+
+				it("compares faces when the vertices are rotated", []() {
+					phys::vclip::face f({ 1, 2, 3, 4 });
+
+					expect(f).to_be(phys::vclip::face({ 2, 3, 4, 1 })).annd()
+						.to_be(phys::vclip::face({ 3, 4, 1, 2 })).annd()
+						.to_be(phys::vclip::face({ 4, 1, 2, 3 })).annd()
+						.naht().to_be(phys::vclip::face({ 1, 3, 2, 4 }));
+				});
+
+				describe("for a box", []() {
+					before_all([&]() {
+						box_body_1.pos = phys::vec3(0.0_r);
+						box_1.half_size = phys::vec3(1.0_r, 2.0_r, 3.0_r);
+					});
+
+					it("converts a box to a polyhedron with the correct number of features", [&]() {
+						phys::vclip::polyhedron p = box_1.to_polyhedron();
+
+						expect(p.vertices).to_have_size(8);
+						expect(p.edges).to_have_size(12);
+						expect(p.faces).to_have_size(6);
+						expect(p.euler_characteristic()).to_be(2);
+
+						p.validate();
+					});
+
+					it("gets edges adjacent to a vertex", [&]() {
+						phys::vclip::polyhedron p = box_1.to_polyhedron();
+						auto edges = p.vertices[0].edges(p);
+
+						expect(edges).to_have_size(3).annd()
+							.to_have_item(phys::vclip::edge(0, 1)).annd()
+							.to_have_item(phys::vclip::edge(0, 2)).annd()
+							.to_have_item(phys::vclip::edge(0, 4));
+
+						edges = p.vertices[5].edges(p);
+
+						expect(edges).to_have_size(3).annd()
+							.to_have_item(phys::vclip::edge(1, 5)).annd()
+							.to_have_item(phys::vclip::edge(5, 7)).annd()
+							.to_have_item(phys::vclip::edge(4, 5));
+					});
+
+					it("gets vertices adjacent to an edge", [&]() {
+						phys::vclip::polyhedron p = box_1.to_polyhedron();
+						phys::vclip::edge e(3, 7);
+						auto verts = e.vertices(p);
+
+						expect(verts).to_have_size(2).annd()
+							.to_have_item(phys::vclip::vertex(
+								phys::vec3(1.0_r, -1.0_r, -1.0_r), 3
+							)).annd()
+							.to_have_item(phys::vclip::vertex(
+								phys::vec3(-1.0_r), 7
+							));
+					});
+
+					it("gets faces adjacent to an edge", [&]() {
+						phys::vclip::polyhedron p = box_1.to_polyhedron();
+						phys::vclip::edge e(3, 7);
+						auto faces = e.faces(p);
+
+						expect(faces).to_have_size(2).annd()
+							.to_have_item(phys::vclip::face({
+								7, 3, 2, 6
+							})).annd()
+							.to_have_item(phys::vclip::face({
+								7, 5, 1, 3
+							}));
+					});
+
+					it("gets vertices adjacent to a face", [&]() {
+						phys::vclip::polyhedron p = box_1.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+
+						auto verts = f.vertices(p);
+
+						expect(verts).to_have_size(4).annd()
+							.to_have_item(phys::vclip::vertex(phys::vec3(1.0_r), 0)).annd()
+							.to_have_item(phys::vclip::vertex(phys::vec3(1.0_r, 1.0_r, -1.0_r), 1)).annd()
+							.to_have_item(phys::vclip::vertex(phys::vec3(-1.0_r, 1.0_r, -1.0_r), 5)).annd()
+							.to_have_item(phys::vclip::vertex(phys::vec3(-1.0_r, 1.0_r, 1.0_r), 4));
+					});
+
+					it("gets edges adjacent to a face", [&]() {
+						phys::vclip::polyhedron p = box_1.to_polyhedron();
+						phys::vclip::face f({ 0, 4, 6, 2 });
+
+						expect(p.faces).to_have_item(f).annd()
+							.naht().to_have_item(phys::vclip::face({ 0, 2, 6, 4 }));
+
+						auto edges = f.edges();
+
+						expect(edges).to_have_size(4).annd()
+							.to_have_item(phys::vclip::edge(0, 4)).annd()
+							.to_have_item(phys::vclip::edge(4, 6)).annd()
+							.to_have_item(phys::vclip::edge(6, 2)).annd()
+							.to_have_item(phys::vclip::edge(2, 0));
+					});
+
+					it("computes face normals", [&]() {
+						phys::vclip::polyhedron p = box_1.to_polyhedron();
+
+						expect(phys::vclip::face({ 0, 1, 5, 4 }).normal(p)).to_be(
+							phys::vec3(0.0_r, 1.0_r, 0.0_r)
+						);
+						expect(phys::vclip::face({ 0, 4, 6, 2 }).normal(p)).to_be(
+							phys::vec3(0.0_r, 0.0_r, 1.0_r)
+						);
+						expect(phys::vclip::face({ 0, 2, 3, 1 }).normal(p)).to_be(
+							phys::vec3(1.0_r, 0.0_r, 0.0_r)
+						);
+						expect(phys::vclip::face({ 7, 3, 2, 6 }).normal(p)).to_be(
+							phys::vec3(0.0_r, -1.0_r, 0.0_r)
+						);
+						expect(phys::vclip::face({ 1, 3, 7, 5 }).normal(p)).to_be(
+							phys::vec3(0.0_r, 0.0_r, -1.0_r)
+						);
+						expect(phys::vclip::face({ 7, 6, 4, 5 }).normal(p)).to_be(
+							phys::vec3(-1.0_r, 0.0_r, 0.0_r)
+						);
+					});
+
+					it("computes V-E planes from vertex", [&]() {
+						phys::vclip::polyhedron p = box_1.to_polyhedron();
+						auto vplanes = p.vertices[4].ve_planes(p);
+
+						expect(vplanes).to_have_size(3).annd()
+							.to_have_item(phys::vclip::vplane(
+								p.vertices[4], phys::vclip::edge(4, 0),
+								phys::vec3(-1.0_r, 2.0_r, 3.0_r),
+								phys::vec3(1.0_r, 0.0_r, 0.0_r)
+							)).annd()
+							.to_have_item(phys::vclip::vplane(
+								p.vertices[4], phys::vclip::edge(4, 5),
+								phys::vec3(-1.0_r, 2.0_r, 3.0_r),
+								phys::vec3(0.0_r, 0.0_r, -1.0_r)
+							)).annd()
+							.to_have_item(phys::vclip::vplane(
+								p.vertices[4], phys::vclip::edge(4, 6),
+								phys::vec3(-1.0_r, 2.0_r, 3.0_r),
+								phys::vec3(0.0_r, -1.0_r, 0.0_r)
+							));
+					});
+
+					it("computes V-E planes from edge", [&]() {
+						phys::vclip::polyhedron p = box_1.to_polyhedron();
+						auto vplanes = phys::vclip::edge(1, 5).ve_planes(p);
+
+						expect(vplanes).to_have_size(2).annd()
+							.to_have_item(phys::vclip::vplane(
+								p.vertices[1], phys::vclip::edge(1, 5),
+								phys::vec3(1.0_r, 2.0_r, -3.0_r),
+								phys::vec3(1.0_r, 0.0_r, 0.0_r)
+							)).annd()
+							.to_have_item(phys::vclip::vplane(
+								p.vertices[5], phys::vclip::edge(1, 5),
+								phys::vec3(-1.0_r, 2.0_r, -3.0_r),
+								phys::vec3(-1.0_r, 0.0_r, 0.0_r)
+							));
+					});
+
+					it("computes F-E planes from edge", [&]() {
+						phys::vclip::polyhedron p = box_1.to_polyhedron();
+						auto vplanes = phys::vclip::edge(1, 5).fe_planes(p);
+						phys::vclip::face f1({ 0, 1, 5, 4 });
+						phys::vclip::face f2({ 1, 3, 7, 5 });
+						phys::vclip::edge e(1, 5);
+
+						expect(vplanes).to_have_size(2)
+							.annd()
+								.to_have_item(phys::vclip::vplane(
+									f1,
+									e,
+									phys::vec3(-1.0_r, 2.0_r, -3.0_r),
+									phys::vec3(0.0_r, 0.0_r, 1.0_r)
+								)).orr()
+								.to_have_item(phys::vclip::vplane(
+									f1,
+									e,
+									phys::vec3(1.0_r, 2.0_r, -3.0_r),
+									phys::vec3(0.0_r, 0.0_r, 1.0_r)
+								))
+							.annd()
+								.to_have_item(phys::vclip::vplane(
+									f2,
+									e,
+									phys::vec3(-1.0_r, 2.0_r, -3.0_r),
+									phys::vec3(0.0_r, -1.0_r, 0.0_r)
+								)).orr()
+								.to_have_item(phys::vclip::vplane(
+									f2,
+									e,
+									phys::vec3(1.0_r, 2.0_r, -3.0_r),
+									phys::vec3(0.0_r, -1.0_r, 0.0_r)
+								));
+					});
+
+					it("computes F-E planes from face", [&]() {
+						phys::vclip::polyhedron p = box_1.to_polyhedron();
+						phys::vclip::face f({ 1, 5, 4, 0 });
+						auto vplanes = f.fe_planes(p);
+
+						expect(vplanes).to_have_size(4)
+							.annd()
+								.to_have_item(phys::vclip::vplane(
+									f,
+									phys::vclip::edge(1, 5),
+									phys::vec3(1.0_r, 2.0_r, -3.0_r),
+									phys::vec3(0.0_r, 0.0_r, -1.0_r)
+								)).orr()
+								.to_have_item(phys::vclip::vplane(
+									f,
+									phys::vclip::edge(1, 5),
+									phys::vec3(-1.0_r, 2.0_r, -3.0_r),
+									phys::vec3(0.0_r, 0.0_r, -1.0_r)
+								))
+							.annd()
+								.to_have_item(phys::vclip::vplane(
+									f,
+									phys::vclip::edge(5, 4),
+									phys::vec3(-1.0_r, 2.0_r, -3.0_r),
+									phys::vec3(-1.0_r, 0.0_r, 0.0_r)
+								)).orr()
+								.to_have_item(phys::vclip::vplane(
+									f,
+									phys::vclip::edge(5, 4),
+									phys::vec3(-1.0_r, 2.0_r, 3.0_r),
+									phys::vec3(-1.0_r, 0.0_r, 0.0_r)
+								))
+							.annd()
+								.to_have_item(phys::vclip::vplane(
+									f,
+									phys::vclip::edge(4, 0),
+									phys::vec3(-1.0_r, 2.0_r, 3.0_r),
+									phys::vec3(0.0_r, 0.0_r, 1.0_r)
+								)).orr()
+								.to_have_item(phys::vclip::vplane(
+									f,
+									phys::vclip::edge(4, 0),
+									phys::vec3(1.0_r, 2.0_r, 3.0_r),
+									phys::vec3(0.0_r, 0.0_r, 1.0_r)
+								))
+							.annd()
+								.to_have_item(phys::vclip::vplane(
+									f,
+									phys::vclip::edge(0, 1),
+									phys::vec3(1.0_r, 2.0_r, 3.0_r),
+									phys::vec3(1.0_r, 0.0_r, 0.0_r)
+								)).orr()
+								.to_have_item(phys::vclip::vplane(
+									f,
+									phys::vclip::edge(0, 1),
+									phys::vec3(1.0_r, 2.0_r, -3.0_r),
+									phys::vec3(1.0_r, 0.0_r, 0.0_r)
+								));
+					});
+				});
+
+				describe("for two boxes", []() {
+					describe("clip_edge", []() {
+						describe("simple exclusion", []() {
+							after_each([&]() {
+								box_body_1 = {};
+								box_body_2 = {};
+								box_1.half_size = phys::vec3(1.0_r);
+								box_2.half_size = phys::vec3(1.0_r);
+							});
+
+							it("selects the face when a clipped edge is simply excluded by an edge's F-E plane", [&]() {
+								box_body_2.pos = phys::vec3(0.0_r, 2.0_r, 0.0_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::edge f(0, 1);
+								phys::vclip::edge e(7, 6);
+								std::vector<phys::vclip::vplane> vps = f.fe_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::face({ 0, 1, 5, 4 }),
+									phys::vclip::face({ 0, 1, 5, 4 }),
+									0.0_r,
+									1.0_r,
+									false
+								));
+							});
+
+							it("selects the face when a clipped edge is simply excluded by an edge's F-E plane "
+								"and the clipped edge is reversed", [&]() {
+								box_body_2.pos = phys::vec3(0.0_r, 2.0_r, 0.0_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::edge f(0, 1);
+								phys::vclip::edge e(6, 7);
+								std::vector<phys::vclip::vplane> vps = f.fe_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::face({ 0, 1, 5, 4 }),
+									phys::vclip::face({ 0, 1, 5, 4 }),
+									0.0_r,
+									1.0_r,
+									false
+								));
+							});
+
+							it("selects the edge when a clipped edge is excluded by a face's F-E plane", [&]() {
+								box_body_2.pos = phys::vec3(0.5_r, 1.0_r, 2.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::face f({ 0, 1, 5, 4 });
+								phys::vclip::edge e(7, 6);
+								std::vector<phys::vclip::vplane> vps = f.fe_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::edge(0, 4),
+									phys::vclip::edge(0, 4),
+									0.0_r,
+									1.0_r,
+									false
+								));
+							});
+
+							it("selects the edge when a clipped edge is excluded by a face's F-E plane "
+								"and the clipped edge is reversed", [&]() {
+								box_body_2.pos = phys::vec3(0.5_r, 1.0_r, 2.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::face f({ 0, 1, 5, 4 });
+								phys::vclip::edge e(6, 7);
+								std::vector<phys::vclip::vplane> vps = f.fe_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::edge(0, 4),
+									phys::vclip::edge(0, 4),
+									0.0_r,
+									1.0_r,
+									false
+								));
+							});
+
+							it("selects the edge when a clipped edge is simply excluded by a vertex's V-E plane", [&]() {
+								box_body_2.pos = phys::vec3(0.5_r, 2.0_r, 2.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::vertex f = p1.vertices[4];
+								phys::vclip::edge e(7, 6);
+								std::vector<phys::vclip::vplane> vps = f.ve_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::edge(0, 4),
+									phys::vclip::edge(0, 4),
+									0.0_r,
+									1.0_r,
+									false
+								));
+							});
+
+							it("selects the edge when a clipped edge is simply excluded by a vertex's V-E plane "
+								"and the clipped edge is reversed", [&]() {
+								box_body_2.pos = phys::vec3(0.5_r, 2.0_r, 2.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::vertex f = p1.vertices[4];
+								phys::vclip::edge e(6, 7);
+								std::vector<phys::vclip::vplane> vps = f.ve_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::edge(0, 4),
+									phys::vclip::edge(0, 4),
+									0.0_r,
+									1.0_r,
+									false
+								));
+							});
+
+							it("selects the vertex when a clipped edge is simply excluded by an edge's V-E plane", [&]() {
+								box_body_2.pos = phys::vec3(0.5_r, 2.0_r, 2.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::edge f(0, 1);
+								phys::vclip::edge e(7, 6);
+								std::vector<phys::vclip::vplane> vps = f.ve_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									p1.vertices[0],
+									p1.vertices[0],
+									0.0_r,
+									1.0_r,
+									false
+								));
+							});
+
+							it("selects the vertex when a clipped edge is simply excluded by an edge's V-E plane "
+								"and the clipped edge is reversed", [&]() {
+								box_body_2.pos = phys::vec3(0.5_r, 2.0_r, 2.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::edge f(0, 1);
+								phys::vclip::edge e(6, 7);
+								std::vector<phys::vclip::vplane> vps = f.ve_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									p1.vertices[0],
+									p1.vertices[0],
+									0.0_r,
+									1.0_r,
+									false
+								));
+							});
+						});
+
+						describe("compound exclusion", []() {
+							after_each([&]() {
+								box_body_1 = {};
+								box_body_2 = {};
+								box_1.half_size = phys::vec3(1.0_r);
+								box_2.half_size = phys::vec3(1.0_r);
+							});
+
+							it("selects faces when a clipped edge is excluded by an edge's F-E planes", [&]() {
+								box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r));
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::edge f(1, 5);
+								phys::vclip::edge e(5, 7);
+								std::vector<phys::vclip::vplane> vps = f.fe_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::face({ 0, 1, 5, 4 }),
+									phys::vclip::face({ 1, 3, 7, 5 }),
+									1.0_r / std::sqrt(2.0_r),
+									1.0_r - 1.0_r / std::sqrt(2.0_r),
+									false
+								));
+							});
+
+							it("selects faces when a clipped edge is excluded by an edge's F-E planes "
+								"and the clipped edge is reversed", [&]() {
+								box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r));
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::edge f(1, 5);
+								phys::vclip::edge e(7, 5);
+								std::vector<phys::vclip::vplane> vps = f.fe_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::face({ 1, 3, 7, 5 }),
+									phys::vclip::face({ 0, 1, 5, 4 }),
+									1.0_r / std::sqrt(2.0_r),
+									1.0_r - 1.0_r / std::sqrt(2.0_r),
+									false
+								));
+							});
+
+							it("selects edges when a clipped edge is excluded by a face's F-E planes", [&]() {
+								box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
+								box_body_2.pos = phys::vec3(-0.5_r, 0.0_r, -0.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::face f({ 0, 1, 5, 4 });
+								phys::vclip::edge e(1, 5);
+								std::vector<phys::vclip::vplane> vps = f.fe_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::edge(1, 5),
+									phys::vclip::edge(5, 4),
+									1.0_r - std::sqrt(2.0_r) / 4.0_r,
+									std::sqrt(2.0_r) / 4.0_r,
+									false
+								));
+							});
+
+							it("selects edges when a clipped edge is excluded by a face's F-E planes "
+								"and the clipped edge is reversed", [&]() {
+								box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
+								box_body_2.pos = phys::vec3(-0.5_r, 0.0_r, -0.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::face f({ 0, 1, 5, 4 });
+								phys::vclip::edge e(5, 1);
+								std::vector<phys::vclip::vplane> vps = f.fe_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::edge(5, 4),
+									phys::vclip::edge(1, 5),
+									1.0_r - std::sqrt(2.0_r) / 4.0_r,
+									std::sqrt(2.0_r) / 4.0_r,
+									false
+								));
+							});
+
+							it("selects edges when a clipped edge is excluded by a vertex's V-E planes", [&]() {
+								box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
+								box_body_2.pos = phys::vec3(1.5_r, 1.0_r, 1.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::vertex f = p1.vertices[0];
+								phys::vclip::edge e(1, 5);
+								std::vector<phys::vclip::vplane> vps = f.ve_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::edge(0, 1),
+									phys::vclip::edge(4, 0),
+									1.0_r - std::sqrt(2.0_r) / 4.0_r,
+									std::sqrt(2.0_r) / 4.0_r,
+									false
+								));
+							});
+
+							it("selects edges when a clipped edge is excluded by a vertex's V-E planes "
+								"and the clipped edge is reversed", [&]() {
+								box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
+								box_body_2.pos = phys::vec3(1.5_r, 1.0_r, 1.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::vertex f = p1.vertices[0];
+								phys::vclip::edge e(5, 1);
+								std::vector<phys::vclip::vplane> vps = f.ve_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::edge(4, 0),
+									phys::vclip::edge(0, 1),
+									1.0_r - std::sqrt(2.0_r) / 4.0_r,
+									std::sqrt(2.0_r) / 4.0_r,
+									false
+								));
+							});
+						});
+
+						describe("clipping on one side", []() {
+							after_each([&]() {
+								box_body_1 = {};
+								box_body_2 = {};
+								box_1.half_size = phys::vec3(1.0_r);
+								box_2.half_size = phys::vec3(1.0_r);
+							});
+
+							it("clips an edge to the nearest F-E plane for an edge and selects the face", [&]() {
+								box_body_2.pos = phys::vec3(0.5_r, 2.5_r, 0.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::edge e(7, 6);
+								phys::vclip::edge f(0, 4);
+								std::vector<phys::vclip::vplane> vps = f.fe_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::face({ 0, 1, 5, 4 }),
+									{},
+									0.75_r,
+									1.0_r,
+									true
+								));
+							});
+
+							it("clips an edge to the nearest F-E plane for an edge "
+								"and selects the face when the edge is reversed", [&]() {
+								box_body_2.pos = phys::vec3(0.5_r, 2.5_r, 0.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::edge e(6, 7);
+								phys::vclip::edge f(0, 4);
+								std::vector<phys::vclip::vplane> vps = f.fe_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									{},
+									phys::vclip::face({ 0, 1, 5, 4 }),
+									0.0_r,
+									0.25_r,
+									true
+								));
+							});
+
+							it("clips an edge to the nearest F-E plane for a face and selects the edge", [&]() {
+								box_body_2.pos = phys::vec3(0.0_r, 2.5_r, 0.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::edge e(7, 6);
+								phys::vclip::face f({ 0, 1, 5, 4 });
+								std::vector<phys::vclip::vplane> vps = f.fe_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									{},
+									phys::vclip::edge(0, 4),
+									0.0_r,
+									0.75_r,
+									true
+								));
+							});
+
+							it("clips an edge to the nearest F-E plane for a face and selects the edge "
+								"when the clipped edge is reversed", [&]() {
+								box_body_2.pos = phys::vec3(0.0_r, 2.5_r, 0.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::edge e(6, 7);
+								phys::vclip::face f({ 0, 1, 5, 4 });
+								std::vector<phys::vclip::vplane> vps = f.fe_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::edge(0, 4),
+									{},
+									0.25_r,
+									1.0_r,
+									true
+								));
+							});
+
+							it("clips an edge to the nearest V-E plane for a vertex and selects the edge", [&]() {
+								box_body_2.pos = phys::vec3(2.5_r, 2.5_r, 0.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::vertex f = p1.vertices[0];
+								phys::vclip::edge e(7, 6);
+								std::vector<phys::vclip::vplane> vps = f.ve_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::edge(0, 1),
+									{},
+									0.75_r,
+									1.0_r,
+									true
+								));
+							});
+
+							it("clips an edge to the nearest V-E plane for a vertex and selects the edge "
+								"when the clipped edge is reversed",[&]() {
+
+								box_body_2.pos = phys::vec3(2.5_r, 2.5_r, 0.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::vertex f = p1.vertices[0];
+								phys::vclip::edge e(6, 7);
+								std::vector<phys::vclip::vplane> vps = f.ve_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									{},
+									phys::vclip::edge(0, 1),
+									0.0_r,
+									0.25_r,
+									true
+								));
+							});
+
+							it("clips an edge to the nearest V-E plane for an edge and selects the vertex", [&]() {
+								box_body_2.pos = phys::vec3(2.5_r, 2.5_r, 0.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::edge f(1, 0);
+								phys::vclip::edge e(7, 6);
+								std::vector<phys::vclip::vplane> vps = f.ve_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									{},
+									p1.vertices[0],
+									0.0_r,
+									0.75_r,
+									true
+								));
+							});
+
+							it("clips an edge to the nearest V-E plane for an edge and selects the vertex "
+								"when the clipped edge is reversed", [&]() {
+								box_body_2.pos = phys::vec3(2.5_r, 2.5_r, 0.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::edge f(1, 0);
+								phys::vclip::edge e(6, 7);
+								std::vector<phys::vclip::vplane> vps = f.ve_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									p1.vertices[0],
+									{},
+									0.25_r,
+									1.0_r,
+									true
+								));
+							});
+						});
+
+						describe("clipping on both sides", []() {
+							after_each([&]() {
+								box_body_1 = {};
+								box_body_2 = {};
+								box_1.half_size = phys::vec3(1.0_r);
+								box_2.half_size = phys::vec3(1.0_r);
+							});
+
+							it("clips an edge to another edge's F-E planes and selects faces", [&]() {
+								box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r));
+								box_body_2.pos = phys::vec3(0.5_r, 0.5_r, -0.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::edge f(5, 1);
+								phys::vclip::edge e(5, 7);
+								std::vector<phys::vclip::vplane> vps = f.fe_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::face({ 0, 1, 5, 4 }),
+									phys::vclip::face({ 1, 3, 7, 5 }),
+									std::sqrt(2.0_r) / 4.0_r,
+									1.0_r - std::sqrt(2.0_r) / 4.0_r,
+									true
+								));
+							});
+
+							it("clips an edge to another edge's F-E planes and selects faces "
+								"when the clipped edge is reversed", [&]() {
+								box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r));
+								box_body_2.pos = phys::vec3(0.5_r, 0.5_r, -0.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::edge f(5, 1);
+								phys::vclip::edge e(7, 5);
+								std::vector<phys::vclip::vplane> vps = f.fe_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::face({ 1, 3, 7, 5 }),
+									phys::vclip::face({ 0, 1, 5, 4 }),
+									std::sqrt(2.0_r) / 4.0_r,
+									1.0_r - std::sqrt(2.0_r) / 4.0_r,
+									true
+								));
+							});
+
+							it("clips an edge to a face's F-E planes and selects faces", [&]() {
+								box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r));
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::face f({ 4, 6, 7, 5 });
+								phys::vclip::edge e(5, 4);
+								std::vector<phys::vclip::vplane> vps = f.fe_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::edge(5, 4),
+									phys::vclip::edge(4, 6),
+									1.0_r - 1.0_r / std::sqrt(2.0_r),
+									1.0_r / std::sqrt(2.0_r),
+									true
+								));
+							});
+
+							it("clips an edge to a face's F-E planes and selects faces "
+								"when the clipped edge is reversed", [&]() {
+								box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r));
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::face f({ 4, 6, 7, 5 });
+								phys::vclip::edge e(4, 5);
+								std::vector<phys::vclip::vplane> vps = f.fe_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::edge(4, 6),
+									phys::vclip::edge(5, 4),
+									1.0_r - 1.0_r / std::sqrt(2.0_r),
+									1.0_r / std::sqrt(2.0_r),
+									true
+								));
+							});
+
+							it("clips an edge to a vertex's V-E planes and selects the edges", [&]() {
+								box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r));
+								box_body_2.pos = phys::vec3(1.5_r, 0.5_r, -0.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::vertex f = p1.vertices[1];
+								phys::vclip::edge e(1, 3);
+								std::vector<phys::vclip::vplane> vps = f.ve_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::edge(0, 1),
+									phys::vclip::edge(1, 3),
+									std::sqrt(2.0_r) / 4.0_r,
+									1.0_r - std::sqrt(2.0_r) / 4.0_r,
+									true
+								));
+							});
+
+							it("clips an edge to a vertex's V-E planes and selects the edges "
+								"when the clipped edge is reversed", [&]() {
+								box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r));
+								box_body_2.pos = phys::vec3(1.5_r, 0.5_r, -0.5_r);
+								box_body_2.calculate_derived_data();
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::vertex f = p1.vertices[1];
+								phys::vclip::edge e(3, 1);
+								std::vector<phys::vclip::vplane> vps = f.ve_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									phys::vclip::edge(1, 3),
+									phys::vclip::edge(0, 1),
+									std::sqrt(2.0_r) / 4.0_r,
+									1.0_r - std::sqrt(2.0_r) / 4.0_r,
+									true
+								));
+							});
+
+							it("clips an edge to an edge's V-E planes and selects the vertices", [&]() {
+								box_body_2.pos = phys::vec3(3.0_r, 3.0_r, 0.0_r);
+								box_body_2.calculate_derived_data();
+								box_2.half_size = phys::vec3(2.0_r);
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::edge f(0, 1);
+								phys::vclip::edge e(6, 7);
+								std::vector<phys::vclip::vplane> vps = f.ve_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									p1.vertices[0],
+									p1.vertices[1],
+									0.25_r,
+									0.75_r,
+									true
+								));
+							});
+
+							it("clips an edge to an edge's V-E planes and selects the vertices "
+								"when the clipped edge is reversed", [&]() {
+								box_body_2.pos = phys::vec3(3.0_r, 3.0_r, 0.0_r);
+								box_body_2.calculate_derived_data();
+								box_2.half_size = phys::vec3(2.0_r);
+								phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+								phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+								phys::vclip::edge f(0, 1);
+								phys::vclip::edge e(7, 6);
+								std::vector<phys::vclip::vplane> vps = f.ve_planes(p1);
+
+								phys::vclip::clip_result cr = phys::vclip::clip_edge(
+									p2,
+									e,
+									f,
+									vps
+								);
+
+								expect(cr).to_be(phys::vclip::clip_result(
+									e,
+									f,
+									p1.vertices[1],
+									p1.vertices[0],
+									0.25_r,
+									0.75_r,
+									true
+								));
+							});
+						});
+					});
+
+					describe("V-V state handler", []() {
+						it("terminates when the vertices are the closest points between two boxes and are in each others' Voronoi regions", [&]() {
+							box_body_2.pos = phys::vec3(2.5_r);
+							box_body_2.calculate_derived_data();
+							phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+							phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+
+							phys::vclip::algorithm_state_update upd =
+								phys::vclip::vv_state(
+									p1,
+									p2,
+									p1.vertices[0],
+									p2.vertices[7]
+								);
+
+							expect(upd.step).to_be(phys::vclip::algorithm_step::Done);
+							expect(upd.f1).to_be(p1.vertices[0]);
+							expect(upd.f2).to_be(p2.vertices[7]);
+						});
+
+						it("updates to the nearest edge on the first polyhedron", [&]() {
+							box_body_2.pos = phys::vec3(1.0_r, 2.5_r, 2.5_r);
+							box_body_2.calculate_derived_data();
+							phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+							phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+
+							phys::vclip::algorithm_state_update upd =
+								phys::vclip::vv_state(
+									p1,
+									p2,
+									p1.vertices[0],
+									p2.vertices[7]
+								);
+
+							expect(upd.step).to_be(phys::vclip::algorithm_step::Continue);
+							expect(upd.f1).to_be(phys::vclip::edge(0, 4));
+							expect(upd.f2).to_be(p2.vertices[7]);
+						});
+
+						it("updates to the nearest edge on the second polyhedron", [&]() {
+							box_body_2.pos = phys::vec3(1.0_r, 2.5_r, 2.5_r);
+							box_body_2.calculate_derived_data();
+							phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+							phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+
+							phys::vclip::algorithm_state_update upd =
+								phys::vclip::vv_state(
+									p1,
+									p2,
+									p1.vertices[0],
+									p2.vertices[3]
+								);
+
+							expect(upd.step).to_be(phys::vclip::algorithm_step::Continue);
+							expect(upd.f1).to_be(p1.vertices[0]);
+							expect(upd.f2).to_be(phys::vclip::edge(3, 7));
+						});
+
+						it("updates to the nearest edge when the polyhedra are penetrating", [&]() {
+							box_body_2.pos = phys::vec3(0.5_r, 0.8_r, 0.8_r);
+							box_body_2.calculate_derived_data();
+							phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+							phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+
+							phys::vclip::algorithm_state_update upd =
+								phys::vclip::vv_state(
+									p1,
+									p2,
+									p1.vertices[0],
+									p2.vertices[3]
+								);
+
+							expect(upd.step).to_be(phys::vclip::algorithm_step::Continue);
+							// TODO: More assertions here
+						});
+					});
+
+					describe("V-E state handler", []() {
+						// it("terminates when ")
+					});
 				});
 			});
 		});
