@@ -148,59 +148,46 @@ namespace phys {
 		};
 
 		struct algorithm_state {
-			const polyhedron &p;
-			feature f1;
-			feature f2;
-			algorithm_step step{ algorithm_step::Continue };
-
-			algorithm_state(
-				const polyhedron &_p,
-				const feature &_f1,
-				const feature &_f2
-			);
-		};
-
-		struct algorithm_state_update {
 			feature f1;
 			feature f2;
 			algorithm_step step;
 			real penetration{};
 
 			friend bool operator==(
-				const algorithm_state_update &upd1,
-				const algorithm_state_update &upd2
+				const algorithm_state &upd1,
+				const algorithm_state &upd2
 			);
 		};
 
-		algorithm_state_update vv_state(
+		algorithm_state vv_state(
 			const polyhedron &p_v1,
 			const polyhedron &p_v2,
 			const vertex &v1,
 			const vertex &v2
 		);
 
-		algorithm_state_update ve_state(
+		algorithm_state ve_state(
 			const polyhedron &p_v,
 			const polyhedron &p_e,
 			const vertex &v,
 			const edge &e
 		);
 
-		algorithm_state_update vf_state(
+		algorithm_state vf_state(
 			const polyhedron &p_v,
 			const polyhedron &p_f,
 			const vertex &v,
 			const face &f
 		);
 
-		algorithm_state_update ee_state(
+		algorithm_state ee_state(
 			const polyhedron &p_e1,
 			const polyhedron &p_e2,
 			const edge &e1,
 			const edge &e2
 		);
 
-		algorithm_state_update ef_state(
+		algorithm_state ef_state(
 			const polyhedron &p_e,
 			const polyhedron &p_f,
 			const edge &e,
@@ -275,7 +262,7 @@ namespace traits {
 	std::string to_string(const phys::vclip::clip_result &cr, size_t indent);
 
 	template <>
-	std::string to_string(const phys::vclip::algorithm_state_update &upd, size_t indent);
+	std::string to_string(const phys::vclip::algorithm_state &upd, size_t indent);
 }
 
 inline std::ranges::view auto phys::vclip::vertex::edges(const polyhedron &p) const & {

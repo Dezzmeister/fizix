@@ -404,17 +404,7 @@ namespace phys {
 			return out;
 		}
 
-		algorithm_state::algorithm_state(
-			const polyhedron &_p,
-			const feature &_f1,
-			const feature &_f2
-		) :
-			p(_p),
-			f1(_f1),
-			f2(_f2)
-		{}
-
-		algorithm_state_update vv_state(
+		algorithm_state vv_state(
 			const polyhedron &p1,
 			const polyhedron &p2,
 			const vertex &v1,
@@ -426,7 +416,7 @@ namespace phys {
 				vec3 v_dir = v2.v - vp.pos;
 
 				if (dot(v_dir, vp.dir) >= 0) {
-					return algorithm_state_update{
+					return algorithm_state{
 						.f1 = vp.f2,
 						.f2 = v2,
 						.step = algorithm_step::Continue
@@ -440,7 +430,7 @@ namespace phys {
 				vec3 v_dir = v1.v - vp.pos;
 
 				if (dot(v_dir, vp.dir) >= 0) {
-					return algorithm_state_update{
+					return algorithm_state{
 						.f1 = v1,
 						.f2 = vp.f2,
 						.step = algorithm_step::Continue
@@ -448,14 +438,14 @@ namespace phys {
 				}
 			}
 
-			return algorithm_state_update{
+			return algorithm_state{
 				.f1 = v1,
 				.f2 = v2,
 				.step = algorithm_step::Done
 			};
 		}
 
-		algorithm_state_update ve_state(
+		algorithm_state ve_state(
 			const polyhedron &p_v,
 			const polyhedron &p_e,
 			const vertex &v,
@@ -466,7 +456,7 @@ namespace phys {
 				vec3 v_dir = v.v - vp.pos;
 
 				if (dot(v_dir, vp.dir) > 0) {
-					return algorithm_state_update{
+					return algorithm_state{
 						.f1 = v,
 						.f2 = vp.f1,
 						.step = algorithm_step::Continue
@@ -479,7 +469,7 @@ namespace phys {
 				vec3 v_dir = v.v - vp.pos;
 
 				if (dot(v_dir, vp.dir) > 0) {
-					return algorithm_state_update{
+					return algorithm_state{
 						.f1 = v,
 						.f2 = vp.f1,
 						.step = algorithm_step::Continue
@@ -488,7 +478,7 @@ namespace phys {
 			}
 
 			clip_result cr = clip_edge(p_e, e, v, vplanes(p_v, v));
-			algorithm_state_update out{
+			algorithm_state out{
 				.f1 = v,
 				.f2 = e,
 				.step = algorithm_step::Continue
@@ -514,7 +504,7 @@ namespace phys {
 			return out;
 		}
 
-		algorithm_state_update vf_state(
+		algorithm_state vf_state(
 			const polyhedron &p_v,
 			const polyhedron &p_f,
 			const vertex &v,
@@ -534,7 +524,7 @@ namespace phys {
 			}
 
 			if (max_edge) {
-				return algorithm_state_update{
+				return algorithm_state{
 					.f1 = v,
 					.f2 = *max_edge,
 					.step = algorithm_step::Continue
@@ -556,7 +546,7 @@ namespace phys {
 				bool should_update_to_vp = std::signbit(dpv) == std::signbit(dpvp) ?
 					std::abs(dpv) > std::abs(dpvp) : dpv > dpvp;
 				if (should_update_to_vp) {
-					return algorithm_state_update{
+					return algorithm_state{
 						.f1 = e,
 						.f2 = f,
 						.step = algorithm_step::Continue
@@ -565,7 +555,7 @@ namespace phys {
 			}
 
 			if (dpv > 0) {
-				return algorithm_state_update{
+				return algorithm_state{
 					.f1 = v,
 					.f2 = f,
 					.step = algorithm_step::Done
@@ -577,7 +567,7 @@ namespace phys {
 			real penetration =
 				lmr.step == algorithm_step::Penetration ? lmr.d : 0.0_r;
 
-			return algorithm_state_update{
+			return algorithm_state{
 				.f1 = v,
 				.f2 = lmr.f,
 				.step = lmr.step,
@@ -585,13 +575,13 @@ namespace phys {
 			};
 		}
 
-		algorithm_state_update ee_state(
+		algorithm_state ee_state(
 			const polyhedron &p_e1,
 			const polyhedron &p_e2,
 			const edge &e1,
 			const edge &e2
 		) {
-			algorithm_state_update out{
+			algorithm_state out{
 				.f1 = e1,
 				.f2 = e2,
 				.step = algorithm_step::Continue
@@ -669,7 +659,7 @@ namespace phys {
 			return out;
 		}
 
-		algorithm_state_update ef_state(
+		algorithm_state ef_state(
 			const polyhedron &p_e,
 			const polyhedron &p_f,
 			const edge &e,
@@ -696,7 +686,7 @@ namespace phys {
 					next_f = deriv_check(p_e, p_f, cr);
 				}
 
-				return algorithm_state_update{
+				return algorithm_state{
 					.f1 = e,
 					.f2 = *min_f,
 					.step = algorithm_step::Continue
@@ -710,7 +700,7 @@ namespace phys {
 			real d2 = dot(e_v2 - p_f.vertices[f.verts[0]].v, n);
 
 			if (d1 * d2 <= 0) {
-				return algorithm_state_update{
+				return algorithm_state{
 					.f1 = e,
 					.f2 = f,
 					.step = algorithm_step::Penetration,
@@ -720,13 +710,13 @@ namespace phys {
 
 			if (edge_dist_deriv(p_e, p_f, cr, cr.l1) <= 0) {
 				if (cr.n1) {
-					return algorithm_state_update{
+					return algorithm_state{
 						.f1 = e,
 						.f2 = *cr.n1,
 						.step = algorithm_step::Continue,
 					};
 				} else {
-					return algorithm_state_update{
+					return algorithm_state{
 						.f1 = e.t(p_e),
 						.f2 = f,
 						.step = algorithm_step::Continue
@@ -734,13 +724,13 @@ namespace phys {
 				}
 			} else {
 				if (cr.n2) {
-					return algorithm_state_update{
+					return algorithm_state{
 						.f1 = e,
 						.f2 = *cr.n2,
 						.step = algorithm_step::Continue
 					};
 				} else {
-					return algorithm_state_update{
+					return algorithm_state{
 						.f1 = e.h(p_e),
 						.f2 = f,
 						.step = algorithm_step::Continue
@@ -835,7 +825,7 @@ namespace phys {
 			return are_non_numerics_eq && are_numerics_eq;
 		}
 
-		bool operator==(const algorithm_state_update &upd1, const algorithm_state_update &upd2) {
+		bool operator==(const algorithm_state &upd1, const algorithm_state &upd2) {
 			return std::tie(upd1.f1, upd1.f2, upd1.step) ==
 				std::tie(upd2.f1, upd2.f2, upd2.step) &&
 				util::eq_within_epsilon(upd1.penetration, upd2.penetration);
@@ -913,9 +903,9 @@ std::string traits::to_string(const phys::vclip::clip_result &cr, size_t indent)
 }
 
 template <>
-std::string traits::to_string(const phys::vclip::algorithm_state_update &upd, size_t indent) {
+std::string traits::to_string(const phys::vclip::algorithm_state &upd, size_t indent) {
 	return util::obj_to_string(
-		"algorithm_state_update", indent,
+		"algorithm_state", indent,
 		util::named_val("f1", upd.f1),
 		util::named_val("f2", upd.f2),
 		util::named_val("step", upd.step),

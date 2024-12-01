@@ -2101,7 +2101,7 @@ void setup_collision_tests() {
 						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
 						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
 
-						phys::vclip::algorithm_state_update upd =
+						phys::vclip::algorithm_state state =
 							phys::vclip::vv_state(
 								p1,
 								p2,
@@ -2109,9 +2109,9 @@ void setup_collision_tests() {
 								p2.vertices[7]
 							);
 
-						expect(upd.step).to_be(phys::vclip::algorithm_step::Done);
-						expect(upd.f1).to_be(p1.vertices[0]);
-						expect(upd.f2).to_be(p2.vertices[7]);
+						expect(state.step).to_be(phys::vclip::algorithm_step::Done);
+						expect(state.f1).to_be(p1.vertices[0]);
+						expect(state.f2).to_be(p2.vertices[7]);
 					});
 
 					it("updates to the nearest edge on the first polyhedron", [&]() {
@@ -2120,7 +2120,7 @@ void setup_collision_tests() {
 						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
 						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
 
-						phys::vclip::algorithm_state_update upd =
+						phys::vclip::algorithm_state state =
 							phys::vclip::vv_state(
 								p1,
 								p2,
@@ -2128,9 +2128,9 @@ void setup_collision_tests() {
 								p2.vertices[7]
 							);
 
-						expect(upd.step).to_be(phys::vclip::algorithm_step::Continue);
-						expect(upd.f1).to_be(phys::vclip::edge(0, 4));
-						expect(upd.f2).to_be(p2.vertices[7]);
+						expect(state.step).to_be(phys::vclip::algorithm_step::Continue);
+						expect(state.f1).to_be(phys::vclip::edge(0, 4));
+						expect(state.f2).to_be(p2.vertices[7]);
 					});
 
 					it("updates to the nearest edge on the second polyhedron", [&]() {
@@ -2139,7 +2139,7 @@ void setup_collision_tests() {
 						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
 						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
 
-						phys::vclip::algorithm_state_update upd =
+						phys::vclip::algorithm_state state =
 							phys::vclip::vv_state(
 								p1,
 								p2,
@@ -2147,9 +2147,9 @@ void setup_collision_tests() {
 								p2.vertices[3]
 							);
 
-						expect(upd.step).to_be(phys::vclip::algorithm_step::Continue);
-						expect(upd.f1).to_be(p1.vertices[0]);
-						expect(upd.f2).to_be(phys::vclip::edge(3, 7));
+						expect(state.step).to_be(phys::vclip::algorithm_step::Continue);
+						expect(state.f1).to_be(p1.vertices[0]);
+						expect(state.f2).to_be(phys::vclip::edge(3, 7));
 					});
 
 					it("updates to the nearest edge when the polyhedra are penetrating", [&]() {
@@ -2158,7 +2158,7 @@ void setup_collision_tests() {
 						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
 						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
 
-						phys::vclip::algorithm_state_update upd =
+						phys::vclip::algorithm_state state =
 							phys::vclip::vv_state(
 								p1,
 								p2,
@@ -2166,7 +2166,7 @@ void setup_collision_tests() {
 								p2.vertices[3]
 							);
 
-						expect(upd.step).to_be(phys::vclip::algorithm_step::Continue);
+						expect(state.step).to_be(phys::vclip::algorithm_step::Continue);
 						// TODO: More assertions here
 					});
 				});
@@ -2187,14 +2187,14 @@ void setup_collision_tests() {
 						phys::vclip::edge e(4, 0);
 						phys::vclip::vertex v = p2.vertices[7];
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+						phys::vclip::algorithm_state state = phys::vclip::ve_state(
 							p2,
 							p1,
 							v,
 							e
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = v,
 							.f2 = p1.vertices[0],
 							.step = phys::vclip::algorithm_step::Continue,
@@ -2211,14 +2211,14 @@ void setup_collision_tests() {
 						phys::vclip::edge e(0, 4);
 						phys::vclip::vertex v = p2.vertices[7];
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+						phys::vclip::algorithm_state state = phys::vclip::ve_state(
 							p2,
 							p1,
 							v,
 							e
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = v,
 							.f2 = p1.vertices[0],
 							.step = phys::vclip::algorithm_step::Continue,
@@ -2234,14 +2234,14 @@ void setup_collision_tests() {
 						phys::vclip::edge e(4, 0);
 						phys::vclip::vertex v = p2.vertices[7];
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+						phys::vclip::algorithm_state state = phys::vclip::ve_state(
 							p2,
 							p1,
 							v,
 							e
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = v,
 							.f2 = p1.vertices[4],
 							.step = phys::vclip::algorithm_step::Continue,
@@ -2258,14 +2258,14 @@ void setup_collision_tests() {
 						phys::vclip::edge e(0, 4);
 						phys::vclip::vertex v = p2.vertices[7];
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+						phys::vclip::algorithm_state state = phys::vclip::ve_state(
 							p2,
 							p1,
 							v,
 							e
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = v,
 							.f2 = p1.vertices[4],
 							.step = phys::vclip::algorithm_step::Continue,
@@ -2281,14 +2281,14 @@ void setup_collision_tests() {
 						phys::vclip::edge e(0, 4);
 						phys::vclip::vertex v = p2.vertices[7];
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+						phys::vclip::algorithm_state state = phys::vclip::ve_state(
 							p2,
 							p1,
 							v,
 							e
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = v,
 							.f2 = phys::vclip::face({ 0, 1, 5, 4 }),
 							.step = phys::vclip::algorithm_step::Continue,
@@ -2305,14 +2305,14 @@ void setup_collision_tests() {
 						phys::vclip::edge e(4, 0);
 						phys::vclip::vertex v = p2.vertices[7];
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+						phys::vclip::algorithm_state state = phys::vclip::ve_state(
 							p2,
 							p1,
 							v,
 							e
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = v,
 							.f2 = phys::vclip::face({ 0, 1, 5, 4 }),
 							.step = phys::vclip::algorithm_step::Continue,
@@ -2329,14 +2329,14 @@ void setup_collision_tests() {
 						phys::vclip::edge e(4, 0);
 						phys::vclip::vertex v = p2.vertices[4];
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+						phys::vclip::algorithm_state state = phys::vclip::ve_state(
 							p2,
 							p1,
 							v,
 							e
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = phys::vclip::edge(5, 4),
 							.f2 = e,
 							.step = phys::vclip::algorithm_step::Continue,
@@ -2354,14 +2354,14 @@ void setup_collision_tests() {
 						phys::vclip::edge e(0, 4);
 						phys::vclip::vertex v = p2.vertices[4];
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+						phys::vclip::algorithm_state state = phys::vclip::ve_state(
 							p2,
 							p1,
 							v,
 							e
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = phys::vclip::edge(5, 4),
 							.f2 = e,
 							.step = phys::vclip::algorithm_step::Continue,
@@ -2384,20 +2384,20 @@ void setup_collision_tests() {
 						phys::vclip::edge e(0, 4);
 						phys::vclip::vertex v = p2.vertices[3];
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+						phys::vclip::algorithm_state state = phys::vclip::ve_state(
 							p2,
 							p1,
 							v,
 							e
 						);
 
-						expect(upd)
-							.to_be(phys::vclip::algorithm_state_update{
+						expect(state)
+							.to_be(phys::vclip::algorithm_state{
 								.f1 = phys::vclip::edge(2, 3),
 								.f2 = e,
 								.step = phys::vclip::algorithm_step::Continue,
 								.penetration = 0.0_r
-							}).orr().to_be(phys::vclip::algorithm_state_update{
+							}).orr().to_be(phys::vclip::algorithm_state{
 								.f1 = phys::vclip::edge(3, 7),
 								.f2 = e,
 								.step = phys::vclip::algorithm_step::Continue,
@@ -2415,14 +2415,14 @@ void setup_collision_tests() {
 						phys::vclip::edge e(0, 4);
 						phys::vclip::vertex v = p2.vertices[3];
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+						phys::vclip::algorithm_state state = phys::vclip::ve_state(
 							p2,
 							p1,
 							v,
 							e
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = v,
 							.f2 = e,
 							.step = phys::vclip::algorithm_step::Done,
@@ -2448,14 +2448,14 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::vertex v = p2.vertices[7];
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::vf_state(
+						phys::vclip::algorithm_state state = phys::vclip::vf_state(
 							p2,
 							p1,
 							v,
 							f
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = v,
 							.f2 = phys::vclip::edge(0, 4),
 							.step = phys::vclip::algorithm_step::Continue,
@@ -2472,14 +2472,14 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::vertex v = p2.vertices[6];
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::vf_state(
+						phys::vclip::algorithm_state state = phys::vclip::vf_state(
 							p2,
 							p1,
 							v,
 							f
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = v,
 							.f2 = phys::vclip::edge(1, 5),
 							.step = phys::vclip::algorithm_step::Continue,
@@ -2497,14 +2497,14 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::vertex v = p2.vertices[7];
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::vf_state(
+						phys::vclip::algorithm_state state = phys::vclip::vf_state(
 							p2,
 							p1,
 							v,
 							f
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = phys::vclip::edge(7, 6),
 							.f2 = f,
 							.step = phys::vclip::algorithm_step::Continue,
@@ -2523,14 +2523,14 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::vertex v = p2.vertices[7];
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::vf_state(
+						phys::vclip::algorithm_state state = phys::vclip::vf_state(
 							p2,
 							p1,
 							v,
 							f
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = phys::vclip::edge(7, 6),
 							.f2 = f,
 							.step = phys::vclip::algorithm_step::Continue,
@@ -2548,14 +2548,14 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::vertex v = p2.vertices[7];
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::vf_state(
+						phys::vclip::algorithm_state state = phys::vclip::vf_state(
 							p2,
 							p1,
 							v,
 							f
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = v,
 							.f2 = f,
 							.step = phys::vclip::algorithm_step::Done,
@@ -2573,17 +2573,17 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::vertex v = p2.vertices[7];
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::vf_state(
+						phys::vclip::algorithm_state state = phys::vclip::vf_state(
 							p2,
 							p1,
 							v,
 							f
 						);
 
-						expect(upd.f1).to_be(v);
-						expect(upd.f2).to_be(f);
-						expect(upd.step).to_be(phys::vclip::algorithm_step::Penetration);
-						expect(upd.penetration).to_be_less_than(0.0_r);
+						expect(state.f1).to_be(v);
+						expect(state.f2).to_be(f);
+						expect(state.step).to_be(phys::vclip::algorithm_step::Penetration);
+						expect(state.penetration).to_be_less_than(0.0_r);
 					});
 
 					it("selects a new face when the vertex is in a local minimum without penetration", [&]() {
@@ -2596,14 +2596,14 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 2, 6, 7, 3 });
 						phys::vclip::vertex v = p2.vertices[7];
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::vf_state(
+						phys::vclip::algorithm_state state = phys::vclip::vf_state(
 							p2,
 							p1,
 							v,
 							f
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = v,
 							.f2 = phys::vclip::face({ 0, 1, 5, 4 }),
 							.step = phys::vclip::algorithm_step::Continue,
@@ -2621,17 +2621,17 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 2, 6, 7, 3 });
 						phys::vclip::vertex v = p2.vertices[7];
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::vf_state(
+						phys::vclip::algorithm_state state = phys::vclip::vf_state(
 							p2,
 							p1,
 							v,
 							f
 						);
 
-						expect(upd.f1).to_be(v);
-						expect(upd.f2).to_be(f);
-						expect(upd.step).to_be(phys::vclip::algorithm_step::Penetration);
-						expect(upd.penetration).to_be_less_than(0.0_r);
+						expect(state.f1).to_be(v);
+						expect(state.f2).to_be(f);
+						expect(state.step).to_be(phys::vclip::algorithm_step::Penetration);
+						expect(state.penetration).to_be_less_than(0.0_r);
 					});
 				});
 
@@ -2652,21 +2652,21 @@ void setup_collision_tests() {
 						phys::vclip::edge e1(4, 0);
 						phys::vclip::edge e2(1, 3);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+						phys::vclip::algorithm_state state = phys::vclip::ee_state(
 							p1,
 							p2,
 							e1,
 							e2
 						);
 
-						expect(upd)
-							.to_be(phys::vclip::algorithm_state_update{
+						expect(state)
+							.to_be(phys::vclip::algorithm_state{
 								.f1 = e1,
 								.f2 = phys::vclip::face({ 0, 2, 3, 1 }),
 								.step = phys::vclip::algorithm_step::Continue,
 								.penetration = 0.0_r
 							}).orr()
-							.to_be(phys::vclip::algorithm_state_update{
+							.to_be(phys::vclip::algorithm_state{
 								.f1 = e1,
 								.f2 = phys::vclip::face({ 1, 3, 7, 5 }),
 								.step = phys::vclip::algorithm_step::Continue,
@@ -2684,21 +2684,21 @@ void setup_collision_tests() {
 						phys::vclip::edge e1(0, 4);
 						phys::vclip::edge e2(1, 3);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+						phys::vclip::algorithm_state state = phys::vclip::ee_state(
 							p1,
 							p2,
 							e1,
 							e2
 						);
 
-						expect(upd)
-							.to_be(phys::vclip::algorithm_state_update{
+						expect(state)
+							.to_be(phys::vclip::algorithm_state{
 								.f1 = e1,
 								.f2 = phys::vclip::face({ 0, 2, 3, 1 }),
 								.step = phys::vclip::algorithm_step::Continue,
 								.penetration = 0.0_r
 							}).orr()
-							.to_be(phys::vclip::algorithm_state_update{
+							.to_be(phys::vclip::algorithm_state{
 								.f1 = e1,
 								.f2 = phys::vclip::face({ 1, 3, 7, 5 }),
 								.step = phys::vclip::algorithm_step::Continue,
@@ -2716,21 +2716,21 @@ void setup_collision_tests() {
 						phys::vclip::edge e1(4, 0);
 						phys::vclip::edge e2(3, 1);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+						phys::vclip::algorithm_state state = phys::vclip::ee_state(
 							p1,
 							p2,
 							e1,
 							e2
 						);
 
-						expect(upd)
-							.to_be(phys::vclip::algorithm_state_update{
+						expect(state)
+							.to_be(phys::vclip::algorithm_state{
 								.f1 = e1,
 								.f2 = phys::vclip::face({ 0, 2, 3, 1 }),
 								.step = phys::vclip::algorithm_step::Continue,
 								.penetration = 0.0_r
 							}).orr()
-							.to_be(phys::vclip::algorithm_state_update{
+							.to_be(phys::vclip::algorithm_state{
 								.f1 = e1,
 								.f2 = phys::vclip::face({ 1, 3, 7, 5 }),
 								.step = phys::vclip::algorithm_step::Continue,
@@ -2748,21 +2748,21 @@ void setup_collision_tests() {
 						phys::vclip::edge e1(0, 4);
 						phys::vclip::edge e2(3, 1);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+						phys::vclip::algorithm_state state = phys::vclip::ee_state(
 							p1,
 							p2,
 							e1,
 							e2
 						);
 
-						expect(upd)
-							.to_be(phys::vclip::algorithm_state_update{
+						expect(state)
+							.to_be(phys::vclip::algorithm_state{
 								.f1 = e1,
 								.f2 = phys::vclip::face({ 0, 2, 3, 1 }),
 								.step = phys::vclip::algorithm_step::Continue,
 								.penetration = 0.0_r
 							}).orr()
-							.to_be(phys::vclip::algorithm_state_update{
+							.to_be(phys::vclip::algorithm_state{
 								.f1 = e1,
 								.f2 = phys::vclip::face({ 1, 3, 7, 5 }),
 								.step = phys::vclip::algorithm_step::Continue,
@@ -2780,21 +2780,21 @@ void setup_collision_tests() {
 						phys::vclip::edge e1(4, 0);
 						phys::vclip::edge e2(1, 3);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+						phys::vclip::algorithm_state state = phys::vclip::ee_state(
 							p2,
 							p1,
 							e2,
 							e1
 						);
 
-						expect(upd)
-							.to_be(phys::vclip::algorithm_state_update{
+						expect(state)
+							.to_be(phys::vclip::algorithm_state{
 								.f1 = phys::vclip::face({ 0, 2, 3, 1 }),
 								.f2 = e1,
 								.step = phys::vclip::algorithm_step::Continue,
 								.penetration = 0.0_r
 							}).orr()
-							.to_be(phys::vclip::algorithm_state_update{
+							.to_be(phys::vclip::algorithm_state{
 								.f1 = phys::vclip::face({ 1, 3, 7, 5 }),
 								.f2 = e1,
 								.step = phys::vclip::algorithm_step::Continue,
@@ -2810,14 +2810,14 @@ void setup_collision_tests() {
 						phys::vclip::edge e1(4, 0);
 						phys::vclip::edge e2(5, 7);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+						phys::vclip::algorithm_state state = phys::vclip::ee_state(
 							p1,
 							p2,
 							e1,
 							e2
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = e1,
 							.f2 = e2,
 							.step = phys::vclip::algorithm_step::Done,
@@ -2833,14 +2833,14 @@ void setup_collision_tests() {
 						phys::vclip::edge e1(4, 0);
 						phys::vclip::edge e2(5, 7);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+						phys::vclip::algorithm_state state = phys::vclip::ee_state(
 							p1,
 							p2,
 							e1,
 							e2
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = p1.vertices[0],
 							.f2 = e2,
 							.step = phys::vclip::algorithm_step::Continue,
@@ -2857,14 +2857,14 @@ void setup_collision_tests() {
 						phys::vclip::edge e1(0, 4);
 						phys::vclip::edge e2(5, 7);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+						phys::vclip::algorithm_state state = phys::vclip::ee_state(
 							p1,
 							p2,
 							e1,
 							e2
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = p1.vertices[0],
 							.f2 = e2,
 							.step = phys::vclip::algorithm_step::Continue,
@@ -2881,14 +2881,14 @@ void setup_collision_tests() {
 						phys::vclip::edge e1(4, 0);
 						phys::vclip::edge e2(7, 5);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+						phys::vclip::algorithm_state state = phys::vclip::ee_state(
 							p1,
 							p2,
 							e1,
 							e2
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = p1.vertices[0],
 							.f2 = e2,
 							.step = phys::vclip::algorithm_step::Continue,
@@ -2905,14 +2905,14 @@ void setup_collision_tests() {
 						phys::vclip::edge e1(0, 4);
 						phys::vclip::edge e2(7, 5);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+						phys::vclip::algorithm_state state = phys::vclip::ee_state(
 							p1,
 							p2,
 							e1,
 							e2
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = p1.vertices[0],
 							.f2 = e2,
 							.step = phys::vclip::algorithm_step::Continue,
@@ -2929,14 +2929,14 @@ void setup_collision_tests() {
 						phys::vclip::edge e1(4, 0);
 						phys::vclip::edge e2(5, 7);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+						phys::vclip::algorithm_state state = phys::vclip::ee_state(
 							p2,
 							p1,
 							e2,
 							e1
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = e2,
 							.f2 = p1.vertices[0],
 							.step = phys::vclip::algorithm_step::Continue,
@@ -2963,14 +2963,14 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::edge e(7, 6);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+						phys::vclip::algorithm_state state = phys::vclip::ef_state(
 							p2,
 							p1,
 							e,
 							f
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = e,
 							.f2 = phys::vclip::edge(4, 0),
 							.step = phys::vclip::algorithm_step::Continue,
@@ -2989,14 +2989,14 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::edge e(6, 7);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+						phys::vclip::algorithm_state state = phys::vclip::ef_state(
 							p2,
 							p1,
 							e,
 							f
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = e,
 							.f2 = phys::vclip::edge(4, 0),
 							.step = phys::vclip::algorithm_step::Continue,
@@ -3014,14 +3014,14 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::edge e(7, 6);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+						phys::vclip::algorithm_state state = phys::vclip::ef_state(
 							p2,
 							p1,
 							e,
 							f
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = e,
 							.f2 = phys::vclip::edge(1, 5),
 							.step = phys::vclip::algorithm_step::Continue,
@@ -3040,14 +3040,14 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::edge e(6, 7);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+						phys::vclip::algorithm_state state = phys::vclip::ef_state(
 							p2,
 							p1,
 							e,
 							f
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = e,
 							.f2 = phys::vclip::edge(1, 5),
 							.step = phys::vclip::algorithm_step::Continue,
@@ -3064,21 +3064,21 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::edge e(7, 6);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+						phys::vclip::algorithm_state state = phys::vclip::ef_state(
 							p2,
 							p1,
 							e,
 							f
 						);
 
-						expect(upd)
-							.to_be(phys::vclip::algorithm_state_update{
+						expect(state)
+							.to_be(phys::vclip::algorithm_state{
 								.f1 = e,
 								.f2 = phys::vclip::edge(1, 5),
 								.step = phys::vclip::algorithm_step::Continue,
 								.penetration = 0.0_r
 							}).orr()
-							.to_be(phys::vclip::algorithm_state_update{
+							.to_be(phys::vclip::algorithm_state{
 								.f1 = e,
 								.f2 = phys::vclip::edge(0, 4),
 								.step = phys::vclip::algorithm_step::Continue,
@@ -3096,21 +3096,21 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::edge e(6, 7);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+						phys::vclip::algorithm_state state = phys::vclip::ef_state(
 							p2,
 							p1,
 							e,
 							f
 						);
 
-						expect(upd)
-							.to_be(phys::vclip::algorithm_state_update{
+						expect(state)
+							.to_be(phys::vclip::algorithm_state{
 								.f1 = e,
 								.f2 = phys::vclip::edge(1, 5),
 								.step = phys::vclip::algorithm_step::Continue,
 								.penetration = 0.0_r
 							}).orr()
-							.to_be(phys::vclip::algorithm_state_update{
+							.to_be(phys::vclip::algorithm_state{
 								.f1 = e,
 								.f2 = phys::vclip::edge(0, 4),
 								.step = phys::vclip::algorithm_step::Continue,
@@ -3128,17 +3128,17 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::edge e(7, 6);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+						phys::vclip::algorithm_state state = phys::vclip::ef_state(
 							p2,
 							p1,
 							e,
 							f
 						);
 
-						expect(upd.f1).to_be(e);
-						expect(upd.f2).to_be(f);
-						expect(upd.step).to_be(phys::vclip::algorithm_step::Penetration);
-						expect(upd.penetration).to_be_less_than(0.0_r);
+						expect(state.f1).to_be(e);
+						expect(state.f2).to_be(f);
+						expect(state.step).to_be(phys::vclip::algorithm_step::Penetration);
+						expect(state.penetration).to_be_less_than(0.0_r);
 					});
 
 					it("terminates for an edge clipped on both sides and penetrating the face "
@@ -3152,17 +3152,17 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::edge e(6, 7);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+						phys::vclip::algorithm_state state = phys::vclip::ef_state(
 							p2,
 							p1,
 							e,
 							f
 						);
 
-						expect(upd.f1).to_be(e);
-						expect(upd.f2).to_be(f);
-						expect(upd.step).to_be(phys::vclip::algorithm_step::Penetration);
-						expect(upd.penetration).to_be_less_than(0.0_r);
+						expect(state.f1).to_be(e);
+						expect(state.f2).to_be(f);
+						expect(state.step).to_be(phys::vclip::algorithm_step::Penetration);
+						expect(state.penetration).to_be_less_than(0.0_r);
 					});
 
 					it("selects the closest vertex for an edge penetrating one of a face's F-E planes", [&]() {
@@ -3174,14 +3174,14 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::edge e(7, 6);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+						phys::vclip::algorithm_state state = phys::vclip::ef_state(
 							p2,
 							p1,
 							e,
 							f
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = p2.vertices[6],
 							.f2 = f,
 							.step = phys::vclip::algorithm_step::Continue,
@@ -3198,14 +3198,14 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::edge e(7, 6);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+						phys::vclip::algorithm_state state = phys::vclip::ef_state(
 							p2,
 							p1,
 							e,
 							f
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = e,
 							.f2 = phys::vclip::edge(0, 4),
 							.step = phys::vclip::algorithm_step::Continue,
@@ -3221,14 +3221,14 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::edge e(5, 7);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+						phys::vclip::algorithm_state state = phys::vclip::ef_state(
 							p2,
 							p1,
 							e,
 							f
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = e,
 							.f2 = f,
 							.step = phys::vclip::algorithm_step::Penetration,
@@ -3246,14 +3246,14 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::edge e(7, 6);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+						phys::vclip::algorithm_state state = phys::vclip::ef_state(
 							p2,
 							p1,
 							e,
 							f
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = e,
 							.f2 = phys::vclip::edge(0, 4),
 							.step = phys::vclip::algorithm_step::Continue,
@@ -3269,14 +3269,14 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::edge e(7, 3);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+						phys::vclip::algorithm_state state = phys::vclip::ef_state(
 							p2,
 							p1,
 							e,
 							f
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = e,
 							.f2 = phys::vclip::edge(0, 4),
 							.step = phys::vclip::algorithm_step::Continue,
@@ -3292,14 +3292,14 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::edge e(7, 3);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+						phys::vclip::algorithm_state state = phys::vclip::ef_state(
 							p2,
 							p1,
 							e,
 							f
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = e,
 							.f2 = phys::vclip::edge(1, 5),
 							.step = phys::vclip::algorithm_step::Continue,
@@ -3317,19 +3317,19 @@ void setup_collision_tests() {
 						phys::vclip::face f({ 0, 1, 5, 4 });
 						phys::vclip::edge e(3, 7);
 
-						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+						phys::vclip::algorithm_state state = phys::vclip::ef_state(
 							p2,
 							p1,
 							e,
 							f
 						);
 
-						expect(upd).to_be(phys::vclip::algorithm_state_update{
+						expect(state).to_be(phys::vclip::algorithm_state{
 							.f1 = e,
 							.f2 = phys::vclip::edge(0, 1),
 							.step = phys::vclip::algorithm_step::Continue,
 							.penetration = 0.0_r
-						}).orr().to_be(phys::vclip::algorithm_state_update{
+						}).orr().to_be(phys::vclip::algorithm_state{
 							.f1 = e,
 							.f2 = phys::vclip::edge(4, 0),
 							.step = phys::vclip::algorithm_step::Continue,
