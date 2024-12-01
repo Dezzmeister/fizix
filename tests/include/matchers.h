@@ -101,6 +101,7 @@ namespace test {
 		matchers(const ActualType _actual, const char * const _file, int _line);
 
 		auto to_be(const ActualType expected) -> decltype(*this)&;
+		auto to_be_less_than(const ActualType cmp) -> decltype(*this)&;
 
 	private:
 		const ActualType actual;
@@ -282,6 +283,33 @@ auto test::matchers<ActualType>::to_be(const ActualType expected) -> decltype(*t
 	} else if (! this->is_inverted && ! is_match) {
 		this->err = assertion_failure(
 			"Expected " + to_string(actual) + " to be " + to_string(expected),
+			file,
+			line
+		);
+	}
+
+	return *this;
+}
+
+template <util::numeric ActualType>
+auto test::matchers<ActualType>::to_be_less_than(const ActualType cmp) -> decltype(*this)& {
+	using traits::to_string;
+
+	if (this->is_done()) {
+		return *this;
+	}
+
+	bool is_match = actual < cmp;
+
+	if (this->is_inverted && is_match) {
+		this->err = assertion_failure(
+			"Expected " + to_string(actual) + " not to be less than " + to_string(cmp),
+			file,
+			line
+		);
+	} else if (! this->is_inverted && ! is_match) {
+		this->err = assertion_failure(
+			"Expected " + to_string(actual) + " to be less than " + to_string(cmp),
 			file,
 			line
 		);

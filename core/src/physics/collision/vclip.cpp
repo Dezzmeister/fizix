@@ -2,6 +2,8 @@
 #include "physics/collision/vclip.h"
 #include "util.h"
 
+using namespace phys::literals;
+
 namespace phys {
 	namespace vclip {
 		struct local_min_result {
@@ -70,7 +72,7 @@ namespace phys {
 			const clip_result &cr,
 			const real l
 		) {
-			vec3 u = cr.e.h(p_e).v - cr.e.t(p_e).v;
+			vec3 u = cr.e.t(p_e).v - cr.e.h(p_e).v;
 			const feature * f = &cr.f;
 
 			if (std::holds_alternative<edge>(*f)) {
@@ -104,7 +106,6 @@ namespace phys {
 			return -dot(u, n);
 		}
 
-		// Algorithm 2 in the paper
 		std::optional<feature> deriv_check(
 			const polyhedron &p_e,
 			const polyhedron &p_f,
@@ -464,7 +465,7 @@ namespace phys {
 			for (const auto &vp : ve_vps) {
 				vec3 v_dir = v.v - vp.pos;
 
-				if (dot(v_dir, vp.dir) < 0) {
+				if (dot(v_dir, vp.dir) > 0) {
 					return algorithm_state_update{
 						.f1 = v,
 						.f2 = vp.f1,
@@ -477,7 +478,7 @@ namespace phys {
 			for (const auto &vp : fe_vps) {
 				vec3 v_dir = v.v - vp.pos;
 
-				if (dot(v_dir, vp.dir) < 0) {
+				if (dot(v_dir, vp.dir) > 0) {
 					return algorithm_state_update{
 						.f1 = v,
 						.f2 = vp.f1,
@@ -526,7 +527,7 @@ namespace phys {
 			for (const vplane &vp : vps) {
 				real vp_violation = dot(v.v - vp.pos, vp.dir);
 
-				if (vp_violation < violation) {
+				if (vp_violation > violation) {
 					violation = vp_violation;
 					max_edge = std::get<edge>(vp.f2);
 				}
@@ -545,9 +546,16 @@ namespace phys {
 
 			for (const edge &e : v.edges(p_v)) {
 				vec3 vp = e.v_is[0] == v.i ? e.h(p_v).v : e.t(p_v).v;
-				real dpvp = dot(vp - p_v.vertices[f.verts[0]].v, f_norm);
+				real dpvp = dot(vp - p_f.vertices[f.verts[0]].v, f_norm);
 
-				if (std::abs(dpv) > std::abs(dpvp)) {
+				// The algorithm as described in the paper compares the magnitudes of Dp(v)
+				// and Dp(vp) here, but that would be incorrect if this vertex does not
+				// penetrate the face, but the other vertex penetrates the face and
+				// is further from the face than this vertex. In that case, we might
+				// not detect the penetration and falsely terminate.
+				bool should_update_to_vp = std::signbit(dpv) == std::signbit(dpvp) ?
+					std::abs(dpv) > std::abs(dpvp) : dpv > dpvp;
+				if (should_update_to_vp) {
 					return algorithm_state_update{
 						.f1 = e,
 						.f2 = f,
@@ -565,12 +573,15 @@ namespace phys {
 			}
 
 			local_min_result lmr = handle_local_min(p_f, f, v);
+			// TODO: Rename this to "distance" and always report it
+			real penetration =
+				lmr.step == algorithm_step::Penetration ? lmr.d : 0.0_r;
 
 			return algorithm_state_update{
 				.f1 = v,
 				.f2 = lmr.f,
 				.step = lmr.step,
-				.penetration = lmr.d
+				.penetration = penetration
 			};
 		}
 
@@ -604,7 +615,7 @@ namespace phys {
 			}
 
 			vps = e1.fe_planes(p_e1);
-			cr = clip_edge(p_e2, e2, e1, vps);
+			cr = clip_edge(p_e2, e2, e1, vps, cr);
 
 			if (! cr.is_clipped && cr.n1 == cr.n2 && cr.n1) {
 				out.f1 = *cr.n1;
@@ -638,7 +649,7 @@ namespace phys {
 			}
 
 			vps = e2.fe_planes(p_e2);
-			cr = clip_edge(p_e1, e1, e2, vps);
+			cr = clip_edge(p_e1, e1, e2, vps, cr);
 
 			if (! cr.is_clipped && cr.n1 == cr.n2 && cr.n1) {
 				out.f2 = *cr.n1;
@@ -823,6 +834,12 @@ namespace phys {
 
 			return are_non_numerics_eq && are_numerics_eq;
 		}
+
+		bool operator==(const algorithm_state_update &upd1, const algorithm_state_update &upd2) {
+			return std::tie(upd1.f1, upd1.f2, upd1.step) ==
+				std::tie(upd2.f1, upd2.f2, upd2.step) &&
+				util::eq_within_epsilon(upd1.penetration, upd2.penetration);
+		}
 	}
 }
 
@@ -892,5 +909,16 @@ std::string traits::to_string(const phys::vclip::clip_result &cr, size_t indent)
 		util::named_val("l1", cr.l1),
 		util::named_val("l2", cr.l2),
 		util::named_val("is_clipped", cr.is_clipped)
+	);
+}
+
+template <>
+std::string traits::to_string(const phys::vclip::algorithm_state_update &upd, size_t indent) {
+	return util::obj_to_string(
+		"algorithm_state_update", indent,
+		util::named_val("f1", upd.f1),
+		util::named_val("f2", upd.f2),
+		util::named_val("step", upd.step),
+		util::named_val("penetration", upd.penetration)
 	);
 }

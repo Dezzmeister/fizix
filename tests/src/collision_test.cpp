@@ -2083,86 +2083,1258 @@ void setup_collision_tests() {
 							});
 						});
 					});
+				});
+			});
 
-					describe("V-V state handler", []() {
-						it("terminates when the vertices are the closest points between two boxes and are in each others' Voronoi regions", [&]() {
-							box_body_2.pos = phys::vec3(2.5_r);
-							box_body_2.calculate_derived_data();
-							phys::vclip::polyhedron p1 = box_1.to_polyhedron();
-							phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+			describe("state handlers", []() {
+				describe("V-V state handler", []() {
+					after_each([&]() {
+						box_body_1 = {};
+						box_body_2 = {};
+						box_1.half_size = phys::vec3(1.0_r);
+						box_2.half_size = phys::vec3(1.0_r);
+					});
 
-							phys::vclip::algorithm_state_update upd =
-								phys::vclip::vv_state(
-									p1,
-									p2,
-									p1.vertices[0],
-									p2.vertices[7]
-								);
+					it("terminates when the vertices are the closest points between two boxes and are in each others' Voronoi regions", [&]() {
+						box_body_2.pos = phys::vec3(2.5_r);
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
 
-							expect(upd.step).to_be(phys::vclip::algorithm_step::Done);
-							expect(upd.f1).to_be(p1.vertices[0]);
-							expect(upd.f2).to_be(p2.vertices[7]);
-						});
+						phys::vclip::algorithm_state_update upd =
+							phys::vclip::vv_state(
+								p1,
+								p2,
+								p1.vertices[0],
+								p2.vertices[7]
+							);
 
-						it("updates to the nearest edge on the first polyhedron", [&]() {
-							box_body_2.pos = phys::vec3(1.0_r, 2.5_r, 2.5_r);
-							box_body_2.calculate_derived_data();
-							phys::vclip::polyhedron p1 = box_1.to_polyhedron();
-							phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						expect(upd.step).to_be(phys::vclip::algorithm_step::Done);
+						expect(upd.f1).to_be(p1.vertices[0]);
+						expect(upd.f2).to_be(p2.vertices[7]);
+					});
 
-							phys::vclip::algorithm_state_update upd =
-								phys::vclip::vv_state(
-									p1,
-									p2,
-									p1.vertices[0],
-									p2.vertices[7]
-								);
+					it("updates to the nearest edge on the first polyhedron", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 2.5_r, 2.5_r);
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
 
-							expect(upd.step).to_be(phys::vclip::algorithm_step::Continue);
-							expect(upd.f1).to_be(phys::vclip::edge(0, 4));
-							expect(upd.f2).to_be(p2.vertices[7]);
-						});
+						phys::vclip::algorithm_state_update upd =
+							phys::vclip::vv_state(
+								p1,
+								p2,
+								p1.vertices[0],
+								p2.vertices[7]
+							);
 
-						it("updates to the nearest edge on the second polyhedron", [&]() {
-							box_body_2.pos = phys::vec3(1.0_r, 2.5_r, 2.5_r);
-							box_body_2.calculate_derived_data();
-							phys::vclip::polyhedron p1 = box_1.to_polyhedron();
-							phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						expect(upd.step).to_be(phys::vclip::algorithm_step::Continue);
+						expect(upd.f1).to_be(phys::vclip::edge(0, 4));
+						expect(upd.f2).to_be(p2.vertices[7]);
+					});
 
-							phys::vclip::algorithm_state_update upd =
-								phys::vclip::vv_state(
-									p1,
-									p2,
-									p1.vertices[0],
-									p2.vertices[3]
-								);
+					it("updates to the nearest edge on the second polyhedron", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 2.5_r, 2.5_r);
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
 
-							expect(upd.step).to_be(phys::vclip::algorithm_step::Continue);
-							expect(upd.f1).to_be(p1.vertices[0]);
-							expect(upd.f2).to_be(phys::vclip::edge(3, 7));
-						});
+						phys::vclip::algorithm_state_update upd =
+							phys::vclip::vv_state(
+								p1,
+								p2,
+								p1.vertices[0],
+								p2.vertices[3]
+							);
 
-						it("updates to the nearest edge when the polyhedra are penetrating", [&]() {
-							box_body_2.pos = phys::vec3(0.5_r, 0.8_r, 0.8_r);
-							box_body_2.calculate_derived_data();
-							phys::vclip::polyhedron p1 = box_1.to_polyhedron();
-							phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						expect(upd.step).to_be(phys::vclip::algorithm_step::Continue);
+						expect(upd.f1).to_be(p1.vertices[0]);
+						expect(upd.f2).to_be(phys::vclip::edge(3, 7));
+					});
 
-							phys::vclip::algorithm_state_update upd =
-								phys::vclip::vv_state(
-									p1,
-									p2,
-									p1.vertices[0],
-									p2.vertices[3]
-								);
+					it("updates to the nearest edge when the polyhedra are penetrating", [&]() {
+						box_body_2.pos = phys::vec3(0.5_r, 0.8_r, 0.8_r);
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
 
-							expect(upd.step).to_be(phys::vclip::algorithm_step::Continue);
-							// TODO: More assertions here
+						phys::vclip::algorithm_state_update upd =
+							phys::vclip::vv_state(
+								p1,
+								p2,
+								p1.vertices[0],
+								p2.vertices[3]
+							);
+
+						expect(upd.step).to_be(phys::vclip::algorithm_step::Continue);
+						// TODO: More assertions here
+					});
+				});
+
+				describe("V-E state handler", []() {
+					after_each([&]() {
+						box_body_1 = {};
+						box_body_2 = {};
+						box_1.half_size = phys::vec3(1.0_r);
+						box_2.half_size = phys::vec3(1.0_r);
+					});
+
+					it("selects the closest vertex for a vertex outside of the edge's V-E planes", [&]() {
+						box_body_2.pos = phys::vec3(2.5_r);
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e(4, 0);
+						phys::vclip::vertex v = p2.vertices[7];
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+							p2,
+							p1,
+							v,
+							e
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = v,
+							.f2 = p1.vertices[0],
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
 						});
 					});
 
-					describe("V-E state handler", []() {
-						// it("terminates when ")
+					it("selects the closest vertex for a vertex outside of the edge's V-E planes "
+						"when the edge is reversed", [&]() {
+						box_body_2.pos = phys::vec3(2.5_r);
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e(0, 4);
+						phys::vclip::vertex v = p2.vertices[7];
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+							p2,
+							p1,
+							v,
+							e
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = v,
+							.f2 = p1.vertices[0],
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closest vertex for a vertex outside of the edge's V-E planes (2)", [&]() {
+						box_body_2.pos = phys::vec3(-1.0_r, 2.5_r, 2.5_r);
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e(4, 0);
+						phys::vclip::vertex v = p2.vertices[7];
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+							p2,
+							p1,
+							v,
+							e
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = v,
+							.f2 = p1.vertices[4],
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closest vertex for a vertex outside of the edge's V-E planes (2) "
+						"when the edge is reversed", [&]() {
+						box_body_2.pos = phys::vec3(-1.0_r, 2.5_r, 2.5_r);
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e(0, 4);
+						phys::vclip::vertex v = p2.vertices[7];
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+							p2,
+							p1,
+							v,
+							e
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = v,
+							.f2 = p1.vertices[4],
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closest face for a vertex outside of the edge's F-E planes", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 2.5_r, 1.0_r);
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e(0, 4);
+						phys::vclip::vertex v = p2.vertices[7];
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+							p2,
+							p1,
+							v,
+							e
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = v,
+							.f2 = phys::vclip::face({ 0, 1, 5, 4 }),
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closest face for a vertex outside of the edge's F-E planes "
+						"when the edge is reversed", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 2.5_r, 1.0_r);
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e(4, 0);
+						phys::vclip::vertex v = p2.vertices[7];
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+							p2,
+							p1,
+							v,
+							e
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = v,
+							.f2 = phys::vclip::face({ 0, 1, 5, 4 }),
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closest edge when the vertex is inside the edge's Voronoi region", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 16.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e(4, 0);
+						phys::vclip::vertex v = p2.vertices[4];
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+							p2,
+							p1,
+							v,
+							e
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = phys::vclip::edge(5, 4),
+							.f2 = e,
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closest edge when the vertex is inside the edge's Voronoi region "
+						"when the edge is reversed", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 16.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e(0, 4);
+						phys::vclip::vertex v = p2.vertices[4];
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+							p2,
+							p1,
+							v,
+							e
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = phys::vclip::edge(5, 4),
+							.f2 = e,
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					// The algorithm might be expected to terminate here,
+					// but it does not because the edge is clipped on both
+					// sides by the vertex's Voronoi region. The algorithm doesn't
+					// yet know that the vertex's neighbors are futher from the edge
+					// than the vertex.
+					it("selects the closest edge when the edge is inside the vertex's Voronoi region "
+						"and is clipped on both sides", [&]() {
+						box_body_2.pos = phys::vec3(0.0_r, 2.5_r, 2.5_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e(0, 4);
+						phys::vclip::vertex v = p2.vertices[3];
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+							p2,
+							p1,
+							v,
+							e
+						);
+
+						expect(upd)
+							.to_be(phys::vclip::algorithm_state_update{
+								.f1 = phys::vclip::edge(2, 3),
+								.f2 = e,
+								.step = phys::vclip::algorithm_step::Continue,
+								.penetration = 0.0_r
+							}).orr().to_be(phys::vclip::algorithm_state_update{
+								.f1 = phys::vclip::edge(3, 7),
+								.f2 = e,
+								.step = phys::vclip::algorithm_step::Continue,
+								.penetration = 0.0_r
+							});
+					});
+
+					it("terminates when the edge is inside the vertex's Voronoi region "
+						"and is not clipped", [&]() {
+						box_body_2.pos = phys::vec3(0.0_r, 10.0_r, 10.0_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e(0, 4);
+						phys::vclip::vertex v = p2.vertices[3];
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ve_state(
+							p2,
+							p1,
+							v,
+							e
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = v,
+							.f2 = e,
+							.step = phys::vclip::algorithm_step::Done,
+							.penetration = 0.0_r
+						});
+					});
+				});
+
+				describe("V-F state handler", []() {
+					after_each([&]() {
+						box_body_1 = {};
+						box_body_2 = {};
+						box_1.half_size = phys::vec3(1.0_r);
+						box_2.half_size = phys::vec3(1.0_r);
+					});
+
+					it("selects the closest edge when the vertex is excluded from the face's Voronoi region", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 2.5_r, 2.5_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::vertex v = p2.vertices[7];
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::vf_state(
+							p2,
+							p1,
+							v,
+							f
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = v,
+							.f2 = phys::vclip::edge(0, 4),
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closest edge when the vertex is excluded from the face's Voronoi region (2)", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 2.5_r, -2.5_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::vertex v = p2.vertices[6];
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::vf_state(
+							p2,
+							p1,
+							v,
+							f
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = v,
+							.f2 = phys::vclip::edge(1, 5),
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closest edge when the vertex is in the face's Voronoi region", [&]() {
+						box_body_2.pos = phys::vec3(0.0_r, 2.5_r, 1.0_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 16.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r)) *
+							make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 0.0_r, 1.0_r));
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::vertex v = p2.vertices[7];
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::vf_state(
+							p2,
+							p1,
+							v,
+							f
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = phys::vclip::edge(7, 6),
+							.f2 = f,
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closest edge when the vertex is in the face's Voronoi region "
+						"and is incident to an edge that deeply penetrates the face", [&]() {
+						box_body_2.pos = phys::vec3(0.0_r, 1.3_r, 1.0_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r)) *
+							make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 0.0_r, 1.0_r));
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::vertex v = p2.vertices[7];
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::vf_state(
+							p2,
+							p1,
+							v,
+							f
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = phys::vclip::edge(7, 6),
+							.f2 = f,
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("terminates when the vertex is closest to the face", [&]() {
+						box_body_2.pos = phys::vec3(0.0_r, 3.0_r, 1.0_r);
+						box_body_2.rot = make_rot(-(phys::real)M_PI / 16.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r)) *
+							make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 0.0_r, 1.0_r));
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::vertex v = p2.vertices[7];
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::vf_state(
+							p2,
+							p1,
+							v,
+							f
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = v,
+							.f2 = f,
+							.step = phys::vclip::algorithm_step::Done,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("reports penetration when the vertex shallowly penetrates the face", [&]() {
+						box_body_2.pos = phys::vec3(0.0_r, 2.5_r, 1.0_r);
+						box_body_2.rot = make_rot(-(phys::real)M_PI / 16.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r)) *
+							make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 0.0_r, 1.0_r));
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::vertex v = p2.vertices[7];
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::vf_state(
+							p2,
+							p1,
+							v,
+							f
+						);
+
+						expect(upd.f1).to_be(v);
+						expect(upd.f2).to_be(f);
+						expect(upd.step).to_be(phys::vclip::algorithm_step::Penetration);
+						expect(upd.penetration).to_be_less_than(0.0_r);
+					});
+
+					it("selects a new face when the vertex is in a local minimum without penetration", [&]() {
+						box_body_2.pos = phys::vec3(0.0_r, 3.0_r, 1.0_r);
+						box_body_2.rot = make_rot(-(phys::real)M_PI / 16.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r)) *
+							make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 0.0_r, 1.0_r));
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 2, 6, 7, 3 });
+						phys::vclip::vertex v = p2.vertices[7];
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::vf_state(
+							p2,
+							p1,
+							v,
+							f
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = v,
+							.f2 = phys::vclip::face({ 0, 1, 5, 4 }),
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("reports penetration when the vertex is in a local minimum with penetration", [&]() {
+						box_body_2.pos = phys::vec3(0.0_r, 0.7_r, 1.0_r);
+						box_body_2.rot = make_rot(-(phys::real)M_PI / 16.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r)) *
+							make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 0.0_r, 1.0_r));
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 2, 6, 7, 3 });
+						phys::vclip::vertex v = p2.vertices[7];
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::vf_state(
+							p2,
+							p1,
+							v,
+							f
+						);
+
+						expect(upd.f1).to_be(v);
+						expect(upd.f2).to_be(f);
+						expect(upd.step).to_be(phys::vclip::algorithm_step::Penetration);
+						expect(upd.penetration).to_be_less_than(0.0_r);
+					});
+				});
+
+				describe("E-E state handler", []() {
+					after_each([&]() {
+						box_body_1 = {};
+						box_body_2 = {};
+						box_1.half_size = phys::vec3(1.0_r);
+						box_2.half_size = phys::vec3(1.0_r);
+					});
+
+					it("selects the closest face when the second edge intersects one F-E plane", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 1.0_r, 3.0_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e1(4, 0);
+						phys::vclip::edge e2(1, 3);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+							p1,
+							p2,
+							e1,
+							e2
+						);
+
+						expect(upd)
+							.to_be(phys::vclip::algorithm_state_update{
+								.f1 = e1,
+								.f2 = phys::vclip::face({ 0, 2, 3, 1 }),
+								.step = phys::vclip::algorithm_step::Continue,
+								.penetration = 0.0_r
+							}).orr()
+							.to_be(phys::vclip::algorithm_state_update{
+								.f1 = e1,
+								.f2 = phys::vclip::face({ 1, 3, 7, 5 }),
+								.step = phys::vclip::algorithm_step::Continue,
+								.penetration = 0.0_r
+							});
+					});
+
+					it("selects the closest face when the second edge intersects one F-E plane "
+						"and the first edge is reversed", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 1.0_r, 3.0_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e1(0, 4);
+						phys::vclip::edge e2(1, 3);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+							p1,
+							p2,
+							e1,
+							e2
+						);
+
+						expect(upd)
+							.to_be(phys::vclip::algorithm_state_update{
+								.f1 = e1,
+								.f2 = phys::vclip::face({ 0, 2, 3, 1 }),
+								.step = phys::vclip::algorithm_step::Continue,
+								.penetration = 0.0_r
+							}).orr()
+							.to_be(phys::vclip::algorithm_state_update{
+								.f1 = e1,
+								.f2 = phys::vclip::face({ 1, 3, 7, 5 }),
+								.step = phys::vclip::algorithm_step::Continue,
+								.penetration = 0.0_r
+							});
+					});
+
+					it("selects the closest face when the second edge intersects one F-E plane "
+						"and the second edge is reversed", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 1.0_r, 3.0_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e1(4, 0);
+						phys::vclip::edge e2(3, 1);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+							p1,
+							p2,
+							e1,
+							e2
+						);
+
+						expect(upd)
+							.to_be(phys::vclip::algorithm_state_update{
+								.f1 = e1,
+								.f2 = phys::vclip::face({ 0, 2, 3, 1 }),
+								.step = phys::vclip::algorithm_step::Continue,
+								.penetration = 0.0_r
+							}).orr()
+							.to_be(phys::vclip::algorithm_state_update{
+								.f1 = e1,
+								.f2 = phys::vclip::face({ 1, 3, 7, 5 }),
+								.step = phys::vclip::algorithm_step::Continue,
+								.penetration = 0.0_r
+							});
+					});
+
+					it("selects the closest face when the second edge intersects one F-E plane "
+						"and both edges are reversed", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 1.0_r, 3.0_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e1(0, 4);
+						phys::vclip::edge e2(3, 1);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+							p1,
+							p2,
+							e1,
+							e2
+						);
+
+						expect(upd)
+							.to_be(phys::vclip::algorithm_state_update{
+								.f1 = e1,
+								.f2 = phys::vclip::face({ 0, 2, 3, 1 }),
+								.step = phys::vclip::algorithm_step::Continue,
+								.penetration = 0.0_r
+							}).orr()
+							.to_be(phys::vclip::algorithm_state_update{
+								.f1 = e1,
+								.f2 = phys::vclip::face({ 1, 3, 7, 5 }),
+								.step = phys::vclip::algorithm_step::Continue,
+								.penetration = 0.0_r
+							});
+					});
+
+					it("selects the closest face when the second edge intersects one F-E plane "
+						"and the edges are swapped", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 1.0_r, 3.0_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e1(4, 0);
+						phys::vclip::edge e2(1, 3);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+							p2,
+							p1,
+							e2,
+							e1
+						);
+
+						expect(upd)
+							.to_be(phys::vclip::algorithm_state_update{
+								.f1 = phys::vclip::face({ 0, 2, 3, 1 }),
+								.f2 = e1,
+								.step = phys::vclip::algorithm_step::Continue,
+								.penetration = 0.0_r
+							}).orr()
+							.to_be(phys::vclip::algorithm_state_update{
+								.f1 = phys::vclip::face({ 1, 3, 7, 5 }),
+								.f2 = e1,
+								.step = phys::vclip::algorithm_step::Continue,
+								.penetration = 0.0_r
+							});
+					});
+
+					it("terminates when the second edge intersects one F-E plane", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 1.0_r, 3.0_r);
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e1(4, 0);
+						phys::vclip::edge e2(5, 7);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+							p1,
+							p2,
+							e1,
+							e2
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = e1,
+							.f2 = e2,
+							.step = phys::vclip::algorithm_step::Done,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closest vertex when the second edge intersects one V-E plane", [&]() {
+						box_body_2.pos = phys::vec3(2.5_r, 1.0_r, 2.5_r);
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e1(4, 0);
+						phys::vclip::edge e2(5, 7);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+							p1,
+							p2,
+							e1,
+							e2
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = p1.vertices[0],
+							.f2 = e2,
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closest vertex when the second edge intersects one V-E plane "
+						"and the first edge is reversed", [&]() {
+						box_body_2.pos = phys::vec3(2.5_r, 1.0_r, 2.5_r);
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e1(0, 4);
+						phys::vclip::edge e2(5, 7);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+							p1,
+							p2,
+							e1,
+							e2
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = p1.vertices[0],
+							.f2 = e2,
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closest vertex when the second edge intersects one V-E plane "
+						"and the second edge is reversed", [&]() {
+						box_body_2.pos = phys::vec3(2.5_r, 1.0_r, 2.5_r);
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e1(4, 0);
+						phys::vclip::edge e2(7, 5);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+							p1,
+							p2,
+							e1,
+							e2
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = p1.vertices[0],
+							.f2 = e2,
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closest vertex when the second edge intersects one V-E plane "
+						"and both edges are reversed", [&]() {
+						box_body_2.pos = phys::vec3(2.5_r, 1.0_r, 2.5_r);
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e1(0, 4);
+						phys::vclip::edge e2(7, 5);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+							p1,
+							p2,
+							e1,
+							e2
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = p1.vertices[0],
+							.f2 = e2,
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closest vertex when the second edge intersects one V-E plane "
+						"and the edges are swapped", [&]() {
+						box_body_2.pos = phys::vec3(2.5_r, 1.0_r, 2.5_r);
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::edge e1(4, 0);
+						phys::vclip::edge e2(5, 7);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ee_state(
+							p2,
+							p1,
+							e2,
+							e1
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = e2,
+							.f2 = p1.vertices[0],
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+				});
+
+				describe("E-F state handler", []() {
+					after_each([&]() {
+						box_body_1 = {};
+						box_body_2 = {};
+						box_1.half_size = phys::vec3(1.0_r);
+						box_2.half_size = phys::vec3(1.0_r);
+					});
+
+					it("selects the closer edge for an edge clipped on both sides by a face", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 3.5_r, 0.0_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 16.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						box_2.half_size = phys::vec3(2.0_r);
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::edge e(7, 6);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+							p2,
+							p1,
+							e,
+							f
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = e,
+							.f2 = phys::vclip::edge(4, 0),
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closer edge for an edge clipped on both sides by a face "
+						"when the clipped edge is reversed", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 3.5_r, 0.0_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 16.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						box_2.half_size = phys::vec3(2.0_r);
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::edge e(6, 7);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+							p2,
+							p1,
+							e,
+							f
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = e,
+							.f2 = phys::vclip::edge(4, 0),
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closer edge for an edge clipped on both sides by a face (2)", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 3.5_r, 0.0_r);
+						box_body_2.rot = make_rot(-(phys::real)M_PI / 16.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						box_2.half_size = phys::vec3(2.0_r);
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::edge e(7, 6);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+							p2,
+							p1,
+							e,
+							f
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = e,
+							.f2 = phys::vclip::edge(1, 5),
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closer edge for an edge clipped on both sides by a face "
+						"when the clipped edge is reversed (2)", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 3.5_r, 0.0_r);
+						box_body_2.rot = make_rot(-(phys::real)M_PI / 16.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						box_2.half_size = phys::vec3(2.0_r);
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::edge e(6, 7);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+							p2,
+							p1,
+							e,
+							f
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = e,
+							.f2 = phys::vclip::edge(1, 5),
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("does not terminate for an edge clipped on both sides and closest to the face", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 3.5_r, 0.0_r);
+						box_body_2.calculate_derived_data();
+						box_2.half_size = phys::vec3(2.0_r);
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::edge e(7, 6);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+							p2,
+							p1,
+							e,
+							f
+						);
+
+						expect(upd)
+							.to_be(phys::vclip::algorithm_state_update{
+								.f1 = e,
+								.f2 = phys::vclip::edge(1, 5),
+								.step = phys::vclip::algorithm_step::Continue,
+								.penetration = 0.0_r
+							}).orr()
+							.to_be(phys::vclip::algorithm_state_update{
+								.f1 = e,
+								.f2 = phys::vclip::edge(0, 4),
+								.step = phys::vclip::algorithm_step::Continue,
+								.penetration = 0.0_r
+							});
+					});
+
+					it("does not terminate for an edge clipped on both sides and closest to the face "
+						"when the clipped edge is reversed", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 3.5_r, 0.0_r);
+						box_body_2.calculate_derived_data();
+						box_2.half_size = phys::vec3(2.0_r);
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::edge e(6, 7);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+							p2,
+							p1,
+							e,
+							f
+						);
+
+						expect(upd)
+							.to_be(phys::vclip::algorithm_state_update{
+								.f1 = e,
+								.f2 = phys::vclip::edge(1, 5),
+								.step = phys::vclip::algorithm_step::Continue,
+								.penetration = 0.0_r
+							}).orr()
+							.to_be(phys::vclip::algorithm_state_update{
+								.f1 = e,
+								.f2 = phys::vclip::edge(0, 4),
+								.step = phys::vclip::algorithm_step::Continue,
+								.penetration = 0.0_r
+							});
+					});
+
+					it("terminates for an edge clipped on both sides and penetrating the face", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 3.0_r, 0.0_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 16.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						box_2.half_size = phys::vec3(2.0_r);
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::edge e(7, 6);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+							p2,
+							p1,
+							e,
+							f
+						);
+
+						expect(upd.f1).to_be(e);
+						expect(upd.f2).to_be(f);
+						expect(upd.step).to_be(phys::vclip::algorithm_step::Penetration);
+						expect(upd.penetration).to_be_less_than(0.0_r);
+					});
+
+					it("terminates for an edge clipped on both sides and penetrating the face "
+						"when the clipped edge is reversed", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 3.0_r, 0.0_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 16.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						box_2.half_size = phys::vec3(2.0_r);
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::edge e(6, 7);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+							p2,
+							p1,
+							e,
+							f
+						);
+
+						expect(upd.f1).to_be(e);
+						expect(upd.f2).to_be(f);
+						expect(upd.step).to_be(phys::vclip::algorithm_step::Penetration);
+						expect(upd.penetration).to_be_less_than(0.0_r);
+					});
+
+					it("selects the closest vertex for an edge penetrating one of a face's F-E planes", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 2.5_r, 0.0_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::edge e(7, 6);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+							p2,
+							p1,
+							e,
+							f
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = p2.vertices[6],
+							.f2 = f,
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closest edge for an edge penetrating one of a face's F-E planes", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 2.5_r, 1.0_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 16.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::edge e(7, 6);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+							p2,
+							p1,
+							e,
+							f
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = e,
+							.f2 = phys::vclip::edge(0, 4),
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("reports penetration for an edge penetrating one of a face's F-E planes", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 1.5_r, 1.0_r);
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::edge e(5, 7);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+							p2,
+							p1,
+							e,
+							f
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = e,
+							.f2 = f,
+							.step = phys::vclip::algorithm_step::Penetration,
+							.penetration = -0.5_r
+						});
+					});
+
+					it("does not report penetration for support plane violation outside of the plane's Voronoi region", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 2.5_r, 1.0_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						box_2.half_size = phys::vec3(1.0_r, 1.0_r, 5.0_r);
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::edge e(7, 6);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+							p2,
+							p1,
+							e,
+							f
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = e,
+							.f2 = phys::vclip::edge(0, 4),
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closest edge on the face when the edge is simply excluded from the face", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 1.0_r, 2.5_r);
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::edge e(7, 3);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+							p2,
+							p1,
+							e,
+							f
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = e,
+							.f2 = phys::vclip::edge(0, 4),
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closest edge on the face when the edge is simply excluded from the face (2)", [&]() {
+						box_body_2.pos = phys::vec3(1.0_r, 1.0_r, -1.5_r);
+						box_body_2.calculate_derived_data();
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::edge e(7, 3);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+							p2,
+							p1,
+							e,
+							f
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = e,
+							.f2 = phys::vclip::edge(1, 5),
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
+					});
+
+					it("selects the closest edge on the face when the edge is excluded (compound) from the face", [&]() {
+						box_body_2.pos = phys::vec3(2.5_r);
+						box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
+						box_body_2.calculate_derived_data();
+						box_2.half_size = phys::vec3(2.0_r, 1.0_r, 1.0_r);
+						phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+						phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+						phys::vclip::face f({ 0, 1, 5, 4 });
+						phys::vclip::edge e(3, 7);
+
+						phys::vclip::algorithm_state_update upd = phys::vclip::ef_state(
+							p2,
+							p1,
+							e,
+							f
+						);
+
+						expect(upd).to_be(phys::vclip::algorithm_state_update{
+							.f1 = e,
+							.f2 = phys::vclip::edge(0, 1),
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						}).orr().to_be(phys::vclip::algorithm_state_update{
+							.f1 = e,
+							.f2 = phys::vclip::edge(4, 0),
+							.step = phys::vclip::algorithm_step::Continue,
+							.penetration = 0.0_r
+						});
 					});
 				});
 			});

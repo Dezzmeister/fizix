@@ -165,6 +165,11 @@ namespace phys {
 			feature f2;
 			algorithm_step step;
 			real penetration{};
+
+			friend bool operator==(
+				const algorithm_state_update &upd1,
+				const algorithm_state_update &upd2
+			);
 		};
 
 		algorithm_state_update vv_state(
@@ -234,6 +239,13 @@ namespace phys {
 			std::optional<clip_result> prev_result = {}
 		);
 
+		// Algorithm 2 in the paper
+		std::optional<feature> deriv_check(
+			const polyhedron &p_e,
+			const polyhedron &p_f,
+			const clip_result &cr
+		);
+
 		class geometry_error : public std::runtime_error {
 		public:
 			const feature offending_feature;
@@ -261,6 +273,9 @@ namespace traits {
 
 	template <>
 	std::string to_string(const phys::vclip::clip_result &cr, size_t indent);
+
+	template <>
+	std::string to_string(const phys::vclip::algorithm_state_update &upd, size_t indent);
 }
 
 inline std::ranges::view auto phys::vclip::vertex::edges(const polyhedron &p) const & {
