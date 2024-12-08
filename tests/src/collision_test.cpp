@@ -4,6 +4,7 @@
 #include "physics/collision/contact_generator.h"
 #include "physics/collision/primitives.h"
 #include "physics/collision/vclip.h"
+#include "platform/platform.h"
 #include "test.h"
 
 using namespace test;
@@ -957,6 +958,87 @@ void setup_collision_tests() {
 						.to_be(phys::vclip::face({ 3, 4, 1, 2 })).annd()
 						.to_be(phys::vclip::face({ 4, 1, 2, 3 })).annd()
 						.naht().to_be(phys::vclip::face({ 1, 3, 2, 4 }));
+				});
+
+				it("fails to validate a polyhedron with a missing face (an open polyhedron)", []() {
+					// A pyramid missing the bottom face
+					phys::vclip::polyhedron p{
+						.vertices = {
+							phys::vclip::vertex(phys::vec3(1.0_r, 0.0_r, 0.0_r), 0),
+							phys::vclip::vertex(phys::vec3(0.0_r, 0.0_r, 1.0_r), 1),
+							phys::vclip::vertex(phys::vec3(0.0_r, 0.0_r, -1.0_r), 2),
+							phys::vclip::vertex(phys::vec3(0.0_r, 1.0_r, 0.0_r), 3)
+						},
+						.edges = {
+							phys::vclip::edge(0, 1),
+							phys::vclip::edge(1, 2),
+							phys::vclip::edge(2, 0),
+							phys::vclip::edge(0, 3),
+							phys::vclip::edge(1, 3),
+							phys::vclip::edge(2, 3)
+						},
+						.faces = {
+							phys::vclip::face({ 0, 3, 1 }),
+							phys::vclip::face({ 1, 3, 2 }),
+							phys::vclip::face({ 2, 3, 0 }),
+							// (0, 1, 2) is missing
+						}
+					};
+
+					expect(p.euler_characteristic()).naht().to_be(2);
+					try {
+						// TODO: Callable matcher with `to_throw`
+						p.validate();
+						fail_msg("Expected polyhedron validation to fail");
+					} catch (const phys::vclip::geometry_error &err) {
+						expect(err.offending_feature)
+							.to_be(phys::vclip::edge(0, 1)).orr()
+							.to_be(phys::vclip::edge(1, 2)).orr()
+							.to_be(phys::vclip::edge(2, 0));
+					}
+				});
+
+				it("fails to validate a polyhedron with a missing face (an open polyhedron)", []() {
+					// A pyramid, but the bottom face has been replaced with three non-convex faces
+					phys::vclip::polyhedron p{
+						.vertices = {
+							phys::vclip::vertex(phys::vec3(1.0_r, 0.0_r, 0.0_r), 0),
+							phys::vclip::vertex(phys::vec3(0.0_r, 0.0_r, 1.0_r), 1),
+							phys::vclip::vertex(phys::vec3(0.0_r, 0.0_r, -1.0_r), 2),
+							phys::vclip::vertex(phys::vec3(0.0_r, 1.0_r, 0.0_r), 3),
+							phys::vclip::vertex(phys::vec3(0.0_r, 0.1_r, 0.0_r), 4)
+						},
+						.edges = {
+							phys::vclip::edge(0, 1),
+							phys::vclip::edge(1, 2),
+							phys::vclip::edge(2, 0),
+							phys::vclip::edge(0, 3),
+							phys::vclip::edge(1, 3),
+							phys::vclip::edge(2, 3),
+							phys::vclip::edge(0, 4),
+							phys::vclip::edge(1, 4),
+							phys::vclip::edge(2, 4)
+						},
+						.faces = {
+							phys::vclip::face({ 0, 3, 1 }),
+							phys::vclip::face({ 1, 3, 2 }),
+							phys::vclip::face({ 2, 3, 0 }),
+							phys::vclip::face({ 0, 1, 4 }),
+							phys::vclip::face({ 2, 4, 1 }),
+							phys::vclip::face({ 0, 4, 2 })
+						}
+					};
+
+					try {
+						// TODO: Callable matcher with `to_throw`
+						p.validate();
+						fail_msg("Expected polyhedron validation to fail");
+					} catch (const phys::vclip::geometry_error &err) {
+						expect(err.offending_feature)
+							.to_be(phys::vclip::edge(0, 4)).orr()
+							.to_be(phys::vclip::edge(1, 4)).orr()
+							.to_be(phys::vclip::edge(2, 4));
+					}
 				});
 
 				describe("for a box", []() {
@@ -2643,7 +2725,7 @@ void setup_collision_tests() {
 						box_2.half_size = phys::vec3(1.0_r);
 					});
 
-					it("selects the closest face when the second edge intersects one F-E plane", [&]() {
+					it("terminates when the second edge intersects one F-E plane", [&]() {
 						box_body_2.pos = phys::vec3(1.0_r, 1.0_r, 3.0_r);
 						box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
 						box_body_2.calculate_derived_data();
@@ -2662,19 +2744,13 @@ void setup_collision_tests() {
 						expect(state)
 							.to_be(phys::vclip::algorithm_state{
 								.f1 = e1,
-								.f2 = phys::vclip::face({ 0, 2, 3, 1 }),
-								.step = phys::vclip::algorithm_step::Continue,
-								.penetration = 0.0_r
-							}).orr()
-							.to_be(phys::vclip::algorithm_state{
-								.f1 = e1,
-								.f2 = phys::vclip::face({ 1, 3, 7, 5 }),
-								.step = phys::vclip::algorithm_step::Continue,
+								.f2 = e2,
+								.step = phys::vclip::algorithm_step::Done,
 								.penetration = 0.0_r
 							});
 					});
 
-					it("selects the closest face when the second edge intersects one F-E plane "
+					it("terminates when the second edge intersects one F-E plane "
 						"and the first edge is reversed", [&]() {
 						box_body_2.pos = phys::vec3(1.0_r, 1.0_r, 3.0_r);
 						box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
@@ -2694,19 +2770,13 @@ void setup_collision_tests() {
 						expect(state)
 							.to_be(phys::vclip::algorithm_state{
 								.f1 = e1,
-								.f2 = phys::vclip::face({ 0, 2, 3, 1 }),
-								.step = phys::vclip::algorithm_step::Continue,
-								.penetration = 0.0_r
-							}).orr()
-							.to_be(phys::vclip::algorithm_state{
-								.f1 = e1,
-								.f2 = phys::vclip::face({ 1, 3, 7, 5 }),
-								.step = phys::vclip::algorithm_step::Continue,
+								.f2 = e2,
+								.step = phys::vclip::algorithm_step::Done,
 								.penetration = 0.0_r
 							});
 					});
 
-					it("selects the closest face when the second edge intersects one F-E plane "
+					it("terminates when the second edge intersects one F-E plane "
 						"and the second edge is reversed", [&]() {
 						box_body_2.pos = phys::vec3(1.0_r, 1.0_r, 3.0_r);
 						box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
@@ -2726,19 +2796,13 @@ void setup_collision_tests() {
 						expect(state)
 							.to_be(phys::vclip::algorithm_state{
 								.f1 = e1,
-								.f2 = phys::vclip::face({ 0, 2, 3, 1 }),
-								.step = phys::vclip::algorithm_step::Continue,
-								.penetration = 0.0_r
-							}).orr()
-							.to_be(phys::vclip::algorithm_state{
-								.f1 = e1,
-								.f2 = phys::vclip::face({ 1, 3, 7, 5 }),
-								.step = phys::vclip::algorithm_step::Continue,
+								.f2 = e2,
+								.step = phys::vclip::algorithm_step::Done,
 								.penetration = 0.0_r
 							});
 					});
 
-					it("selects the closest face when the second edge intersects one F-E plane "
+					it("terminates when the second edge intersects one F-E plane "
 						"and both edges are reversed", [&]() {
 						box_body_2.pos = phys::vec3(1.0_r, 1.0_r, 3.0_r);
 						box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
@@ -2758,19 +2822,13 @@ void setup_collision_tests() {
 						expect(state)
 							.to_be(phys::vclip::algorithm_state{
 								.f1 = e1,
-								.f2 = phys::vclip::face({ 0, 2, 3, 1 }),
-								.step = phys::vclip::algorithm_step::Continue,
-								.penetration = 0.0_r
-							}).orr()
-							.to_be(phys::vclip::algorithm_state{
-								.f1 = e1,
-								.f2 = phys::vclip::face({ 1, 3, 7, 5 }),
-								.step = phys::vclip::algorithm_step::Continue,
+								.f2 = e2,
+								.step = phys::vclip::algorithm_step::Done,
 								.penetration = 0.0_r
 							});
 					});
 
-					it("selects the closest face when the second edge intersects one F-E plane "
+					it("terminates when the second edge intersects one F-E plane "
 						"and the edges are swapped", [&]() {
 						box_body_2.pos = phys::vec3(1.0_r, 1.0_r, 3.0_r);
 						box_body_2.rot = make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r));
@@ -2789,15 +2847,9 @@ void setup_collision_tests() {
 
 						expect(state)
 							.to_be(phys::vclip::algorithm_state{
-								.f1 = phys::vclip::face({ 0, 2, 3, 1 }),
+								.f1 = e2,
 								.f2 = e1,
-								.step = phys::vclip::algorithm_step::Continue,
-								.penetration = 0.0_r
-							}).orr()
-							.to_be(phys::vclip::algorithm_state{
-								.f1 = phys::vclip::face({ 1, 3, 7, 5 }),
-								.f2 = e1,
-								.step = phys::vclip::algorithm_step::Continue,
+								.step = phys::vclip::algorithm_step::Done,
 								.penetration = 0.0_r
 							});
 					});
@@ -3336,6 +3388,198 @@ void setup_collision_tests() {
 							.penetration = 0.0_r
 						});
 					});
+				});
+			});
+
+			describe("collision detection", []() {
+				after_each([&]() {
+					box_body_1 = {};
+					box_body_2 = {};
+					box_1.half_size = phys::vec3(1.0_r);
+					box_2.half_size = phys::vec3(1.0_r);
+				});
+
+				it("always reports penetration", [&]() {
+					box_body_2.pos = phys::vec3(0.0_r, 2.0_r, 1.0_r);
+					box_body_2.rot = make_rot(-(phys::real)M_PI / 16.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r)) *
+						make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 0.0_r, 1.0_r));
+					box_body_2.calculate_derived_data();
+					box_body_1.calculate_derived_data();
+					phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+					phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+
+					p1.validate();
+					p2.validate();
+
+					for (const phys::vclip::feature &f1 : p1.features()) {
+						for (const phys::vclip::feature &f2 : p2.features()) {
+							if (std::holds_alternative<phys::vclip::face>(f1) && std::holds_alternative<phys::vclip::face>(f2)) {
+								continue;
+							}
+
+							phys::vclip::algorithm_result result = phys::vclip::closest_features(
+								p1,
+								p2,
+								f1,
+								f2,
+								52
+							);
+
+							expect(result.state)
+								.to_be(phys::vclip::algorithm_state{
+									.f1 = phys::vclip::face({ 0, 4, 6, 2 }),
+									.f2 = phys::vclip::edge(6, 7),
+									.step = phys::vclip::algorithm_step::Penetration,
+									.penetration = -0.704886_r
+								}).orr()
+								.to_be(phys::vclip::algorithm_state{
+									.f1 = phys::vclip::face({ 0, 4, 6, 2 }),
+									.f2 = p2.vertices[7],
+									.step = phys::vclip::algorithm_step::Penetration,
+									.penetration = -0.582130_r
+								}).orr()
+								.to_be(phys::vclip::algorithm_state{
+									.f1 = phys::vclip::face({ 0, 1, 5, 4 }),
+									.f2 = p2.vertices[7],
+									.step = phys::vclip::algorithm_step::Penetration,
+									.penetration = -0.582130_r
+								}).orr()
+								.to_be(phys::vclip::algorithm_state{
+									.f1 = phys::vclip::face({ 0, 1, 5, 4 }),
+									.f2 = phys::vclip::edge(3, 7),
+									.step = phys::vclip::algorithm_step::Penetration,
+									.penetration = -0.582130_r
+								}).orr()
+								.to_be(phys::vclip::algorithm_state{
+									.f1 = phys::vclip::face({ 0, 1, 5, 4 }),
+									.f2 = phys::vclip::edge(5, 7),
+									.step = phys::vclip::algorithm_step::Penetration,
+									.penetration = -0.582130_r
+								}).orr()
+								.to_be(phys::vclip::algorithm_state{
+									.f1 = phys::vclip::edge(0, 4),
+									.f2 = phys::vclip::face({ 4, 5, 7, 6 }),
+									.step = phys::vclip::algorithm_step::Penetration,
+									.penetration = -0.612960_r
+								}).orr()
+								.to_be(phys::vclip::algorithm_state{
+									.f1 = phys::vclip::edge(0, 4),
+									.f2 = phys::vclip::face({ 2, 6, 7, 3 }),
+									.step = phys::vclip::algorithm_step::Penetration,
+									.penetration = -0.612960_r
+								});
+						}
+					}
+				});
+
+				it("always reports penetration (2)", [&]() {
+					box_body_2.pos = phys::vec3(0.0_r, 2.0_r, 1.0_r);
+					box_body_2.rot = make_rot(-(phys::real)M_PI / 20.0_r, phys::vec3(0.0_r, 1.0_r, 0.0_r)) *
+						make_rot(-(phys::real)M_PI / 16.0_r, phys::vec3(1.0_r, 0.0_r, 0.0_r)) *
+						make_rot((phys::real)M_PI / 4.0_r, phys::vec3(0.0_r, 0.0_r, 1.0_r));
+					box_body_2.calculate_derived_data();
+					box_body_1.calculate_derived_data();
+					phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+					phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+
+					p1.validate();
+					p2.validate();
+
+					for (const phys::vclip::feature &f1 : p1.features()) {
+						for (const phys::vclip::feature &f2 : p2.features()) {
+							if (
+								std::holds_alternative<phys::vclip::face>(f1) &&
+								std::holds_alternative<phys::vclip::face>(f2)
+							) {
+								continue;
+							}
+
+							phys::vclip::algorithm_result result = phys::vclip::closest_features(
+								p1,
+								p2,
+								f1,
+								f2,
+								52
+							);
+
+							expect(result.state)
+								.to_be(phys::vclip::algorithm_state{
+									.f1 = phys::vclip::face({ 0, 4, 6, 2 }),
+									.f2 = phys::vclip::edge(6, 7),
+									.step = phys::vclip::algorithm_step::Penetration,
+									.penetration = -0.696208_r
+								}).orr()
+								.to_be(phys::vclip::algorithm_state{
+									.f1 = phys::vclip::face({ 0, 4, 6, 2 }),
+									.f2 = p2.vertices[7],
+									.step = phys::vclip::algorithm_step::Penetration,
+									.penetration = -0.582130_r
+								}).orr()
+								.to_be(phys::vclip::algorithm_state{
+									.f1 = phys::vclip::face({ 0, 1, 5, 4 }),
+									.f2 = p2.vertices[7],
+									.step = phys::vclip::algorithm_step::Penetration,
+									.penetration = -0.582130_r
+								}).orr()
+								.to_be(phys::vclip::algorithm_state{
+									.f1 = phys::vclip::face({ 0, 1, 5, 4 }),
+									.f2 = phys::vclip::edge(3, 7),
+									.step = phys::vclip::algorithm_step::Penetration,
+									.penetration = -0.582130_r
+								}).orr()
+								.to_be(phys::vclip::algorithm_state{
+									.f1 = phys::vclip::face({ 0, 1, 5, 4 }),
+									.f2 = phys::vclip::edge(5, 7),
+									.step = phys::vclip::algorithm_step::Penetration,
+									.penetration = -0.582130_r
+								}).orr()
+								.to_be(phys::vclip::algorithm_state{
+									.f1 = phys::vclip::edge(0, 4),
+									.f2 = phys::vclip::face({ 4, 5, 7, 6 }),
+									.step = phys::vclip::algorithm_step::Penetration,
+									.penetration = -0.632504_r
+								}).orr()
+								.to_be(phys::vclip::algorithm_state{
+									.f1 = phys::vclip::edge(0, 4),
+									.f2 = phys::vclip::face({ 2, 6, 7, 3 }),
+									.step = phys::vclip::algorithm_step::Penetration,
+									.penetration = -0.594588_r
+								});
+						}
+					}
+				});
+
+				it("always terminates when the boxes are not penetrating", [&]() {
+					box_body_2.pos = phys::vec3(-1.0_r, -4.0_r, 0.0_r);
+
+					box_body_2.calculate_derived_data();
+
+					phys::vclip::polyhedron p1 = box_1.to_polyhedron();
+					phys::vclip::polyhedron p2 = box_2.to_polyhedron();
+
+					p1.validate();
+					p2.validate();
+
+					for (const phys::vclip::feature &f1 : p1.features()) {
+						for (const phys::vclip::feature &f2 : p2.features()) {
+							if (
+								std::holds_alternative<phys::vclip::face>(f1) &&
+								std::holds_alternative<phys::vclip::face>(f2)
+							) {
+								continue;
+							}
+
+							phys::vclip::algorithm_result result = phys::vclip::closest_features(
+								p1,
+								p2,
+								f1,
+								f2,
+								52
+							);
+
+							expect(result.state.step).to_be(phys::vclip::algorithm_step::Done);
+						}
+					}
 				});
 			});
 		});

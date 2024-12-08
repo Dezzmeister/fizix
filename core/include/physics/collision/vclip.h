@@ -20,9 +20,11 @@ namespace phys {
 		struct face;
 		struct vplane;
 
-		// A collection of features, defined with reference to a set of vertices
+		// A collection of features, defined with reference to a set of vertices.
+		// A polyhedron must be convex. `validate()` will verify that the polyhedron
+		// is convex and closed.
 		struct polyhedron {
-			const std::vector<vertex> vertices{};
+			std::vector<vertex> vertices{};
 			const std::vector<edge> edges{};
 			const std::vector<face> faces{};
 
@@ -31,6 +33,9 @@ namespace phys {
 			void validate() const;
 			void validate_references() const;
 			void validate_geometry() const;
+
+			std::ranges::range auto features() const &;
+			std::ranges::range auto features() const && = delete;
 		};
 
 		template <typename T>
@@ -159,6 +164,18 @@ namespace phys {
 			);
 		};
 
+		struct algorithm_result {
+			const polyhedron &p1;
+			const polyhedron &p2;
+			algorithm_state state;
+
+			algorithm_result(
+				const polyhedron &_p1,
+				const polyhedron &_p2,
+				algorithm_state &_state
+			);
+		};
+
 		algorithm_state vv_state(
 			const polyhedron &p_v1,
 			const polyhedron &p_v2,
@@ -192,6 +209,14 @@ namespace phys {
 			const polyhedron &p_f,
 			const edge &e,
 			const face &f
+		);
+
+		algorithm_result closest_features(
+			const polyhedron &p1,
+			const polyhedron &p2,
+			const feature &_f1,
+			const feature &_f2,
+			size_t max_steps = SIZE_MAX
 		);
 
 		struct clip_result {
@@ -253,6 +278,9 @@ namespace traits {
 	std::string to_string(const phys::vclip::face &f, size_t indent);
 
 	template <>
+	std::string to_string(const phys::vclip::polyhedron &p, size_t indent);
+
+	template <>
 	std::string to_string(const phys::vclip::vplane &vp, size_t indent);
 
 	template <>
@@ -263,6 +291,24 @@ namespace traits {
 
 	template <>
 	std::string to_string(const phys::vclip::algorithm_state &upd, size_t indent);
+
+	template <>
+	std::string to_string(const phys::vclip::algorithm_result &result, size_t indent);
+}
+
+inline std::ranges::range auto phys::vclip::polyhedron::features() const & {
+	auto to_feature =
+		[&]<typename T>(const T &t) {
+			return feature(t);
+		};
+
+	return util::concat_views(
+		vertices | std::ranges::views::transform(to_feature),
+		util::concat_views(
+			edges | std::ranges::views::transform(to_feature),
+			faces | std::ranges::views::transform(to_feature)
+		)
+	);
 }
 
 inline std::ranges::view auto phys::vclip::vertex::edges(const polyhedron &p) const & {

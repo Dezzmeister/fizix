@@ -43,6 +43,9 @@ namespace traits {
 	std::string to_string(const char * const &s, size_t indent);
 
 	template <>
+	std::string to_string(const unsigned char * const &s, size_t indent);
+
+	template <>
 	std::string to_string(const std::string &s, size_t indent);
 
 	template <>

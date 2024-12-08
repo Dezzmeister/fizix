@@ -1,4 +1,5 @@
 #include <algorithm>
+#include "logging.h"
 #include "physics/collision/vclip.h"
 #include "util.h"
 
@@ -12,6 +13,10 @@ namespace phys {
 			algorithm_step step{ algorithm_step::Continue };
 		};
 
+		real dp(const vec3 &v, const vec3 &p_pos, const vec3 &p_dir) {
+			return dot(v - p_pos, p_dir);
+		}
+
 		clip_result clip_edge(
 			const polyhedron &p_e,
 			const edge &e,
@@ -23,12 +28,14 @@ namespace phys {
 
 			if (prev_result) {
 				out = *prev_result;
+				out.e = e;
+				out.f = f;
 			}
 
 			for (const vplane &vp : vps) {
 				const feature &n = vp.other(f);
-				real dt = -vp.dist_from(e.t(p_e).v);
-				real dh = -vp.dist_from(e.h(p_e).v);
+				real dt = -dp(e.t(p_e).v, vp.pos, vp.dir);
+				real dh = -dp(e.h(p_e).v, vp.pos, vp.dir);
 
 				if (dt < 0 && dh < 0) {
 					out.n1 = n;
@@ -65,24 +72,59 @@ namespace phys {
 			out.is_clipped = true;
 			return out;
 		}
-
-		real edge_dist_deriv(
+		std::optional<feature> deriv_check(
 			const polyhedron &p_e,
 			const polyhedron &p_f,
-			const clip_result &cr,
-			const real l
+			const clip_result &cr
 		) {
 			vec3 u = cr.e.t(p_e).v - cr.e.h(p_e).v;
 			const feature * f = &cr.f;
 
 			if (std::holds_alternative<edge>(*f)) {
-				real dl = l - cr.l1;
-				real dr = cr.l2 - l;
-				const std::optional<feature> &f_opt = dl < dr ? cr.n1 : cr.n2;
+				const edge &f_e = std::get<edge>(*f);
 
-				assert(!! f_opt);
+				if (cr.n1 && ! cr.n2) {
+					f = &(*cr.n1);
+				} else if (cr.n2 && ! cr.n1) {
+					f = &(*cr.n2);
+				} else if (cr.n1 && cr.n2) {
+					real d1;
+					real d2;
 
-				f = &(*f_opt);
+					if (std::holds_alternative<vertex>(*cr.n1)) {
+						const vertex &v = std::get<vertex>(*cr.n1);
+
+						d1 = dot(u, cr.e.at(p_e, cr.l1) - v.v);
+					} else {
+						assert(std::holds_alternative<face>(*cr.n1));
+
+						const face &f1 = std::get<face>(*cr.n1);
+						vec3 f_pos = f_e.t(p_f).v;
+						d1 = dp(cr.e.at(p_e, cr.l1), f_pos, f1.normal(p_f));
+					}
+
+					if (std::holds_alternative<vertex>(*cr.n2)) {
+						const vertex &v = std::get<vertex>(*cr.n2);
+
+						d2 = dot(u, cr.e.at(p_e, cr.l2) - v.v);
+					} else {
+						assert(std::holds_alternative<face>(*cr.n2));
+
+						const face &f2 = std::get<face>(*cr.n2);
+						vec3 f_pos = f_e.t(p_f).v;
+						d2 = dp(cr.e.at(p_e, cr.l2), f_pos, f2.normal(p_f));
+					}
+
+					if (d1 < d2) {
+						f = &(*cr.n1);
+					} else if (d2 < d1) {
+						f = &(*cr.n2);
+					} else {
+						return std::nullopt;
+					}
+				} else {
+					return std::nullopt;
+				}
 
 				assert(! std::holds_alternative<edge>(*f));
 			}
@@ -90,30 +132,25 @@ namespace phys {
 			if (std::holds_alternative<vertex>(*f)) {
 				const vertex &v = std::get<vertex>(*f);
 
-				return dot(u, cr.e.at(p_e, l) - v.v);
+				real d1 = dot(u, cr.e.at(p_e, cr.l1) - v.v);
+				real d2 = dot(u, cr.e.at(p_e, cr.l2) - v.v);
+
+				if (cr.n1 && d1 > 0) {
+					return cr.n1;
+				} else if (cr.n2 && d2 < 0) {
+					return cr.n2;
+				}
+
+				return std::nullopt;
 			}
 
 			const face &fa = std::get<face>(*f);
-			vec3 at = cr.e.at(p_e, l);
 			vec3 n = fa.normal(p_f);
-			// TODO: Consolidate plane/vector distance functions
-			real d = dot(at - p_f.vertices[fa.verts[0]].v, n);
+			real un = dot(u, n);
 
-			if (d > 0) {
-				return dot(u, n);
-			}
-
-			return -dot(u, n);
-		}
-
-		std::optional<feature> deriv_check(
-			const polyhedron &p_e,
-			const polyhedron &p_f,
-			const clip_result &cr
-		) {
-			if (cr.n1 && edge_dist_deriv(p_e, p_f, cr, cr.l1) > 0) {
+			if (cr.n1 && un < 0) {
 				return cr.n1;
-			} else if (cr.n2 && edge_dist_deriv(p_e, p_f, cr, cr.l2) < 0) {
+			} else if (cr.n2 && un > 0) {
 				return cr.n2;
 			}
 
@@ -131,7 +168,7 @@ namespace phys {
 
 			for (const face &fp : p_f.faces) {
 				vec3 n = fp.normal(p_f);
-				real d = dot(v.v - p_f.vertices[fp.verts[0]].v, n);
+				real d = dp(v.v, p_f.vertices[fp.verts[0]].v, n);
 
 				if (d > d_max) {
 					d_max = d;
@@ -193,7 +230,38 @@ namespace phys {
 					);
 				}
 			}
-			// TODO: Verify that the polyhedron is closed and convex
+
+			for (const edge &e : edges) {
+				std::vector<face> neighbors = e.faces(*this) | std::ranges::to<std::vector>();
+
+				if (neighbors.size() != 2) {
+					throw geometry_error(e,
+						"Edge does not have two neighboring faces: " + traits::to_string(neighbors.size())
+					);
+				}
+
+				const face &f1 = neighbors[0];
+				const face &f2 = neighbors[1];
+				const edge &f1e = f1.get_ccw(e);
+				const vec3 bt1 = normalize(f1e.h(*this).v - f1e.t(*this).v);
+				const vec3 n1 = f1.normal(*this);
+				const vec3 n2 = f2.normal(*this);
+
+				// TODO: Verify that the face normals are smooth and that the polyhedron is
+				// not self-intersecting
+
+				// Vectors tangent to the face, pointing from the edge to the other
+				// side of the face
+				const vec3 tan1 = cross(n1, bt1);
+				const vec3 tan2 = cross(n2, -bt1);
+				const vec3 avg_n = (n1 + n2) / 2.0_r;
+
+				// For a non-convex shape that does not self-intersect, there must be at
+				// least one edge whose two faces point "towards" each other
+				if (dot(avg_n, tan1) > 0.0_r || dot(avg_n, tan2) > 0.0_r) {
+					throw geometry_error(e, "Edge has non-convex neighbor faces");
+				}
+			}
 		}
 
 		vertex::vertex(const vec3 &_v, size_t _i) :
@@ -515,7 +583,7 @@ namespace phys {
 			std::optional<edge> max_edge{};
 
 			for (const vplane &vp : vps) {
-				real vp_violation = dot(v.v - vp.pos, vp.dir);
+				real vp_violation = dp(v.v, vp.pos, vp.dir);
 
 				if (vp_violation > violation) {
 					violation = vp_violation;
@@ -532,11 +600,11 @@ namespace phys {
 			}
 
 			vec3 f_norm = f.normal(p_f);
-			real dpv = dot(v.v - p_f.vertices[f.verts[0]].v, f_norm);
+			real dpv = dp(v.v, p_f.vertices[f.verts[0]].v, f_norm);
 
 			for (const edge &e : v.edges(p_v)) {
 				vec3 vp = e.v_is[0] == v.i ? e.h(p_v).v : e.t(p_v).v;
-				real dpvp = dot(vp - p_f.vertices[f.verts[0]].v, f_norm);
+				real dpvp = dp(vp, p_f.vertices[f.verts[0]].v, f_norm);
 
 				// The algorithm as described in the paper compares the magnitudes of Dp(v)
 				// and Dp(vp) here, but that would be incorrect if this vertex does not
@@ -681,7 +749,20 @@ namespace phys {
 					assert(std::holds_alternative<vertex>(*next_f));
 
 					min_f = next_f;
-					vps = std::get<vertex>(*min_f).ve_planes(p_f);
+					std::vector<vplane> all_vps = std::get<vertex>(*min_f).ve_planes(p_f);
+
+					vps.clear();
+
+					for (const vplane &vp : all_vps) {
+						assert(std::holds_alternative<edge>(vp.f2));
+
+						if (f.has_edge(std::get<edge>(vp.f2))) {
+							vps.push_back(vp);
+						}
+					}
+
+					assert(! vps.empty());
+
 					cr = clip_edge(p_e, e, *min_f, vps);
 					next_f = deriv_check(p_e, p_f, cr);
 				}
@@ -708,12 +789,16 @@ namespace phys {
 				};
 			}
 
-			if (edge_dist_deriv(p_e, p_f, cr, cr.l1) <= 0) {
+			vec3 u = e.t(p_e).v - e.h(p_e).v;
+			real un = dot(u, n);
+			bool below_support = d1 < 0 && d2 < 0;
+
+			if ((un < 0) != below_support) {
 				if (cr.n1) {
 					return algorithm_state{
 						.f1 = e,
 						.f2 = *cr.n1,
-						.step = algorithm_step::Continue,
+						.step = algorithm_step::Continue
 					};
 				} else {
 					return algorithm_state{
@@ -767,6 +852,90 @@ namespace phys {
 			std::runtime_error(message),
 			offending_feature(_offending_feature)
 		{}
+
+		algorithm_result::algorithm_result(
+			const polyhedron &_p1,
+			const polyhedron &_p2,
+			algorithm_state &_state
+		) :
+			p1(_p1),
+			p2(_p2),
+			state(_state)
+		{}
+
+		algorithm_state update_state(
+			const polyhedron &p1,
+			const polyhedron &p2,
+			const algorithm_state &old
+		) {
+			if (std::holds_alternative<vertex>(old.f1)) {
+				const vertex &v1 = std::get<vertex>(old.f1);
+
+				if (std::holds_alternative<vertex>(old.f2)) {
+					return vv_state(p1, p2, v1, std::get<vertex>(old.f2));
+				} else if (std::holds_alternative<edge>(old.f2)) {
+					return ve_state(p1, p2, v1, std::get<edge>(old.f2));
+				} else {
+					return vf_state(p1, p2, v1, std::get<face>(old.f2));
+				}
+			} else if (std::holds_alternative<edge>(old.f1)) {
+				const edge &e1 = std::get<edge>(old.f1);
+
+				if (std::holds_alternative<vertex>(old.f2)) {
+					algorithm_state state = ve_state(p2, p1, std::get<vertex>(old.f2), e1);
+					std::swap(state.f1, state.f2);
+
+					return state;
+				} else if (std::holds_alternative<edge>(old.f2)) {
+					return ee_state(p1, p2, e1, std::get<edge>(old.f2));
+				} else {
+					return ef_state(p1, p2, e1, std::get<face>(old.f2));
+				}
+			} else {
+				const face &f1 = std::get<face>(old.f1);
+
+				if (std::holds_alternative<vertex>(old.f2)) {
+					algorithm_state state = vf_state(p2, p1, std::get<vertex>(old.f2), f1);
+					std::swap(state.f1, state.f2);
+
+					return state;
+				} else if (std::holds_alternative<edge>(old.f2)) {
+					algorithm_state state = ef_state(p2, p1, std::get<edge>(old.f2), f1);
+					std::swap(state.f1, state.f2);
+
+					return state;
+				} else {
+					std::unreachable();
+				}
+			}
+		}
+
+		algorithm_result closest_features(
+			const polyhedron &p1,
+			const polyhedron &p2,
+			const feature &_f1,
+			const feature &_f2,
+			size_t max_steps
+		) {
+			algorithm_state state = algorithm_state{
+				.f1 = _f1,
+				.f2 = _f2,
+				.step = algorithm_step::Continue,
+				.penetration = 0.0_r
+			};
+			size_t steps = 0;
+
+			while (state.step == algorithm_step::Continue) {
+				if (steps >= max_steps) {
+					break;
+				}
+
+				state = update_state(p1, p2, state);
+				steps++;
+			}
+
+			return algorithm_result(p1, p2, state);
+		}
 
 		bool operator==(const vertex &v1, const vertex &v2) {
 			return v1.i == v2.i;
@@ -864,6 +1033,11 @@ std::string traits::to_string(const phys::vclip::face &f, size_t) {
 }
 
 template <>
+std::string traits::to_string(const phys::vclip::polyhedron &p, size_t) {
+	return to_string(&p);
+}
+
+template <>
 std::string traits::to_string(const phys::vclip::vplane &vp, size_t indent) {
 	return util::obj_to_string(
 		"vplane", indent,
@@ -910,5 +1084,15 @@ std::string traits::to_string(const phys::vclip::algorithm_state &upd, size_t in
 		util::named_val("f2", upd.f2),
 		util::named_val("step", upd.step),
 		util::named_val("penetration", upd.penetration)
+	);
+}
+
+template <>
+std::string traits::to_string(const phys::vclip::algorithm_result &result, size_t indent) {
+	return util::obj_to_string(
+		"algorithm_result", indent,
+		util::named_val("p1", result.p1),
+		util::named_val("p2", result.p2),
+		util::named_val("state", result.state)
 	);
 }

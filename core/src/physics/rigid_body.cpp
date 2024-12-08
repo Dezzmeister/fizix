@@ -71,9 +71,13 @@ void phys::rigid_body::calculate_derived_data() {
 }
 
 void phys::rigid_body::calculate_local_to_world() {
-	local_to_world[0] = rot * vec4(1.0_r, 0.0_r, 0.0_r, 0.0_r);
-	local_to_world[1] = rot * vec4(0.0_r, 1.0_r, 0.0_r, 0.0_r);
-	local_to_world[2] = rot * vec4(0.0_r, 0.0_r, 1.0_r, 0.0_r);
+	static vec4 x_axis(1.0_r, 0.0_r, 0.0_r, 0.0_r);
+	static vec4 y_axis(0.0_r, 1.0_r, 0.0_r, 0.0_r);
+	static vec4 z_axis(0.0_r, 0.0_r, 1.0_r, 0.0_r);
+
+	local_to_world[0] = rot * x_axis;
+	local_to_world[1] = rot * y_axis;
+	local_to_world[2] = rot * z_axis;
 	local_to_world[3] = vec4(pos, 1.0_r);
 }
 
