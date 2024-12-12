@@ -21,6 +21,19 @@ namespace traits {
 	template <typename T>
 	concept pointer_type = std::is_pointer_v<T>;
 
+	// CRTP class for "pinning" types so that they cannot be moved or
+	// copied
+	template <typename T>
+	class pinned {
+	public:
+		pinned<T>() = default;
+		pinned<T>(const pinned<T>&) = delete;
+		pinned<T>(pinned<T>&&) = delete;
+
+		pinned<T>& operator=(const pinned<T>&) = delete;
+		pinned<T>& operator=(pinned<T>&&) = delete;
+	};
+
 	template <native_stringifiable T>
 	std::string to_string(const T &t, size_t indent = 0);
 

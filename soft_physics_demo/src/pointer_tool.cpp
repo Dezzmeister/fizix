@@ -191,7 +191,7 @@ int pointer_tool::handle(particle_deselect_event&) {
 }
 
 int pointer_tool::handle(mousedown_event &event) {
-	if (event.button == GLFW_MOUSE_BUTTON_LEFT) {
+	if (event.button == MOUSE_LEFT) {
 		if (selected_particle) {
 			held_particle = selected_particle;
 
@@ -200,7 +200,7 @@ int pointer_tool::handle(mousedown_event &event) {
 			held_particle_mass = held_particle->get_mass();
 			held_particle->set_mass(phys::infinity);
 		}
-	} else if (event.button == GLFW_MOUSE_BUTTON_RIGHT) {
+	} else if (event.button == MOUSE_RIGHT) {
 		if (held_particle) {
 			if (frozen_particles.find(held_particle) != std::end(frozen_particles)) {
 				held_particle->set_mass(frozen_particles.at(held_particle));
@@ -222,7 +222,7 @@ int pointer_tool::handle(mousedown_event &event) {
 }
 
 int pointer_tool::handle(mouseup_event &event) {
-	if (event.button == GLFW_MOUSE_BUTTON_LEFT) {
+	if (event.button == MOUSE_LEFT) {
 		if (held_particle) {
 			held_particle->set_mass(held_particle_mass);
 		}

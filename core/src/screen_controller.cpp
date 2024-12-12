@@ -14,24 +14,21 @@ screen_controller::screen_controller(event_buses &_buses) :
 }
 
 int screen_controller::handle(pre_render_pass_event &event) {
-	int curr_width;
-	int curr_height;
+	platform::dimensions window_size = event.window->get_window_size();
 
-	glfwGetWindowSize(event.window, &curr_width, &curr_height);
-
-	if (! curr_width || ! curr_height) {
+	if (! window_size.width || ! window_size.height) {
 		return 0;
 	}
 
-	if (curr_width != screen_width || curr_height != screen_height) {
+	if (window_size.width != screen_width || window_size.height != screen_height) {
 		if (screen_width != -1 || screen_height != -1) {
-			screen_resize_event resize_event(screen_width, screen_height, curr_width, curr_height);
+			screen_resize_event resize_event(screen_width, screen_height, window_size.width, window_size.height);
 
 			buses.render.fire(resize_event);
 		}
 
-		screen_width = curr_width;
-		screen_height = curr_height;
+		screen_width = window_size.width;
+		screen_height = window_size.height;
 	}
 
 	event.screen_width = screen_width;
@@ -48,7 +45,10 @@ int screen_controller::handle(post_processing_event &event) {
 }
 
 int screen_controller::handle(program_start_event &event) {
-	glfwGetWindowSize(event.window, &screen_width, &screen_height);
+	platform::dimensions window_size = event.window->get_window_size();
+
+	screen_width = window_size.width;
+	screen_height = window_size.height;
 
 	event.screen_width = screen_width;
 	event.screen_height = screen_height;

@@ -97,7 +97,7 @@ int connector_spawn_tool::handle(pre_render_pass_event&) {
 }
 
 int connector_spawn_tool::handle(mousedown_event &event) {
-	if (event.button == GLFW_MOUSE_BUTTON_RIGHT) {
+	if (event.button == MOUSE_RIGHT) {
 		if (particle_a) {
 			mesh_world.remove_mesh(selected_a_mesh.get());
 		}
@@ -108,7 +108,7 @@ int connector_spawn_tool::handle(mousedown_event &event) {
 		particle_b_index = -1;
 
 		return 0;
-	} else if (event.button == GLFW_MOUSE_BUTTON_LEFT) {
+	} else if (event.button == MOUSE_LEFT) {
 		if (! selected_particle) {
 			return 0;
 		}

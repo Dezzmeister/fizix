@@ -14,9 +14,8 @@
 // when the input event(s) is/are fired.
 #pragma once
 #include <chrono>
-#include "gl.h"
-#include <GLFW/glfw3.h>
 #include "event.h"
+#include "platform/platform.h"
 #include "shader_program.h"
 
 // The various "store" classes own common resources of a given type and
@@ -37,7 +36,7 @@ class hardware_constants;
 // created. If the user has shaders and textures that they need to load, they
 // can do that on this event.
 struct program_start_event {
-	GLFWwindow * window;
+	platform::window * window;
 	shader_store * shaders{ nullptr };
 	texture_store * textures{ nullptr };
 	hardware_constants * hardware_consts{ nullptr };
@@ -56,7 +55,7 @@ struct program_stop_event {
 // Fired at the beginning of every render pass. This event times the previous
 // render pass (see `delta`).
 struct pre_render_pass_event {
-	GLFWwindow * window;
+	platform::window * window;
 	hardware_constants * hardware_consts;
 	// The time in ms since the beginning of the previous render pass (i.e., since
 	// the last moment this event was fired).
@@ -64,7 +63,7 @@ struct pre_render_pass_event {
 	int screen_width;
 	int screen_height;
 
-	pre_render_pass_event(GLFWwindow * _window, hardware_constants * _hardware_consts) :
+	pre_render_pass_event(platform::window * _window, hardware_constants * _hardware_consts) :
 		window(_window),
 		hardware_consts(_hardware_consts),
 		delta(),
@@ -93,7 +92,7 @@ static_assert(effectful<pre_render_pass_event>);
 // Fired after `pre_render_pass_event` and before `post_processing_event`. Anything that
 // needs to render to the 3D scene should use this event as a call to do so.
 struct draw_event {
-	GLFWwindow * window;
+	platform::window * window;
 	shader_store &shaders;
 	texture_store &textures;
 	// The view matrix that the camera is using for this render pass. The camera should
@@ -101,7 +100,7 @@ struct draw_event {
 	glm::mat4 * view;
 	glm::mat4 * inv_view;
 
-	draw_event(GLFWwindow * _window, shader_store &_shaders, texture_store &_textures) :
+	draw_event(platform::window * _window, shader_store &_shaders, texture_store &_textures) :
 		window(_window),
 		shaders(_shaders),
 		textures(_textures),
@@ -115,7 +114,7 @@ struct draw_event {
 // This is the last event that is fired before the window buffers are swapped and the
 // new front buffer is drawn to the screen.
 struct post_processing_event {
-	GLFWwindow * window;
+	platform::window * window;
 	shader_store &shaders;
 	texture_store &textures;
 	renderer2d &draw2d;
@@ -123,7 +122,7 @@ struct post_processing_event {
 	int screen_height;
 
 	post_processing_event(
-		GLFWwindow * _window,
+		platform::window * _window,
 		shader_store &_shaders,
 		texture_store &_textures,
 		renderer2d &_draw2d
@@ -228,32 +227,49 @@ struct mouseup_event {
 	{}
 };
 
+// Fired whenever the mouse is moved.
+struct mouse_move_event {
+	const long delta_x;
+	const long delta_y;
+
+	mouse_move_event(
+		long _delta_x,
+		long _delta_y
+	) :
+		delta_x(_delta_x),
+		delta_y(_delta_y)
+	{}
+};
+
 // Fired whenever the mouse is scrolled.
 struct mouse_scroll_event {
-	const glm::vec2 offset;
+	const short v_delta;
+	const short h_delta;
 	const bool is_mouse_locked;
 
 	mouse_scroll_event(
-		const glm::vec2 &_offset,
+		short _v_delta,
+		short _h_delta,
 		bool _is_mouse_locked
 	) :
-		offset(_offset),
+		v_delta(_v_delta),
+		h_delta(_h_delta),
 		is_mouse_locked(_is_mouse_locked)
 	{}
 };
 
 // Fired when the cursor is locked.
 struct mouse_lock_event {
-	GLFWwindow * window;
+	platform::window * window;
 
-	mouse_lock_event(GLFWwindow * _window) : window(_window) {}
+	mouse_lock_event(platform::window * _window) : window(_window) {}
 };
 
 // Fired when the cursor is unlocked.
 struct mouse_unlock_event {
-	GLFWwindow * window;
+	platform::window * window;
 
-	mouse_unlock_event(GLFWwindow * _window) : window(_window) {}
+	mouse_unlock_event(platform::window * _window) : window(_window) {}
 };
 
 class player;
@@ -290,7 +306,7 @@ struct player_move_event {
 	{}
 };
 
-// Fired when the player spawns.
+// Fired when a player spawns.
 struct player_spawn_event {
 	player &p;
 	glm::vec3 pos;
@@ -317,6 +333,7 @@ using input_event_bus = event_bus<
 	keyup_event,
 	mousedown_event,
 	mouseup_event,
+	mouse_move_event,
 	mouse_scroll_event,
 	mouse_lock_event,
 	mouse_unlock_event

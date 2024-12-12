@@ -89,10 +89,10 @@ int particle_spawn_tool::handle(mousedown_event &event) {
 		return 0;
 	}
 
-	if (event.button == GLFW_MOUSE_BUTTON_LEFT) {
+	if (event.button == MOUSE_LEFT) {
 		particle_spawn_event spawn_event(player_pos + (dir * scroll_f));
 		custom_bus.fire(spawn_event);
-	} else if (event.button == GLFW_MOUSE_BUTTON_RIGHT) {
+	} else if (event.button == MOUSE_RIGHT) {
 		can_zoom = true;
 	}
 
@@ -100,7 +100,7 @@ int particle_spawn_tool::handle(mousedown_event &event) {
 }
 
 int particle_spawn_tool::handle(mouseup_event &event) {
-	if (event.button == GLFW_MOUSE_BUTTON_RIGHT) {
+	if (event.button == MOUSE_RIGHT) {
 		can_zoom = false;
 	}
 
@@ -112,7 +112,7 @@ int particle_spawn_tool::handle(mouse_scroll_event &event) {
 		return 0;
 	}
 
-	scroll_f += event.offset.y * scroll_f_step;
+	scroll_f += event.v_delta * scroll_f_step / 90.0f;
 	scroll_f = std::clamp(scroll_f, min_scroll_f, max_scroll_f);
 
 	return 0;

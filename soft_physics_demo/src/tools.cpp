@@ -74,14 +74,14 @@ int toolbox::handle(program_start_event &event) {
 }
 
 int toolbox::handle(mouse_scroll_event &event) {
-	if (! tools.size() || event.offset.y == 0.0f) {
+	if (! tools.size() || event.v_delta == 0) {
 		return 0;
 	}
 
 	size_t old_tool = curr_tool;
 	size_t new_tool = curr_tool;
 
-	if (event.offset.y > 0) {
+	if (event.v_delta > 0) {
 		if (new_tool == 0) {
 			new_tool = tools.size() - 1;
 		} else {

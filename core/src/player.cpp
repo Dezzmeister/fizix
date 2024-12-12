@@ -10,16 +10,13 @@ player::player(event_buses &_buses) :
 	event_listener<pre_render_pass_event>(&_buses.render, -50),
 	event_listener<mouse_lock_event>(&_buses.input),
 	event_listener<mouse_unlock_event>(&_buses.input),
+	event_listener<mouse_move_event>(&_buses.input),
 	speed(2.0f),
 	look_sensitivity(0.5f),
 	buses(_buses),
 	cam(buses),
 	input_vel(0.0f, 0.0f),
-	sprint_mul(1.0f),
-	captured_mouse(nullptr),
-	last_mouse(-1.0f, -1.0f),
-	curr_mouse(-1.0f, -1.0f),
-	sent_spawn_event(false)
+	sprint_mul(1.0f)
 {
 	cam.dir = glm::vec3(0.0f, 0.0f, 1.0f);
 
@@ -28,18 +25,19 @@ player::player(event_buses &_buses) :
 	event_listener<pre_render_pass_event>::subscribe();
 	event_listener<mouse_lock_event>::subscribe();
 	event_listener<mouse_unlock_event>::subscribe();
+	event_listener<mouse_move_event>::subscribe();
 }
 
 int player::handle(keydown_event &event) {
-	if (event.key == GLFW_KEY_W) {
+	if (event.key == KEY_W) {
 		input_vel.y += 1.0f;
-	} else if (event.key == GLFW_KEY_S) {
+	} else if (event.key == KEY_S) {
 		input_vel.y -= 1.0f;
-	} else if (event.key == GLFW_KEY_A) {
+	} else if (event.key == KEY_A) {
 		input_vel.x -= 1.0f;
-	} else if (event.key == GLFW_KEY_D) {
+	} else if (event.key == KEY_D) {
 		input_vel.x += 1.0f;
-	} else if (event.key == GLFW_KEY_LEFT_SHIFT) {
+	} else if (event.key == KEY_SHIFT) {
 		sprint_mul = 1.5f;
 	}
 
@@ -47,15 +45,15 @@ int player::handle(keydown_event &event) {
 }
 
 int player::handle(keyup_event &event) {
-	if (event.key == GLFW_KEY_W) {
+	if (event.key == KEY_W) {
 		input_vel.y -= 1.0f;
-	} else if (event.key == GLFW_KEY_S) {
+	} else if (event.key == KEY_S) {
 		input_vel.y += 1.0f;
-	} else if (event.key == GLFW_KEY_A) {
+	} else if (event.key == KEY_A) {
 		input_vel.x += 1.0f;
-	} else if (event.key == GLFW_KEY_D) {
+	} else if (event.key == KEY_D) {
 		input_vel.x -= 1.0f;
-	} else if (event.key == GLFW_KEY_LEFT_SHIFT) {
+	} else if (event.key == KEY_SHIFT) {
 		sprint_mul = 1.0f;
 	}
 
@@ -89,11 +87,10 @@ int player::handle(pre_render_pass_event &event) {
 
 	if (is_mouse_locked) {
 		glm::vec3 old_dir = cam.dir;
-		last_mouse = curr_mouse;
-		glfwGetCursorPos(event.window, &curr_mouse.x, &curr_mouse.y);
 
-		float dx = (float)(curr_mouse.x - last_mouse.x) * look_sensitivity;
-		float dy = (float)(curr_mouse.y - last_mouse.y) * look_sensitivity;
+		float dx = (float)(delta_mouse.x) * look_sensitivity;
+		float dy = (float)(delta_mouse.y) * look_sensitivity;
+		delta_mouse = {};
 
 		float yaw_angle = -(float)(dx * M_PI / 180.0);
 		glm::quat yaw(cosf(yaw_angle / 2), cam.world_up * sinf(yaw_angle / 2));
@@ -160,15 +157,21 @@ int player::handle(pre_render_pass_event &event) {
 	return 0;
 }
 
-int player::handle(mouse_lock_event &event) {
+int player::handle(mouse_lock_event &) {
 	is_mouse_locked = true;
-	glfwGetCursorPos(event.window, &curr_mouse.x, &curr_mouse.y);
 
 	return 0;
 }
 
 int player::handle(mouse_unlock_event&) {
 	is_mouse_locked = false;
+
+	return 0;
+}
+
+int player::handle(mouse_move_event &event) {
+	delta_mouse.x = event.delta_x;
+	delta_mouse.y = event.delta_y;
 
 	return 0;
 }

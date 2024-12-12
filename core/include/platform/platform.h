@@ -1,5 +1,8 @@
 #pragma once
 #include <stdexcept>
+#ifdef _WIN32
+#include "platform/windows.h"
+#endif
 
 namespace platform {
 	class api_error : public std::runtime_error {

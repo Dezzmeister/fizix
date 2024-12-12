@@ -1,6 +1,4 @@
 #include <Windows.h>
-#include "gl.h"
-#include <GLFW/glfw3.h>
 #include <chrono>
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -8,6 +6,7 @@
 #include "events.h"
 #include "flashlight.h"
 #include "gdi_plus_context.h"
+#include "gl.h"
 #include "controllers.h"
 #include "hardware_constants.h"
 #include "logging.h"
@@ -294,6 +293,7 @@ struct object_controller :
 {
 	inline static float light_speed = 0.05f;
 
+	// TODO: Leave `object_controller` on the stack and pin it
 	std::unique_ptr<point_light> light{};
 	std::vector<std::unique_ptr<mesh>> cubes{};
 	std::unique_ptr<mesh> floor{};
@@ -441,13 +441,13 @@ struct object_controller :
 	}
 
 	int handle(keydown_event &event) override {
-		if (event.key == GLFW_KEY_LEFT) {
+		if (event.key == KEY_LEFT) {
 			light_motion.x += 1.0f;
-		} else if (event.key == GLFW_KEY_RIGHT) {
+		} else if (event.key == KEY_RIGHT) {
 			light_motion.x -= 1.0f;
-		} else if (event.key == GLFW_KEY_UP) {
+		} else if (event.key == KEY_UP) {
 			light_motion.z += 1.0f;
-		} else if (event.key == GLFW_KEY_DOWN) {
+		} else if (event.key == KEY_DOWN) {
 			light_motion.z -= 1.0f;
 		}
 
@@ -455,13 +455,13 @@ struct object_controller :
 	}
 
 	int handle(keyup_event &event) override {
-		if (event.key == GLFW_KEY_LEFT) {
+		if (event.key == KEY_LEFT) {
 			light_motion.x -= 1.0f;
-		} else if (event.key == GLFW_KEY_RIGHT) {
+		} else if (event.key == KEY_RIGHT) {
 			light_motion.x += 1.0f;
-		} else if (event.key == GLFW_KEY_UP) {
+		} else if (event.key == KEY_UP) {
 			light_motion.z -= 1.0f;
-		} else if (event.key == GLFW_KEY_DOWN) {
+		} else if (event.key == KEY_DOWN) {
 			light_motion.z += 1.0f;
 		}
 
@@ -469,33 +469,18 @@ struct object_controller :
 	}
 };
 
-static void on_window_resize(GLFWwindow *, int width, int height) {
-	glViewport(0, 0, width, height);
-}
-
 int main(int, const char * const * const) {
 	logger::init();
+	platform::state platform_state{};
+	platform::window main_window(platform_state, 800, 600, L"Phong Materials Demo");
 
 	event_buses buses;
 	gdi_plus_context gdi_plus;
-	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-	GLFWwindow * window = glfwCreateWindow(800, 600, "Phong Materials Demo", NULL, NULL);
-	if (!window) {
-		logger::error("Failed to create window");
-		glfwTerminate();
-		return -1;
-	}
-
-	glfwMakeContextCurrent(window);
-
+	main_window.show();
+	main_window.make_gl_context_current();
 	init_gl();
 
 	glViewport(0, 0, 800, 600);
-	glfwSetFramebufferSizeCallback(window, on_window_resize);
 	glClearColor(0.1f, 0.01f, 0.1f, 0.0f);
 
 	glEnable(GL_DEPTH_TEST);
@@ -507,16 +492,14 @@ int main(int, const char * const * const) {
 	player pl(buses);
 	hardware_constants hw_consts(buses);
 
-	program_start_event program_start{
-		window
-	};
-	pre_render_pass_event pre_render_event(window, &hw_consts);
+	program_start_event program_start(&main_window);
+	pre_render_pass_event pre_render_event(&main_window, &hw_consts);
 	shader_store shaders(buses);
 	texture_store textures(buses);
 	renderer2d draw2d(buses);
-	draw_event draw_event_inst(window, shaders, textures);
+	draw_event draw_event_inst(&main_window, shaders, textures);
 	post_processing_event post_processing_event_inst(
-		window,
+		&main_window,
 		shaders,
 		textures,
 		draw2d
@@ -524,19 +507,19 @@ int main(int, const char * const * const) {
 	post_render_pass_event post_render_event;
 
 	key_controller keys(buses, {
-		GLFW_KEY_W,
-		GLFW_KEY_A,
-		GLFW_KEY_S,
-		GLFW_KEY_D,
-		GLFW_KEY_LEFT_SHIFT,
-		GLFW_KEY_F,
-		GLFW_KEY_ESCAPE,
-		GLFW_KEY_LEFT,
-		GLFW_KEY_RIGHT,
-		GLFW_KEY_UP,
-		GLFW_KEY_DOWN
-		});
-	mouse_controller mouse(buses, {}, GLFW_KEY_ESCAPE);
+		KEY_W,
+		KEY_A,
+		KEY_S,
+		KEY_D,
+		KEY_SHIFT,
+		KEY_F,
+		KEY_ESC,
+		KEY_LEFT,
+		KEY_RIGHT,
+		KEY_UP,
+		KEY_DOWN
+	});
+	mouse_controller mouse(buses, {}, KEY_ESC);
 	screen_controller screen(buses);
 
 	world w(buses);
@@ -547,24 +530,21 @@ int main(int, const char * const * const) {
 
 	object_controller static_objects(buses, w);
 
-	flashlight lc(buses, pl, w, GLFW_KEY_F);
+	flashlight lc(buses, pl, w, KEY_F);
 
 	logger::info(help_text);
-
-	while (! glfwWindowShouldClose(window)) {
+	main_window.run([&](platform::window &win) {
 		buses.render.fire(pre_render_event);
 		buses.render.fire(draw_event_inst);
 		buses.render.fire(post_processing_event_inst);
 
-		glfwSwapBuffers(window);
-		glfwPollEvents();
+		win.swap_buffers();
 
 		buses.render.fire(post_render_event);
-	}
+	});
 
 	program_stop_event program_stop(0);
 	buses.lifecycle.fire(program_stop);
 
-	glfwTerminate();
 	return 0;
 }

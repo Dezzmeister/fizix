@@ -28,6 +28,11 @@ public:
 
 	// TODO: Error handling
 	unique_handle(T _null_handle, deleter _delete_handle) noexcept;
+	unique_handle(
+		T _null_handle,
+		T _init_handle,
+		deleter _delete_handle
+	) noexcept;
 
 	unique_handle(const unique_handle<T> &other) = delete;
 	unique_handle(unique_handle<T> &&other) noexcept;
@@ -36,8 +41,10 @@ public:
 	// TODO: Error handling. What if a GL call fails here
 	unique_handle<T>& operator=(unique_handle<T> &&other) noexcept;
 
-	operator T() noexcept;
-	operator T() const noexcept;
+	operator T() & noexcept;
+	operator T() const & noexcept;
+	operator T() && = delete;
+	operator T() const && = delete;
 
 	T * operator&() noexcept;
 	const T * operator&() const noexcept;
@@ -60,6 +67,17 @@ private:
 template <typename T>
 unique_handle<T>::unique_handle(T _null_handle, deleter _delete_handle) noexcept :
 	handle(_null_handle),
+	null_handle(_null_handle),
+	delete_handle(_delete_handle)
+{}
+
+template <typename T>
+unique_handle<T>::unique_handle(
+	T _null_handle,
+	T _init_handle,
+	deleter _delete_handle
+) noexcept :
+	handle(_init_handle),
 	null_handle(_null_handle),
 	delete_handle(_delete_handle)
 {}
@@ -97,12 +115,12 @@ unique_handle<T>::~unique_handle() {
 }
 
 template <typename T>
-unique_handle<T>::operator T() noexcept {
+unique_handle<T>::operator T() & noexcept {
 	return handle;
 }
 
 template <typename T>
-unique_handle<T>::operator T() const noexcept {
+unique_handle<T>::operator T() const & noexcept {
 	return handle;
 }
 

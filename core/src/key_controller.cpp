@@ -14,8 +14,8 @@ key_controller::key_controller(event_buses &_buses, std::vector<short> _watched_
 
 int key_controller::handle(pre_render_pass_event &event) {
 	for (const short key : watched_keys) {
-		const int is_pressed = glfwGetKey(event.window, key) == GLFW_PRESS;
-		const int was_pressed = keys[key];
+		const bool is_pressed = event.window->is_key_down(key);
+		const bool was_pressed = (bool)keys[key];
 
 		if (is_pressed == was_pressed) {
 			continue;
