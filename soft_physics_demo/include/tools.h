@@ -24,7 +24,8 @@ public:
 
 class toolbox :
 	public event_listener<program_start_event>,
-	public event_listener<mouse_scroll_event>
+	public event_listener<mouse_scroll_event>,
+	public event_listener<keydown_event>
 {
 public:
 	toolbox(
@@ -35,6 +36,7 @@ public:
 
 	int handle(program_start_event &event) override;
 	int handle(mouse_scroll_event &event) override;
+	int handle(keydown_event& event) override;
 
 private:
 	event_buses &buses;

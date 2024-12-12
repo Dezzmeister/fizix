@@ -98,7 +98,11 @@ int main(int, const char * const * const) {
 		KEY_ESC,
 		KEY_T,
 		KEY_P,
-		KEY_PERIOD
+		KEY_PERIOD,
+		KEY_1,
+		KEY_2,
+		KEY_3,
+		KEY_4
 	});
 	mouse_controller mouse(buses, {
 		MOUSE_LEFT,

@@ -22,12 +22,14 @@ toolbox::toolbox(
 ) :
 	event_listener<program_start_event>(&_buses.lifecycle),
 	event_listener<mouse_scroll_event>(&_buses.input),
+	event_listener<keydown_event>(&_buses.input),
 	buses(_buses),
 	custom_bus(_custom_bus),
 	mesh_world(_mesh_world)
 {
 	event_listener<program_start_event>::subscribe();
 	event_listener<mouse_scroll_event>::subscribe();
+	event_listener<keydown_event>::subscribe();
 }
 
 int toolbox::handle(program_start_event &event) {
@@ -101,6 +103,34 @@ int toolbox::handle(mouse_scroll_event &event) {
 
 		tools[new_tool]->activate();
 		curr_tool = new_tool;
+	}
+
+	return 0;
+}
+
+int toolbox::handle(keydown_event& event) {
+	if (event.key < KEY_1 || event.key > KEY_9) {
+		return 0;
+	}
+
+	int idx = event.key - KEY_1;
+
+	if (idx >= tools.size()) {
+		return 0;
+	}
+
+	size_t old_tool = curr_tool;
+
+	tool_select_event select_event(tools[idx].get());
+	int status = custom_bus.fire(select_event);
+
+	if (!status) {
+		if (tools[old_tool]->is_active()) {
+			tools[old_tool]->deactivate();
+		}
+
+		tools[idx]->activate();
+		curr_tool = idx;
 	}
 
 	return 0;
