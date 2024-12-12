@@ -37,7 +37,7 @@
 #define KEY_UP				VK_UP
 #define KEY_RIGHT			VK_RIGHT
 #define KEY_DOWN			VK_DOWN
-#define KEY_PERIOD			VK_DECIMAL
+#define KEY_PERIOD			VK_OEM_PERIOD
 #define KEY_MAX				0x100
 #define KEY_MASK			0xFF
 
