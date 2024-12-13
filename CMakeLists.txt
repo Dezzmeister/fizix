@@ -18,4 +18,5 @@ link_libraries(core)
 
 add_subdirectory(phong_demo)
 add_subdirectory(soft_physics_demo)
+add_subdirectory(fcad)
 add_subdirectory(tests)

@@ -86,7 +86,7 @@ int main(int, const char * const * const) {
 		textures,
 		draw2d
 	);
-	post_render_pass_event post_render_event;
+	post_render_pass_event post_render_event{};
 
 	key_controller keys(buses, {
 		KEY_W,
