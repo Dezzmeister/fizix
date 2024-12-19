@@ -34,7 +34,7 @@ namespace {
 			parsing::parse_one_char(state, L'+', out) ||
 			parsing::parse_one_char(state, L'-', out) ||
 			parsing::parse_one_char(state, L'.', out)
-			);
+		);
 
 		return out.str();
 	}
@@ -47,7 +47,7 @@ namespace {
 			parsing::parse_one_char(state, L'.', out) ||
 			parsing::parse_one_char(state, L'_', out) ||
 			parsing::parse_one_char(state, L'~', out)
-			);
+		);
 	}
 
 	// Despite the name, the `sub-delims` production will only match one terminal
@@ -64,7 +64,7 @@ namespace {
 			parsing::parse_one_char(state, L',', out) ||
 			parsing::parse_one_char(state, L';', out) ||
 			parsing::parse_one_char(state, L'=', out)
-			);
+		);
 	}
 
 	// Despite the name, the `gen-delims` production will only match one terminal
@@ -77,7 +77,7 @@ namespace {
 			parsing::parse_one_char(state, L'[', out) ||
 			parsing::parse_one_char(state, L']', out) ||
 			parsing::parse_one_char(state, L'@', out)
-			);
+		);
 	}
 
 	bool parse_reg_name(parsing::parser_state &state, std::wstringstream &out) {
@@ -98,7 +98,7 @@ namespace {
 			parse_pct_encoded(state, out) ||
 			parse_sub_delims(state, out) ||
 			parsing::parse_one_char(state, L':', out)
-			);
+		);
 
 		std::wstring str_out = out.str();
 

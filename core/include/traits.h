@@ -72,6 +72,9 @@ namespace traits {
 
 	template <>
 	std::string to_string(const glm::mat4 &m, size_t indent);
+
+	template <>
+	std::string to_string(const std::wstring &s, size_t indent);
 }
 
 namespace util {

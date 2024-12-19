@@ -81,4 +81,8 @@ namespace util {
 			++it2;
 		}
 	}
+
+	inline std::wstring to_wstring(const std::string &s) {
+		return std::wstring(s.begin(), s.end());
+	}
 };

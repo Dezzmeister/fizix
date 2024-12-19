@@ -1,3 +1,4 @@
+#include <codecvt>
 #include "traits.h"
 
 template <>
@@ -48,4 +49,12 @@ std::string traits::to_string<glm::mat4>(const glm::mat4 &m, size_t indent) {
 		std::string(indent, '\t') + to_string(m[1]) + ",\n" +
 		std::string(indent, '\t') + to_string(m[2]) + ",\n" +
 		std::string(indent, '\t') + to_string(m[3]) + "]";
+}
+
+template <>
+std::string traits::to_string<std::wstring>(const std::wstring &s, size_t) {
+	using convert_t = std::codecvt_utf8<wchar_t>;
+	std::wstring_convert<convert_t, wchar_t> converter{};
+
+	return converter.to_bytes(s);
 }

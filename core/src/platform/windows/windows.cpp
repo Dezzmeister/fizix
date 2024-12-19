@@ -21,27 +21,6 @@ namespace {
 	HANDLE std_out = INVALID_HANDLE_VALUE;
 	bool can_use_colors{};
 
-	std::string get_last_error(const std::string &method) {
-		DWORD err_code = GetLastError();
-		LPSTR buf = NULL;
-
-		FormatMessageA(
-			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-			NULL,
-			err_code,
-			0,
-			(LPSTR)&buf,
-			0,
-			NULL
-		);
-
-		std::string out = "Windows API call (" + method + ") failed: " +
-			std::string(buf);
-		LocalFree(buf);
-
-		return out;
-	}
-
 	unique_handle<HDC> get_hdc(HWND hwnd) {
 		return unique_handle<HDC>(
 			nullptr,
@@ -65,7 +44,7 @@ LRESULT CALLBACK platform::default_wnd_proc(
 		if (GetLastError()) {
 			logger::error(
 				"Failed to get window userdata: " +
-				get_last_error("GetWindowLongPtrW")
+				win32::get_last_error("GetWindowLongPtrW")
 			);
 		}
 
@@ -78,7 +57,7 @@ LRESULT CALLBACK platform::default_wnd_proc(
 
 	switch (message) {
 		case WM_DESTROY: {
-			win->destroy();
+			PostQuitMessage(0);
 			break;
 		}
 		case WM_KEYDOWN: {
@@ -119,7 +98,7 @@ LRESULT CALLBACK platform::default_wnd_proc(
 				if (! GetWindowRect(win->_hwnd, &r)) {
 					logger::error(
 						"Failed to get window rect: " +
-						get_last_error("GetWindowRect")
+						win32::get_last_error("GetWindowRect")
 					);
 					break;
 				}
@@ -127,7 +106,7 @@ LRESULT CALLBACK platform::default_wnd_proc(
 				if (! SetCursorPos(r.left + + (r.right - r.left) / 2, r.top + (r.bottom - r.top) / 2)) {
 					logger::error(
 						"Failed to set cursor pos: " +
-						get_last_error("SetCursorPos")
+						win32::get_last_error("SetCursorPos")
 					);
 				}
 			}
@@ -140,7 +119,7 @@ LRESULT CALLBACK platform::default_wnd_proc(
 
 			win->write_window_size(width, height);
 
-			break;
+			return DefWindowProcW(hwnd, message, w_param, l_param);
 		}
 		case WM_INPUT: {
 			HRAWINPUT h_input = (HRAWINPUT)l_param;
@@ -158,7 +137,7 @@ LRESULT CALLBACK platform::default_wnd_proc(
 			if (num_bytes == -1) {
 				logger::error(
 					"Failed to get raw input data: " +
-					get_last_error("GetRawInputData")
+					win32::get_last_error("GetRawInputData")
 				);
 				goto input_cleanup;
 			}
@@ -193,7 +172,7 @@ platform::state::state() :
 	if (! (default_wc = RegisterClassExW(&default_wc_spec))) {
 		throw api_error(
 			"Failed to create window class: " +
-			get_last_error("RegisterClassExW")
+			win32::get_last_error("RegisterClassExW")
 		);
 	}
 }
@@ -203,7 +182,7 @@ platform::state::~state() {
 		if (! UnregisterClassW(L"FizixGLWindow", _h_inst)) {
 			logger::error(
 				"Failed to unregister window class: " +
-				get_last_error("UnregisterClassW")
+				win32::get_last_error("UnregisterClassW")
 			);
 		}
 	}
@@ -239,7 +218,7 @@ platform::window::window(
 	if (! _hwnd) {
 		throw api_error(
 			"Failed to create window: " +
-			get_last_error("CreateWindowExW")
+			win32::get_last_error("CreateWindowExW")
 		);
 	}
 
@@ -248,7 +227,7 @@ platform::window::window(
 	if (! SetWindowLongPtrW(_hwnd, GWLP_USERDATA, (LONG_PTR)this) && GetLastError()) {
 		throw api_error(
 			"Failed to attach user data to window: " +
-			get_last_error("SetWindowLongPtr")
+			win32::get_last_error("SetWindowLongPtr")
 		);
 	}
 
@@ -256,7 +235,7 @@ platform::window::window(
 	if (! GetWindowRect(_hwnd, &window_rect)) {
 		throw api_error(
 			"Failed to get window size: " +
-			get_last_error("GetWindowRect")
+			win32::get_last_error("GetWindowRect")
 		);
 	}
 
@@ -278,7 +257,7 @@ platform::window::window(
 	)) {
 		throw api_error(
 			"Failed to register raw input devices: " +
-			get_last_error("RegisterRawInputDevices")
+			win32::get_last_error("RegisterRawInputDevices")
 		);
 	}
 
@@ -303,14 +282,14 @@ platform::window::window(
 		if (! pixel_format) {
 			throw api_error(
 				"Failed to choose a suitable pixel format: " +
-				get_last_error("ChoosePixelFormat")
+				win32::get_last_error("ChoosePixelFormat")
 			);
 		}
 
 		if (! SetPixelFormat(hdc, pixel_format, &pfd)) {
 			throw api_error(
 				"Failed to set pixel format: " +
-				get_last_error("SetPixelFormat")
+				win32::get_last_error("SetPixelFormat")
 			);
 		}
 
@@ -320,12 +299,29 @@ platform::window::window(
 		if (! glc) {
 			throw api_error(
 				"Failed to create OpenGL context: " +
-				get_last_error("wglCreateContext")
+				win32::get_last_error("wglCreateContext")
 			);
 		}
 	}
 
 	dc = GetDC(_hwnd);
+}
+
+platform::window::~window() {
+	try {
+		if (has_gl_context()) {
+			destroy_gl_context();
+		}
+
+		if (dc) {
+			ReleaseDC(_hwnd, dc);
+		}
+	} catch (const api_error &err) {
+		logger::error(
+			"Failed to destroy window: " +
+			std::string(err.what())
+		);
+	}
 }
 
 HWND platform::window::hwnd() const {
@@ -361,7 +357,7 @@ void platform::window::make_gl_context_current() const {
 	if (! wglMakeCurrent(dc, glc)) {
 		throw api_error(
 			"Failed to make OpenGL context current: " +
-			get_last_error("wglMakeCurrent")
+			win32::get_last_error("wglMakeCurrent")
 		);
 	}
 }
@@ -466,56 +462,13 @@ void platform::window::reset_cursor_deltas() {
 	mouse.delta_hscroll = 0;
 }
 
-void platform::window::run(const std::function<void(window&)> &do_frame) {
-	MSG msg;
-	BOOL msg_result;
-
-	while (true) {
-		if (destroyed) {
-			return;
-		}
-
-		while (PeekMessageW(&msg, _hwnd, 0, 0, PM_NOREMOVE)) {
-			msg_result = GetMessageW(&msg, NULL, 0, 0);
-
-			if (msg_result == 0) {
-				return;
-			} else if (msg_result == -1) {
-				DWORD err = GetLastError();
-
-				throw api_error(
-					"GetMessageW failed with error code " +
-					traits::to_string(err)
-				);
-			} else {
-				TranslateMessage(&msg);
-				DispatchMessageW(&msg);
-			}
-		}
-
-		do_frame(*this);
-	}
-}
-
-void platform::window::destroy() {
-	if (has_gl_context()) {
-		destroy_gl_context();
-	}
-
-	if (dc) {
-		ReleaseDC(_hwnd, dc);
-	}
-
-	destroyed = true;
-}
-
 void platform::window::destroy_gl_context() const {
 	check_has_gl_context();
 
 	if (! wglDeleteContext(glc)) {
 		throw api_error(
 			"Failed to delete OpenGL context: " +
-			get_last_error("wglDeleteContext")
+			win32::get_last_error("wglDeleteContext")
 		);
 	}
 }
@@ -562,11 +515,36 @@ void platform::window::handle_raw_mouse() {
 	}
 }
 
+void platform::run(const std::function<void(void)> &do_frame) {
+	MSG msg;
+	BOOL msg_result;
+
+	while (true) {
+		while (PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE)) {
+			msg_result = GetMessageW(&msg, NULL, 0, 0);
+
+			if (msg_result == 0) {
+				return;
+			} else if (msg_result == -1) {
+				throw api_error(
+					"Failed to get message on message queue: " +
+					win32::get_last_error("GetMessageW")
+				);
+			} else {
+				TranslateMessage(&msg);
+				DispatchMessageW(&msg);
+			}
+		}
+
+		do_frame();
+	}
+}
+
 void platform::enable_stdout_colors() {
 	std_out = GetStdHandle(STD_OUTPUT_HANDLE);
 
 	if (std_out == INVALID_HANDLE_VALUE) {
-		throw api_error(get_last_error("GetStdHandle"));
+		throw api_error(win32::get_last_error("GetStdHandle"));
 	}
 
 	can_use_colors = SetConsoleMode(
@@ -575,7 +553,7 @@ void platform::enable_stdout_colors() {
 	);
 
 	if (! can_use_colors) {
-		throw api_error(get_last_error("SetConsoleMode"));
+		throw api_error(win32::get_last_error("SetConsoleMode"));
 	}
 }
 
@@ -591,5 +569,26 @@ void platform::set_gpu_preference(gpu_preference pref) {
 		NvOptimusEnablement = 1;
 		AmdPowerXpressRequestHighPerformance = 1;
 	}
+}
+
+std::string platform::win32::get_last_error(const std::string &method) {
+	DWORD err_code = GetLastError();
+	LPSTR buf = NULL;
+
+	FormatMessageA(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+		NULL,
+		err_code,
+		0,
+		(LPSTR)&buf,
+		0,
+		NULL
+	);
+
+	std::string out = "Windows API call (" + method + ") failed: " +
+		std::string(buf);
+	LocalFree(buf);
+
+	return out;
 }
 #endif

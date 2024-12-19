@@ -131,12 +131,12 @@ int main(int, const char * const * const) {
 
 	logger::info(help_text);
 
-	main_window.run([&](platform::window &win) {
+	platform::run([&]() {
 		buses.render.fire(pre_render_event);
 		buses.render.fire(draw_event_inst);
 		buses.render.fire(post_processing_event_inst);
 
-		win.swap_buffers();
+		main_window.swap_buffers();
 
 		buses.render.fire(post_render_event);
 	});

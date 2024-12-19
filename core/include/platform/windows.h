@@ -107,6 +107,7 @@ namespace platform {
 			const wchar_t * title,
 			bool gl = true
 		);
+		~window();
 
 		HWND hwnd() const;
 		bool has_gl_context() const;
@@ -114,8 +115,6 @@ namespace platform {
 
 		void show() const;
 		void hide() const;
-		void run(const std::function<void(window&)> &do_frame);
-		void destroy();
 
 		dimensions get_window_size() const;
 
@@ -166,4 +165,13 @@ namespace platform {
 
 		void handle_raw_mouse();
 	};
+
+	// Runs the message loop for all windows. The `do_frame` callback
+	// is called after handling all queued messages. Any input processing
+	// and OpenGL rendering should happen in `do_frame`.
+	void run(const std::function<void(void)> &do_frame);
+
+	namespace win32 {
+		std::string get_last_error(const std::string &method);
+	}
 }
