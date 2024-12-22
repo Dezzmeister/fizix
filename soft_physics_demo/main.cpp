@@ -59,7 +59,6 @@ int main(int, const char * const * const) {
 
 	main_window.show();
 	main_window.make_gl_context_current();
-	init_gl();
 
 	glViewport(0, 0, 800, 600);
 	glClearColor(0.7f, 0.7f, 1.0f, 0.0f);

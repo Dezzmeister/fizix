@@ -478,7 +478,6 @@ int main(int, const char * const * const) {
 	gdi_plus_context gdi_plus;
 	main_window.show();
 	main_window.make_gl_context_current();
-	init_gl();
 
 	glViewport(0, 0, 800, 600);
 	glClearColor(0.1f, 0.01f, 0.1f, 0.0f);

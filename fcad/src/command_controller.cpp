@@ -101,9 +101,9 @@ int command_controller::handle(command_submit_event &event) {
 command_controller make_commands(event_buses&, fcad_event_bus &events) {
 	std::unordered_map<std::wstring, std::unique_ptr<command_impl>> impls{};
 
-	impls.emplace(
-		std::make_pair(L"v", std::make_unique<create_vertex_command_impl>(events))
-	);
+	impls.emplace(std::make_pair(L"v", std::make_unique<create_vertex_command_impl>(events)));
+	impls.emplace(std::make_pair(L"e", std::make_unique<create_edge_command_impl>(events)));
+	impls.emplace(std::make_pair(L"f", std::make_unique<create_face_command_impl>(events)));
 
 	return command_controller(events, std::move(impls));
 }

@@ -1,7 +1,6 @@
 #include <string>
 #include "gl.h"
-
-#define load(func) func = (decltype(func)) get_gl_func(#func)
+#include "logging.h"
 
 GLuint (GL_CALL * glCreateShader)(GLenum type);
 void (GL_CALL * glDeleteShader)(GLuint shader);
@@ -52,66 +51,53 @@ void (GL_CALL * glVertexAttribDivisor)(GLuint index, GLuint divisor);
 
 void (GL_CALL * glDrawArraysInstanced)(GLenum mode, GLint first, GLsizei count, GLsizei instance_count);
 
-void init_gl() {
-	load(glCreateShader);
-	load(glDeleteShader);
-	load(glShaderSource);
-	load(glCompileShader);
-	load(glGetShaderiv);
-	load(glGetShaderInfoLog);
-	load(glCreateProgram);
-	load(glDeleteProgram);
-	load(glAttachShader);
-	load(glLinkProgram);
-	load(glGetProgramiv);
-	load(glGetProgramInfoLog);
-	load(glUseProgram);
-	load(glGetUniformLocation);
+void load_gl_funcs() {
+	load_gl(glCreateShader);
+	load_gl(glDeleteShader);
+	load_gl(glShaderSource);
+	load_gl(glCompileShader);
+	load_gl(glGetShaderiv);
+	load_gl(glGetShaderInfoLog);
+	load_gl(glCreateProgram);
+	load_gl(glDeleteProgram);
+	load_gl(glAttachShader);
+	load_gl(glLinkProgram);
+	load_gl(glGetProgramiv);
+	load_gl(glGetProgramInfoLog);
+	load_gl(glUseProgram);
+	load_gl(glGetUniformLocation);
 
-	load(glUniform1f);
-	load(glUniform3f);
-	load(glUniform4f);
-	load(glUniform1i);
-	load(glUniform1ui);
-	load(glUniformMatrix3fv);
-	load(glUniformMatrix4fv);
+	load_gl(glUniform1f);
+	load_gl(glUniform3f);
+	load_gl(glUniform4f);
+	load_gl(glUniform1i);
+	load_gl(glUniform1ui);
+	load_gl(glUniformMatrix3fv);
+	load_gl(glUniformMatrix4fv);
 
-	load(glGenFramebuffers);
-	load(glDeleteFramebuffers);
-	load(glBindFramebuffer);
-	load(glFramebufferTexture2D);
-	load(glCheckFramebufferStatus);
-	load(glFramebufferTexture);
+	load_gl(glGenFramebuffers);
+	load_gl(glDeleteFramebuffers);
+	load_gl(glBindFramebuffer);
+	load_gl(glFramebufferTexture2D);
+	load_gl(glCheckFramebufferStatus);
+	load_gl(glFramebufferTexture);
 
-	load(glActiveTexture);
-	load(glGenerateMipmap);
+	load_gl(glActiveTexture);
+	load_gl(glGenerateMipmap);
 
-	load(glGenVertexArrays);
-	load(glDeleteVertexArrays);
-	load(glBindVertexArray);
-	load(glGenBuffers);
-	load(glDeleteBuffers);
-	load(glBindBuffer);
-	load(glVertexAttribPointer);
-	load(glVertexAttribIPointer);
-	load(glEnableVertexAttribArray);
-	load(glDisableVertexAttribArray);
-	load(glBufferData);
-	load(glBufferSubData);
-	load(glVertexAttribDivisor);
+	load_gl(glGenVertexArrays);
+	load_gl(glDeleteVertexArrays);
+	load_gl(glBindVertexArray);
+	load_gl(glGenBuffers);
+	load_gl(glDeleteBuffers);
+	load_gl(glBindBuffer);
+	load_gl(glVertexAttribPointer);
+	load_gl(glVertexAttribIPointer);
+	load_gl(glEnableVertexAttribArray);
+	load_gl(glDisableVertexAttribArray);
+	load_gl(glBufferData);
+	load_gl(glBufferSubData);
+	load_gl(glVertexAttribDivisor);
 
-	load(glDrawArraysInstanced);
-}
-
-void * get_gl_func(const char * const func_name) {
-	void * out = (void *)wglGetProcAddress(func_name);
-
-	if (! out || (out == (void *)1) || (out == (void *)2) || (out == (void *)3) || (out == (void *)-1)) {
-		DWORD err = GetLastError();
-
-		// TODO: Proper errors
-		throw "Failed to load " + std::string(func_name) + ": Error code " + std::to_string(err);
-	}
-
-	return out;
+	load_gl(glDrawArraysInstanced);
 }

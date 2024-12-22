@@ -264,6 +264,125 @@ namespace phys {
 			}
 		}
 
+		void polyhedron::add_vertex(const vec3 &v) {
+			vertices.push_back(vertex(v, vertices.size()));
+		}
+
+		void polyhedron::add_edge(const edge &e) {
+			edges.push_back(e);
+		}
+
+		void polyhedron::add_face(const face &f) {
+			faces.push_back(f);
+		}
+
+		void polyhedron::add_face_and_new_edges(const face &f) {
+			faces.push_back(f);
+
+			// TODO: Sort edges, reduce time complexity from O(nm) to O(n + m)
+			for (const edge &face_edge : f.edges()) {
+				for (const edge &e : edges) {
+					if (e == face_edge) {
+						goto next_face_edge;
+					}
+				}
+
+				edges.push_back(face_edge);
+
+				next_face_edge:;
+			}
+		}
+
+		void polyhedron::remove_vertex(size_t vertex_idx) {
+			assert(is_possible_vertex(vertex_idx));
+
+			std::vector<edge> edges_to_remove{};
+
+			auto pred = [=](const edge &e) {
+				return e.has_vertex(vertex_idx);
+			};
+			auto it = std::begin(edges);
+			while ((it = std::find_if(it, std::end(edges), pred)) != std::end(edges)) {
+				edges_to_remove.push_back(*it);
+			}
+
+			for (const edge &e : edges_to_remove) {
+				remove_edge(e);
+			}
+
+			for (size_t i = vertex_idx + 1; i < vertices.size(); i++) {
+				move_vertex(i, i - 1);
+			}
+
+			std::erase(vertices, vertices[vertex_idx]);
+		}
+
+		void polyhedron::remove_edge(const edge &e) {
+			assert(is_possible_edge(e));
+
+			std::erase_if(faces, [&](const face &f) {
+				return f.has_edge(e);
+			});
+
+			std::erase(edges, e);
+		}
+
+		void polyhedron::remove_face(const face &f) {
+			assert(is_possible_face(f));
+
+			std::erase(faces, f);
+		}
+
+		void polyhedron::remove_face_and_dead_edges(const face &f) {
+			assert(is_possible_face(f));
+
+			std::erase(faces, f);
+
+			// TODO: reduce time complexity
+			for (const edge &face_edge : f.edges()) {
+				if (face_edge.faces(*this).empty()) {
+					std::erase(edges, face_edge);
+				}
+			}
+		}
+
+		bool polyhedron::is_possible_vertex(size_t vertex_idx) const {
+			return vertex_idx < vertices.size();
+		}
+
+		bool polyhedron::is_possible_edge(const edge &e) const {
+			return is_possible_vertex(e.v_is[0]) && is_possible_vertex(e.v_is[1]);
+		}
+
+		bool polyhedron::is_possible_face(const face &f) const {
+			for (size_t v_idx : f.verts) {
+				if (! is_possible_vertex(v_idx)) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		void polyhedron::move_vertex(size_t from, size_t to) {
+			for (edge &e : edges) {
+				if (e.v_is[0] == from) {
+					e.v_is[0] = to;
+					assert(e.v_is[1] != from);
+				} else if (e.v_is[1] == from) {
+					e.v_is[1] = to;
+				}
+			}
+
+			for (face &f : faces) {
+				for (size_t i = 0; i < f.verts.size(); i++) {
+					if (f.verts[i] == from) {
+						f.verts[i] = to;
+					}
+				}
+			}
+		}
+
 		vertex::vertex(const vec3 &_v, size_t _i) :
 			v(_v), i(_i) {}
 

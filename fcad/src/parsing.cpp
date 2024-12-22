@@ -23,3 +23,18 @@ std::optional<phys::real> parse_real(parsing::parser_state &state) {
 
 	return out;
 }
+
+std::optional<size_t> parse_size(parsing::parser_state &state) {
+	std::wstringstream sink{};
+
+	size_t num_digits = parsing::parse_dec_digits(state, sink);
+
+	if (num_digits == 0) {
+		return std::nullopt;
+	}
+
+	size_t out;
+	sink >> out;
+
+	return out;
+}

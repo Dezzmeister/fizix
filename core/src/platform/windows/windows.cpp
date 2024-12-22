@@ -2,10 +2,21 @@
 #include <string>
 #include <Windows.h>
 #include <windowsx.h>
+#include "gl.h"
 #include "logging.h"
 #include "platform/platform.h"
 #include "unique_handle.h"
 #include "util.h"
+
+#define WGL_CONTEXT_MAJOR_VERSION_ARB           0x2091
+#define WGL_CONTEXT_MINOR_VERSION_ARB           0x2092
+#define WGL_CONTEXT_LAYER_PLANE_ARB             0x2093
+#define WGL_CONTEXT_FLAGS_ARB                   0x2094
+#define WGL_CONTEXT_PROFILE_MASK_ARB            0x9126
+#define WGL_CONTEXT_DEBUG_BIT_ARB               0x0001
+#define WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB  0x0002
+#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB        0x00000001
+#define WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB 0x00000002
 
 extern "C" {
 	__declspec(dllexport) DWORD NvOptimusEnablement = 0;
@@ -16,6 +27,8 @@ extern "C" {
 	// See https://devblogs.microsoft.com/oldnewthing/20041025-00/?p=37483
 	extern IMAGE_DOS_HEADER __ImageBase;
 }
+
+HGLRC (* wglCreateContextAttribsARB)(HDC dc, HGLRC share_context, const int * attrib_list);
 
 namespace {
 	HANDLE std_out = INVALID_HANDLE_VALUE;
@@ -29,6 +42,11 @@ namespace {
 				ReleaseDC(hwnd, hdc);
 			}
 		);
+	}
+
+	void load_gl_funcs_win32() {
+		try_load_gl(wglCreateContextAttribsARB);
+		load_gl_funcs();
 	}
 }
 
@@ -175,6 +193,81 @@ platform::state::state() :
 			win32::get_last_error("RegisterClassExW")
 		);
 	}
+
+	HWND dummy = CreateWindowExW(
+		WS_EX_OVERLAPPEDWINDOW,
+		(LPCWSTR)default_wc,
+		L"Dummy window",
+		WS_OVERLAPPEDWINDOW,
+		0, 0, 0, 0,
+		NULL, NULL,
+		_h_inst,
+		NULL
+	);
+
+	if (! dummy) {
+		throw api_error(
+			"Failed to create dummy window: " +
+			win32::get_last_error("CreateWindowExW")
+		);
+	}
+
+	SetLastError(0);
+
+	PIXELFORMATDESCRIPTOR pfd{};
+	pfd.nSize = sizeof PIXELFORMATDESCRIPTOR;
+	pfd.nVersion = 1;
+	pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+	pfd.iPixelType = PFD_TYPE_RGBA;
+	pfd.cColorBits = 32;
+	pfd.cDepthBits = 24;
+	pfd.cStencilBits = 8;
+	pfd.iLayerType = PFD_MAIN_PLANE;
+
+	{
+		unique_handle<HDC> hdc = get_hdc(dummy);
+		int pixel_format = ChoosePixelFormat(hdc, &pfd);
+
+		if (! pixel_format) {
+			throw api_error(
+				"Failed to choose a suitable pixel format for dummy window: " +
+				win32::get_last_error("ChoosePixelFormat")
+			);
+		}
+
+		if (! SetPixelFormat(hdc, pixel_format, &pfd)) {
+			throw api_error(
+				"Failed to set pixel format for dummy window: " +
+				win32::get_last_error("SetPixelFormat")
+			);
+		}
+
+		HGLRC glc = wglCreateContext(hdc);
+
+		if (! glc) {
+			throw api_error(
+				"Failed to create dummy OpenGL context: " +
+				win32::get_last_error("wglCreateContext")
+			);
+		}
+
+		wglMakeCurrent(hdc, glc);
+		load_gl_funcs_win32();
+		wglMakeCurrent(hdc, NULL);
+		if (! wglDeleteContext(glc)) {
+			throw api_error(
+				"Failed to delete dummy OpenGL context: " +
+				win32::get_last_error("wglDeleteContext")
+			);
+		}
+	}
+
+	if (! DestroyWindow(dummy)) {
+		throw api_error(
+			"Failed to destroy dummy window: " +
+			win32::get_last_error("DestroyWindow")
+		);
+	}
 }
 
 platform::state::~state() {
@@ -293,8 +386,18 @@ platform::window::window(
 			);
 		}
 
-		// TODO: Trampoline context?
-		glc = wglCreateContext(hdc);
+		if (wglCreateContextAttribsARB) {
+			static int context_attribs[] = {
+				WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+				WGL_CONTEXT_MINOR_VERSION_ARB, 3,
+				WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+				0
+			};
+
+			glc = wglCreateContextAttribsARB(hdc, NULL, context_attribs);
+		} else {
+			glc = wglCreateContext(hdc);
+		}
 
 		if (! glc) {
 			throw api_error(
@@ -465,6 +568,8 @@ void platform::window::reset_cursor_deltas() {
 void platform::window::destroy_gl_context() const {
 	check_has_gl_context();
 
+	wglMakeCurrent(dc, NULL);
+
 	if (! wglDeleteContext(glc)) {
 		throw api_error(
 			"Failed to delete OpenGL context: " +
@@ -585,9 +690,37 @@ std::string platform::win32::get_last_error(const std::string &method) {
 		NULL
 	);
 
-	std::string out = "Windows API call (" + method + ") failed: " +
-		std::string(buf);
-	LocalFree(buf);
+	if (buf) {
+		std::string out = "Windows API call (" + method + ") failed: " +
+			std::string(buf);
+		LocalFree(buf);
+
+		return out;
+	}
+
+	return "Windows API call (" + method + ") failed with code " +
+		traits::to_string(err_code);
+}
+
+void * get_gl_func(const char * const func_name, bool is_required) {
+	SetLastError(0);
+
+	void * out = (void *)wglGetProcAddress(func_name);
+
+	if (! out || (out == (void *)1) || (out == (void *)2) || (out == (void *)3) || (out == (void *)-1)) {
+		DWORD err = GetLastError();
+
+		if (err) {
+			std::string msg = "Failed to load " + std::string(func_name) + ": " +
+				platform::win32::get_last_error("wglGetProcAddress");
+
+			if (is_required) {
+				throw platform::api_error(msg);
+			} else {
+				logger::error(msg);
+			}
+		}
+	}
 
 	return out;
 }

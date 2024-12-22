@@ -2,13 +2,24 @@
 #include <event.h>
 #include <traits.h>
 #include <physics/math.h>
+#include <physics/collision/vclip.h>
 
 using namespace phys;
+using namespace vclip;
 
 enum class edit_mode {
 	Normal,
 	Command,
 	Select
+};
+
+enum class camera_direction {
+	Left,
+	Right,
+	Up,
+	Down,
+	In,
+	Out
 };
 
 struct window_input_event {
@@ -31,6 +42,7 @@ struct set_mode_event {
 	{}
 };
 
+// TODO: Delete this and use only set_mode_event?
 struct mode_switch_event {
 	const edit_mode old_mode;
 	const edit_mode new_mode;
@@ -69,11 +81,32 @@ struct command_submit_event {
 		command(_command) {}
 };
 
+struct camera_move_event {
+	const camera_direction dir;
+
+	camera_move_event(camera_direction _dir) :
+		dir(_dir) {}
+};
+
 struct new_vertex_event {
 	const vec3 vertex;
 
 	new_vertex_event(const vec3 &_vertex) :
 		vertex(_vertex) {}
+};
+
+struct new_edge_event {
+	const edge e;
+
+	new_edge_event(const edge &_e) :
+		e(_e) {}
+};
+
+struct new_face_event {
+	const face f;
+
+	new_face_event(const face &_f) :
+		f(_f) {}
 };
 
 using fcad_event_bus = event_bus<
@@ -83,7 +116,10 @@ using fcad_event_bus = event_bus<
 	command_cancel_event,
 	command_input_event,
 	command_submit_event,
-	new_vertex_event
+	camera_move_event,
+	new_vertex_event,
+	new_edge_event,
+	new_face_event
 >;
 
 namespace traits {

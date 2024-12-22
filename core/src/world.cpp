@@ -18,16 +18,16 @@ world::world(event_buses &_buses, std::vector<mesh *> _meshes, std::vector<light
 	meshes(_meshes),
 	lights(_lights),
 	transparent_mesh_cmp([&](const mesh * a, const mesh * b) {
-	// We just sort in decreasing order by the distance from the player's pos to the center of the mesh
-	// (assuming that the mesh is centered at (0, 0, 0, 1))
-	glm::vec3 a_pos = a->get_model() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	glm::vec3 b_pos = b->get_model() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		// We just sort in decreasing order by the distance from the player's pos to the center of the mesh
+		// (assuming that the mesh is centered at (0, 0, 0, 1))
+		glm::vec3 a_pos = a->get_model() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		glm::vec3 b_pos = b->get_model() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	float a_dsqr = glm::dot(a_pos - player_pos, a_pos - player_pos);
-	float b_dsqr = glm::dot(b_pos - player_pos, b_pos - player_pos);
+		float a_dsqr = glm::dot(a_pos - player_pos, a_pos - player_pos);
+		float b_dsqr = glm::dot(b_pos - player_pos, b_pos - player_pos);
 
-	return a_dsqr > b_dsqr;
-		})
+		return a_dsqr > b_dsqr;
+	})
 {
 	for (mesh * m : _meshes) {
 		if (m->has_transparency()) {
@@ -137,6 +137,7 @@ void world::draw_instanced_meshes(draw_event &event) const {
 	for (const instanced_mesh * im : instanced_meshes) {
 		render_pass.reset();
 
+		// TODO: Don't construct these shader strings on the fly
 		shader_program &shader = event.shaders.shaders.at(im->mtl->shader_name() + "_instanced");
 		shader.use();
 

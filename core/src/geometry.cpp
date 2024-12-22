@@ -9,7 +9,14 @@ namespace {
 		out.push_back(v.z);
 	}
 
-	std::vector<float> compute_tangent_basis(const std::vector<float> attrs) {
+	void insert(const glm::vec2 &v, std::vector<float> &out) {
+		out.push_back(v.x);
+		out.push_back(v.y);
+	}
+
+	std::vector<float> compute_tangent_basis_for_triangles(
+		const std::vector<float> &attrs
+	) {
 		constexpr size_t stride = 3 + 3 + 2;
 		constexpr size_t uv_offset = 3 + 3;
 
@@ -62,17 +69,54 @@ namespace {
 
 		return out;
 	}
+
+	std::vector<float> compute_empty_tangent_basis(
+		const std::vector<float> &attrs
+	) {
+		constexpr size_t stride = 3 + 3 + 2;
+
+		std::vector<float> out{};
+
+		for (size_t i = 0; i < attrs.size(); i += stride) {
+			std::copy(std::begin(attrs) + i, std::begin(attrs) + i + stride, std::back_inserter(out));
+			insert(glm::vec3(0.0f), out);
+			insert(glm::vec3(0.0f), out);
+		}
+
+		return out;
+	}
+
+	std::vector<float> compute_tangent_basis(
+		const std::vector<float> &attrs,
+		geometry_primitive_type primitive_type
+	) {
+		switch (primitive_type) {
+			case geometry_primitive_type::Points:
+			case geometry_primitive_type::Lines:
+				return compute_empty_tangent_basis(attrs);
+			case geometry_primitive_type::Triangles:
+				return compute_tangent_basis_for_triangles(attrs);
+			default:
+				std::unreachable();
+		}
+	}
 }
 
-geometry::geometry(std::vector<float> _vbo_data) :
+geometry::geometry(
+	const std::vector<float> &_vbo_data,
+	geometry_primitive_type _primitive_type,
+	vbo_usage_hint _vbo_hint
+) :
 	num_vertices(_vbo_data.size() / 8),
-	vbo_data(compute_tangent_basis(_vbo_data)),
+	vbo_data(compute_tangent_basis(_vbo_data, _primitive_type)),
 	vao(0, [](unsigned int handle) {
-	glDeleteVertexArrays(1, &handle);
-		}),
+		glDeleteVertexArrays(1, &handle);
+	}),
 	vbo(0, [](unsigned int handle) {
-	glDeleteBuffers(1, &handle);
-		})
+		glDeleteBuffers(1, &handle);
+	}),
+	primitive_type(_primitive_type),
+	vbo_hint(_vbo_hint)
 {
 	constexpr size_t stride = sizeof(float) * (3 + 3 + 2 + 3 + 3);
 	glGenVertexArrays(1, &vao);
@@ -80,7 +124,7 @@ geometry::geometry(std::vector<float> _vbo_data) :
 
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, vbo_data.size() * sizeof(float), vbo_data.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vbo_data.size() * sizeof(float), vbo_data.data(), static_cast<GLenum>(vbo_hint));
 
 	// Vertices are always (location = 0)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
@@ -107,8 +151,56 @@ geometry::geometry(std::vector<float> _vbo_data) :
 
 void geometry::prepare_draw() const {
 	glBindVertexArray(vao);
+
+	if (vbo_needs_update) {
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		// TODO: Use glBufferSubData instead of invalidating the entire vbo
+		glBufferData(GL_ARRAY_BUFFER, vbo_data.size() * sizeof(float), vbo_data.data(), static_cast<GLenum>(vbo_hint));
+		vbo_needs_update = false;
+	}
 }
 
 void geometry::draw(int, unsigned int count) const {
-	glDrawArrays(GL_TRIANGLES, 0, count == -1 ? (GLsizei)num_vertices : count);
+	glDrawArrays(static_cast<GLenum>(primitive_type), 0, count == -1 ? (GLsizei)num_vertices : count);
+}
+
+size_t geometry::add_vertex(
+	const glm::vec3 &pos,
+	const glm::vec3 &norm,
+	const glm::vec2 &uv,
+	const glm::vec3 &tangent,
+	const glm::vec3 &bitangent
+) {
+	insert(pos, vbo_data);
+	insert(norm, vbo_data);
+	insert(uv, vbo_data);
+	insert(tangent, vbo_data);
+	insert(bitangent, vbo_data);
+
+	size_t out = num_vertices;
+	num_vertices++;
+
+	vbo_needs_update = true;
+
+	return out;
+}
+
+void geometry::remove_vertex(size_t vertex_idx) {
+	vbo_data.erase(std::begin(vbo_data) + vertex_idx);
+	vbo_needs_update = true;
+}
+
+size_t geometry::get_num_vertices() const {
+	return num_vertices;
+}
+
+void geometry::write_vertex(
+	std::vector<float> &out,
+	const glm::vec3 &pos,
+	const glm::vec3 &norm,
+	const glm::vec2 &uv
+) {
+	insert(pos, out);
+	insert(norm, out);
+	insert(uv, out);
 }

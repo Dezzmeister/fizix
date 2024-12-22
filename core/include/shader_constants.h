@@ -57,6 +57,8 @@ namespace constants {
 		{ "cube_sampler_u_filter", 9 },
 		{ "cube_sampler_v_filter", 10 },
 
-		{ "max_particle_size", 1 }
+		{ "max_particle_size", 1 },
+
+		{ "color", 19 },
 	};
 };

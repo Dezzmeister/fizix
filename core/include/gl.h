@@ -4,6 +4,9 @@
 #include <string>
 #include <gl/gl.h>
 
+#define load_gl(func) func = (decltype(func)) get_gl_func(#func, true)
+#define try_load_gl(func) func = (decltype(func)) get_gl_func(#func, false)
+
 #define GL_CALL								__stdcall
 
 #define GL_FRAGMENT_SHADER					0x8B30
@@ -132,5 +135,5 @@ extern void (GL_CALL * glVertexAttribDivisor)(GLuint index, GLuint divisor);
 
 extern void (GL_CALL * glDrawArraysInstanced)(GLenum mode, GLint first, GLsizei count, GLsizei instance_count);
 
-void init_gl();
-void * get_gl_func(const char * const func_name);
+void load_gl_funcs();
+void * get_gl_func(const char * const func_name, bool is_required = true);

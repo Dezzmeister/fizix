@@ -9,13 +9,14 @@ instanced_mesh::instanced_mesh(const geometry * _geom, const material * _mtl, si
 	mtl(_mtl),
 	models(_instances, model_pair(glm::identity<glm::mat4>(), glm::identity<glm::mat4>())),
 	vbo(0, [](unsigned int _handle) {
-	glDeleteBuffers(1, &_handle);
-		}),
+		glDeleteBuffers(1, &_handle);
+	}),
 	models_need_updating(false)
 {
 	geom->prepare_draw();
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	// TODO: Parameterize buffer usage hint
 	glBufferData(GL_ARRAY_BUFFER, sizeof(decltype(models)::value_type) * models.size(), models.data(), GL_STATIC_DRAW);
 
 	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 32 * sizeof(float), (void*)0);
@@ -70,7 +71,7 @@ void instanced_mesh::draw(draw_event&, const shader_program&) const {
 		models_need_updating = false;
 	}
 
-	glDrawArraysInstanced(GL_TRIANGLES, 0, (GLsizei)geom->num_vertices, (GLsizei)models.size());
+	glDrawArraysInstanced(GL_TRIANGLES, 0, (GLsizei)geom->get_num_vertices(), (GLsizei)models.size());
 }
 
 void instanced_mesh::set_model(size_t i, const glm::mat4 &_model) {

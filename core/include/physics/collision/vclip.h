@@ -25,8 +25,8 @@ namespace phys {
 		// is convex and closed.
 		struct polyhedron {
 			std::vector<vertex> vertices{};
-			const std::vector<edge> edges{};
-			const std::vector<face> faces{};
+			std::vector<edge> edges{};
+			std::vector<face> faces{};
 
 			int euler_characteristic() const;
 
@@ -34,8 +34,34 @@ namespace phys {
 			void validate_references() const;
 			void validate_geometry() const;
 
+			void add_vertex(const vec3 &v);
+			void add_edge(const edge &e);
+			// Adds a face, but not its constituent edges. The edges must be added
+			// separately with `add_edge` or the face must be added with
+			// `add_face_and_new_edges`.
+			void add_face(const face &f);
+			// Adds a face. If any of the face's constituent edges are new, those
+			// will be added as well.
+			void add_face_and_new_edges(const face &f);
+			void remove_vertex(size_t vertex_idx);
+			void remove_edge(const edge &e);
+			// Removes a face, but not its constituent edges. The edges must be removed
+			// separately with `remove_edge` or the face must be removed with
+			// `remove_face_and_dead_edges`.
+			void remove_face(const face &f);
+			// Removes a face. If any of the face's constituent edges would be unused after
+			// removing the face, those will be removed as well.
+			void remove_face_and_dead_edges(const face &f);
+
+			bool is_possible_vertex(size_t vertex_idx) const;
+			bool is_possible_edge(const edge &e) const;
+			bool is_possible_face(const face &f) const;
+
 			std::ranges::range auto features() const &;
 			std::ranges::range auto features() const && = delete;
+
+		private:
+			void move_vertex(size_t from, size_t to);
 		};
 
 		template <typename T>

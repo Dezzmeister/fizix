@@ -57,6 +57,8 @@
 #define MOUSE_MAX			0x100
 #define MOUSE_MASK			0xFF
 
+extern HGLRC (* wglCreateContextAttribsARB)(HDC dc, HGLRC share_context, const int * attrib_list);
+
 namespace platform {
 	class window;
 

@@ -18,8 +18,10 @@
 #include <util.h>
 #include <world.h>
 #include "action.h"
+#include "camera_controller.h"
 #include "command_controller.h"
 #include "fcad_events.h"
+#include "geometry_controller.h"
 #include "mode_controller.h"
 #include "window_action_controller.h"
 
@@ -142,7 +144,7 @@ LRESULT CALLBACK command_input_proc(
 	win32_bridge * bridge = (win32_bridge *)ref_data;
 
 	switch (message) {
-		case WM_KEYDOWN: {
+		case WM_CHAR: {
 			if (w_param != VK_ESCAPE && w_param != VK_RETURN) {
 				break;
 			}
@@ -173,7 +175,7 @@ LRESULT CALLBACK command_input_proc(
 			set_mode_event mode_event(edit_mode::Normal);
 			bridge->events.fire(mode_event);
 
-			break;
+			return 0;
 		}
 	}
 
@@ -324,7 +326,6 @@ int main(int, const char * const * const) {
 	gdi_plus_context gdi_plus;
 	main_window.show();
 	main_window.make_gl_context_current();
-	init_gl();
 
 	glViewport(0, 0, 800, 800);
 	// Old Windows BSOD blue
@@ -336,8 +337,9 @@ int main(int, const char * const * const) {
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
 
+	shapes::init();
+
 	// TODO: Custom camera
-	player pl(buses);
 	hardware_constants hw_consts(buses);
 
 	program_start_event program_start(&main_window);
@@ -361,12 +363,10 @@ int main(int, const char * const * const) {
 	// TODO: Disable mouse locking
 	mouse_controller mouse(buses, {}, KEY_ESC);
 	screen_controller screen(buses);
-
-	world w(buses);
+	camera_controller camera(buses, events);
+	geometry_controller geom(buses, events);
 
 	buses.lifecycle.fire(program_start);
-
-	shapes::init();
 
 	platform::run([&]() {
 		buses.render.fire(pre_render_event);
