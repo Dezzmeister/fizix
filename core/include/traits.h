@@ -62,6 +62,9 @@ namespace traits {
 	std::string to_string(const std::string &s, size_t indent);
 
 	template <>
+	std::string to_string(const glm::vec2 &v, size_t indent);
+
+	template <>
 	std::string to_string(const glm::vec3 &v, size_t indent);
 
 	template <>

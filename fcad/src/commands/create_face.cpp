@@ -3,8 +3,6 @@
 #include "commands.h"
 #include "parsing.h"
 
-using namespace phys;
-
 struct face_indices {
 	std::optional<std::vector<size_t>> indices{ std::vector<size_t>{} };
 
@@ -44,7 +42,7 @@ void create_face_command_impl::on_submit(const std::wstring &args) {
 		return;
 	}
 
-	face f(*face_opt.indices);
+	face f(*face_opt.indices, convexity::Unspecified);
 	new_face_event event(f);
 	events.fire(event);
 }

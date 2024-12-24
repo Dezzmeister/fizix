@@ -114,14 +114,16 @@ namespace phys {
 			friend bool operator==(const edge &e1, const edge &e2);
 		};
 
-		struct face {
-			// These are the positions of the face's vertices in the polyhedron's
-			// vertex array. The winding order of the vertices determines the
-			// orientation of the face; the face normal points in the direction for
-			// which the vertices wind counter-clockwise.
-			std::vector<size_t> verts;
+		enum convexity {
+			Convex,
+			Nonconvex,
+			Unspecified
+		};
 
-			face(const std::vector<size_t> &_verts);
+		struct face_cut_result;
+
+		struct face {
+			face(const std::vector<size_t> &_vs, convexity _convexity_hint = convexity::Convex);
 
 			// Returns a view that will yield neighboring vertices
 			std::ranges::view auto vertices(const polyhedron &p) const &;
@@ -135,12 +137,63 @@ namespace phys {
 			bool has_edge(const edge &e) const;
 			bool has_vertex(size_t i) const;
 
+			// Returns the positions of the face's vertices in the polyhedron's
+			// vertex array. The winding order of the vertices determines the
+			// orientation of the face; the face normal points in the direction for
+			// which the vertices wind counter-clockwise.
+			const std::vector<size_t>& verts() const;
+
+			inline size_t vert(size_t vert_idx) const {
+				assert(vert_idx < vs.size());
+
+				return vs[vert_idx];
+			}
+
+			inline void set_vert(size_t vert_idx, size_t new_vert) {
+				assert(vert_idx < vs.size());
+
+				vs[vert_idx] = new_vert;
+				norm_needs_update = true;
+			}
+
+			size_t num_verts() const;
+
+			// Computes the normal of the face. For a convex face, this is an O(1)
+			// operation; for a nonconvex face, this is an O(N) operation where N
+			// is the number of vertices.
+			// The normal is defined by the winding order of the vertices so that
+			// it points in the direction of whatever side has the vertices in CCW
+			// winding order.
 			vec3 normal(const polyhedron &p) const;
 			// Returns a copy of `e` with its two vertices arranged in CCW winding
 			// order around the face
 			edge get_ccw(const edge &e) const;
 
+			bool is_coplanar(const polyhedron &p) const;
+			// Returns true if the vertex is convex. Uses the convexity hint to
+			// short-circuit computation if possible.
+			// Accepts the vertex's index in the face, not in the polyhedron.
+			bool is_vertex_convex(const polyhedron &p, size_t vert_idx) const;
+			// Returns true if the convexity hint is Convex and false if the hint is
+			// Nonconvex. If the hint is Unspecified, the convexity is computed
+			// and not cached.
+			bool is_convex(const polyhedron &p) const;
+
+			face_cut_result cut(size_t from_idx, size_t to_idx) const;
+			bool can_make_cut(size_t from_idx, size_t to_idx) const;
+
 			friend bool operator==(const face &f1, const face &f2);
+
+		private:
+			std::vector<size_t> vs;
+			mutable vec3 norm{};
+			convexity convexity_hint;
+			bool norm_needs_update{ true };
+		};
+
+		struct face_cut_result {
+			face f1;
+			face f2;
 		};
 
 		using feature = std::variant<vertex, edge, face>;
@@ -164,7 +217,6 @@ namespace phys {
 				const vec3 &_dir
 			);
 
-			real dist_from(const vec3 &v) const;
 			const feature& other(const feature &f) const;
 
 			friend bool operator==(const vplane &v1, const vplane &v2);
@@ -363,7 +415,7 @@ inline std::ranges::view auto phys::vclip::edge::faces(const polyhedron &p) cons
 }
 
 inline std::ranges::view auto phys::vclip::face::vertices(const polyhedron &p) const & {
-	return verts | std::ranges::views::transform(
+	return vs | std::ranges::views::transform(
 		[&](const size_t i) {
 			return p.vertices[i];
 		}
@@ -372,11 +424,11 @@ inline std::ranges::view auto phys::vclip::face::vertices(const polyhedron &p) c
 
 inline std::ranges::range auto phys::vclip::face::edges() const & {
 	return util::concat_views(
-		verts | std::ranges::views::slide(2) | std::ranges::views::transform(
+		vs | std::ranges::views::slide(2) | std::ranges::views::transform(
 			[&](const auto &vs) {
 				return edge(vs[0], vs[1]);
 			}
 		),
-		std::ranges::owning_view(std::vector({ edge(verts[verts.size() - 1], verts[0])}))
+		std::ranges::owning_view(std::vector({ edge(vs[vs.size() - 1], vs[0])}))
 	);
 }

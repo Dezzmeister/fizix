@@ -168,7 +168,7 @@ namespace phys {
 
 			for (const face &fp : p_f.faces) {
 				vec3 n = fp.normal(p_f);
-				real d = dp(v.v, p_f.vertices[fp.verts[0]].v, n);
+				real d = dp(v.v, p_f.vertices[fp.verts()[0]].v, n);
 
 				if (d > d_max) {
 					d_max = d;
@@ -211,7 +211,7 @@ namespace phys {
 			}
 
 			for (const face &f : faces) {
-				for (size_t v_i : f.verts) {
+				for (size_t v_i : f.verts()) {
 					if (v_i >= num_verts) {
 						throw geometry_error(f,
 							"Face refers to a vertex that doesn't exist: " + traits::to_string(v_i) +
@@ -224,9 +224,9 @@ namespace phys {
 
 		void polyhedron::validate_geometry() const {
 			for (const face &f : faces) {
-				if (f.verts.size() < 3) {
+				if (f.num_verts() < 3) {
 					throw geometry_error(f,
-						"Face has less than three vertices: " + traits::to_string(f.verts.size())
+						"Face has less than three vertices: " + traits::to_string(f.num_verts())
 					);
 				}
 			}
@@ -355,7 +355,7 @@ namespace phys {
 		}
 
 		bool polyhedron::is_possible_face(const face &f) const {
-			for (size_t v_idx : f.verts) {
+			for (size_t v_idx : f.verts()) {
 				if (! is_possible_vertex(v_idx)) {
 					return false;
 				}
@@ -375,9 +375,9 @@ namespace phys {
 			}
 
 			for (face &f : faces) {
-				for (size_t i = 0; i < f.verts.size(); i++) {
-					if (f.verts[i] == from) {
-						f.verts[i] = to;
+				for (size_t i = 0; i < f.num_verts(); i++) {
+					if (f.vert(i) == from) {
+						f.set_vert(i, to);
 					}
 				}
 			}
@@ -488,11 +488,12 @@ namespace phys {
 			return (1 - l) * t(p).v + l * h(p).v;
 		}
 
-		face::face(const std::vector<size_t> &_verts) : verts(_verts) {}
+		face::face(const std::vector<size_t> &_vs, convexity _convexity_hint) : 
+			vs(_vs), convexity_hint(_convexity_hint) {}
 
 		std::vector<vplane> face::fe_planes(const polyhedron &p) const {
 			std::vector<vplane> out{};
-			vec3 norm = normal(p);
+			vec3 n = normal(p);
 
 			for (const edge &e : edges()) {
 				vec3 d = normalize(e.h(p).v - e.t(p).v);
@@ -501,7 +502,7 @@ namespace phys {
 					*this,
 					e,
 					e.t(p).v,
-					cross(d, norm)
+					cross(d, n)
 				));
 			}
 
@@ -515,29 +516,304 @@ namespace phys {
 		}
 
 		bool face::has_vertex(size_t i) const {
-			return std::find(std::begin(verts), std::end(verts), i) != std::end(verts);
+			return std::find(std::begin(vs), std::end(vs), i) != std::end(vs);
+		}
+
+		const std::vector<size_t>& face::verts() const {
+			return vs;
+		}
+
+		size_t face::num_verts() const {
+			return vs.size();
 		}
 
 		vec3 face::normal(const polyhedron &p) const {
-			vec3 v1 = p.vertices[verts[0]].v;
-			vec3 v2 = p.vertices[verts[1]].v;
-			vec3 v3 = p.vertices[verts[2]].v;
+			if (! norm_needs_update) {
+				return norm;
+			}
+
+			if (convexity_hint == convexity::Convex) {
+				vec3 v1 = p.vertices[vs[0]].v;
+				vec3 v2 = p.vertices[vs[1]].v;
+				vec3 v3 = p.vertices[vs[2]].v;
+				vec3 e1 = v2 - v1;
+				vec3 e2 = v3 - v2;
+
+				norm = normalize(cross(e1, e2));
+				return norm;
+			}
+
+			// We can't just take the cross product of the first two edges, because
+			// the direction of the normal will be flipped if the edges are concave.
+			// Instead, we can compute the bounding box of the polygon, then find a
+			// vertex along the bounding box and use that to compute the normal.
+			// A vertex along the bounding box must be convex, so the normal will point
+			// in the correct direction.
+			// This won't work if the bounding box is degenerate in any direction, so
+			// we set degenerate planes to infinity or negative infinity before finding
+			// a convex vertex.
+
+			assert(is_coplanar(p));
+
+			vec3 min(infinity);
+			vec3 max(-infinity);
+
+			for (const vertex &v : vertices(p)) {
+				if (v.v.x < min.x) {
+					min.x = v.v.x;
+				}
+				if (v.v.y < min.y) {
+					min.y = v.v.y;
+				}
+				if (v.v.z < min.z) {
+					min.z = v.v.z;
+				}
+				if (v.v.x > max.x) {
+					max.x = v.v.x;
+				}
+				if (v.v.y > max.y) {
+					max.y = v.v.y;
+				}
+				if (v.v.z > max.z) {
+					max.z = v.v.z;
+				}
+			}
+
+			assert(min.x != infinity);
+			assert(min.y != infinity);
+			assert(min.z != infinity);
+			assert(max.x != -infinity);
+			assert(max.y != -infinity);
+			assert(max.z != -infinity);
+
+			if (min.x == max.x) {
+				min.x = -infinity;
+				max.x = infinity;
+			}
+			if (min.y == max.y) {
+				min.y = -infinity;
+				max.y = infinity;
+			}
+			if (min.z == max.z) {
+				min.z = -infinity;
+				max.z = infinity;
+			}
+
+			assert(min.x != max.x);
+			assert(min.y != max.y);
+			assert(min.z != max.z);
+
+			int64_t v_idx = -1;
+
+			for (size_t i = 0; i < vs.size(); i++) {
+				const vertex &v = p.vertices[vs[i]];
+
+				bool is_on_any_min_plane =
+					(v.v.x == min.x) ||
+					(v.v.y == min.y) ||
+					(v.v.z == min.z);
+
+				if (is_on_any_min_plane) {
+					v_idx = i;
+					break;
+				}
+
+				bool is_on_any_max_plane =
+					(v.v.x == max.x) ||
+					(v.v.y == max.y) ||
+					(v.v.z == max.z);
+
+				if (is_on_any_max_plane) {
+					v_idx = i;
+					break;
+				}
+			}
+
+			assert(v_idx != -1);
+
+			size_t vi0;
+			size_t vi1 = (size_t)v_idx;
+			size_t vi2;
+
+			if (vi1 == 0) {
+				vi0 = vs.size() - 1;
+				vi2 = 1;
+			} else if (vi1 == vs.size() - 1) {
+				vi0 = vs.size() - 2;
+				vi2 = 0;
+			} else {
+				vi0 = vi1 - 1;
+				vi2 = vi1 + 1;
+			}
+
+			vec3 v1 = p.vertices[vs[vi0]].v;
+			vec3 v2 = p.vertices[vs[vi1]].v;
+			vec3 v3 = p.vertices[vs[vi2]].v;
 			vec3 e1 = v2 - v1;
 			vec3 e2 = v3 - v2;
 
-			return normalize(cross(e1, e2));
+			norm = normalize(cross(e1, e2));
+			return norm;
 		}
 
 		edge face::get_ccw(const edge &_e) const {
-			using traits::to_string;
-
 			for (const edge e : edges()) {
 				if (e == _e) {
 					return e;
 				}
 			}
 
-			throw geometry_error(*this, "Edge not found: " + to_string(_e));
+			throw geometry_error(*this, "Edge not found: " + traits::to_string(_e));
+		}
+
+		bool face::is_coplanar(const polyhedron &p) const {
+			auto all_edges = edges();
+			auto it = std::begin(all_edges);
+			const edge e1 = *it;
+			++it;
+			assert(it != std::end(all_edges));
+
+			const edge e2 = *it;
+			++it;
+			assert(it != std::end(all_edges));
+
+			vec3 dir = cross(e1.h(p).v - e1.t(p).v, e2.h(p).v - e2.t(p).v);
+
+			for (it; it != std::end(all_edges); it++) {
+				// TODO: epsilon?
+				if (dot(dir, it->h(p).v - it->t(p).v) != 0.0_r) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		bool face::is_vertex_convex(const polyhedron &p, size_t vert_idx) const {
+			if (vert_idx >= vs.size()) {
+				throw geometry_error(
+					*this,
+					"Face does not have vertex at index " + traits::to_string(vert_idx) +
+					"; face only has " + traits::to_string(vs.size()) + " vertices"
+				);
+			}
+
+			if (vs.size() < 3) {
+				throw geometry_error(*this, "Face has less than three vertices");
+			}
+
+			size_t vi0;
+			size_t vi1 = vert_idx;
+			size_t vi2;
+
+			if (vi1 == 0) {
+				vi0 = vs.size() - 1;
+				vi2 = 1;
+			} else if (vi1 == vs.size() - 1) {
+				vi0 = vs.size() - 2;
+				vi2 = 0;
+			} else {
+				vi0 = vi1 - 1;
+				vi2 = vi1 + 1;
+			}
+
+			vec3 face_norm = normal(p);
+			vec3 v1 = p.vertices[vs[vi0]].v;
+			vec3 v2 = p.vertices[vs[vi1]].v;
+			vec3 v3 = p.vertices[vs[vi2]].v;
+			vec3 e1 = v2 - v1;
+			vec3 e2 = v3 - v2;
+
+			vec3 local_norm = normalize(cross(e1, e2));
+
+			return dot(face_norm, local_norm) > 0;
+		}
+
+		bool face::is_convex(const polyhedron &p) const {
+			if (convexity_hint == convexity::Convex) {
+				return true;
+			} else if (convexity_hint == convexity::Nonconvex) {
+				return false;
+			}
+
+			if (vs.size() == 3) {
+				return true;
+			}
+
+			size_t vi0 = vs.size() - 1;
+			size_t vi1 = 0;
+			size_t vi2 = 1;
+			vec3 e1 = p.vertices[vs[vi1]].v - p.vertices[vs[vi0]].v;
+			vec3 e2 = p.vertices[vs[vi2]].v - p.vertices[vs[vi1]].v;
+			vec3 dir = cross(e1, e2);
+
+			for (vi1 = 1; vi1 < vs.size() - 1; vi1++) {
+				vi0 = vi1 - 1;
+				vi2 = vi1 + 1;
+				e1 = p.vertices[vs[vi1]].v - p.vertices[vs[vi0]].v;
+				e2 = p.vertices[vs[vi2]].v - p.vertices[vs[vi1]].v;
+
+				vec3 curr_dir = cross(e1, e2);
+
+				if (dot(dir, curr_dir) <= 0) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		face_cut_result face::cut(size_t from_idx, size_t to_idx) const {
+			assert(to_idx < vs.size());
+			assert(from_idx < vs.size());
+
+			std::vector<size_t> f1_verts{};
+			std::vector<size_t> f2_verts{};
+
+			size_t start = from_idx < to_idx ? from_idx : to_idx;
+			size_t end = from_idx < to_idx ? to_idx : from_idx;
+
+			for (size_t i = start; i <= end; i++) {
+				f1_verts.push_back(vs[i]);
+			}
+
+			for (size_t i = end; i < vs.size(); i++) {
+				f2_verts.push_back(vs[i]);
+			}
+
+			for (size_t i = 0; i <= start; i++) {
+				f2_verts.push_back(vs[i]);
+			}
+
+			if (f1_verts.size() < 3 || f2_verts.size() < 3) {
+				throw geometry_error(
+					*this,
+					"Invalid cut from vertex " + traits::to_string(from_idx) +
+					" to " + traits::to_string(to_idx)
+				);
+			}
+
+			convexity new_hint = convexity_hint == convexity::Convex ?
+				convexity::Convex : convexity::Unspecified;
+
+			return face_cut_result{
+				.f1 = face(f1_verts, new_hint),
+				.f2 = face(f2_verts, new_hint)
+			};
+		}
+
+		bool face::can_make_cut(size_t from_idx, size_t to_idx) const {
+			assert(from_idx < vs.size());
+			assert(to_idx < vs.size());
+
+			size_t start = from_idx < to_idx ? from_idx : to_idx;
+			size_t end = from_idx < to_idx ? to_idx : from_idx;
+
+			if (end - start < 2) {
+				return false;
+			}
+
+			return ! (start == 0 && end == vs.size() - 1);
 		}
 
 		int polyhedron::euler_characteristic() const {
@@ -555,11 +831,6 @@ namespace phys {
 			pos(_pos),
 			dir(_dir)
 		{}
-
-		// TODO: Consolidate plane/vector distance functions
-		real vplane::dist_from(const vec3 &v) const {
-			return dot(v - pos, dir);
-		}
 
 		const feature& vplane::other(const feature &f) const {
 			if (f == f1) {
@@ -597,7 +868,7 @@ namespace phys {
 			const vertex &v1,
 			const vertex &v2
 		) {
-			std::vector<vplane> vps = v1.ve_planes(p1);
+			std::vector<vplane> vps = v1.ve_planes(p1); 
 
 			for (const auto &vp : vps) {
 				vec3 v_dir = v2.v - vp.pos;
@@ -719,11 +990,11 @@ namespace phys {
 			}
 
 			vec3 f_norm = f.normal(p_f);
-			real dpv = dp(v.v, p_f.vertices[f.verts[0]].v, f_norm);
+			real dpv = dp(v.v, p_f.vertices[f.vert(0)].v, f_norm);
 
 			for (const edge &e : v.edges(p_v)) {
 				vec3 vp = e.v_is[0] == v.i ? e.h(p_v).v : e.t(p_v).v;
-				real dpvp = dp(vp, p_f.vertices[f.verts[0]].v, f_norm);
+				real dpvp = dp(vp, p_f.vertices[f.vert(0)].v, f_norm);
 
 				// The algorithm as described in the paper compares the magnitudes of Dp(v)
 				// and Dp(vp) here, but that would be incorrect if this vertex does not
@@ -896,8 +1167,8 @@ namespace phys {
 			vec3 n = f.normal(p_f);
 			vec3 e_v1 = e.at(p_e, cr.l1);
 			vec3 e_v2 = e.at(p_e, cr.l2);
-			real d1 = dot(e_v1 - p_f.vertices[f.verts[0]].v, n);
-			real d2 = dot(e_v2 - p_f.vertices[f.verts[0]].v, n);
+			real d1 = dot(e_v1 - p_f.vertices[f.vert(0)].v, n);
+			real d2 = dot(e_v2 - p_f.vertices[f.vert(0)].v, n);
 
 			if (d1 * d2 <= 0) {
 				return algorithm_state{
@@ -1068,31 +1339,31 @@ namespace phys {
 		}
 
 		bool operator==(const face &f1, const face &f2) {
-			if (f1.verts.size() != f2.verts.size()) {
+			if (f1.vs.size() != f2.vs.size()) {
 				return false;
 			}
 
 			size_t i1 = 0;
 			size_t i2 = 0;
 
-			for (; i2 < f2.verts.size(); i2++) {
-				if (f1.verts[i1] == f2.verts[i2]) {
+			for (; i2 < f2.vs.size(); i2++) {
+				if (f1.vs[i1] == f2.vs[i2]) {
 					break;
 				}
 			}
 
-			if (i2 == f2.verts.size()) {
+			if (i2 == f2.vs.size()) {
 				return false;
 			}
 
-			for (size_t i = 0; i < f2.verts.size(); i++) {
+			for (size_t i = 0; i < f2.vs.size(); i++) {
 				size_t j = i + i2;
 
-				if (j >= f2.verts.size()) {
-					j -= f2.verts.size();
+				if (j >= f2.vs.size()) {
+					j -= f2.vs.size();
 				}
 
-				if (f1.verts[i] != f2.verts[j]) {
+				if (f1.vs[i] != f2.vs[j]) {
 					return false;
 				}
 			}
@@ -1138,10 +1409,10 @@ std::string traits::to_string(const phys::vclip::face &f, size_t) {
 	std::stringstream out{};
 	out << "face(";
 
-	for (size_t i = 0; i < f.verts.size(); i++) {
-		out << traits::to_string(f.verts[i]);
+	for (size_t i = 0; i < f.num_verts(); i++) {
+		out << traits::to_string(f.vert(i));
 
-		if (i + 1 != f.verts.size()) {
+		if (i + 1 != f.num_verts()) {
 			out << ", ";
 		}
 	}

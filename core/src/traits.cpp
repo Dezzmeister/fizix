@@ -17,6 +17,13 @@ std::string traits::to_string<const unsigned char *>(const unsigned char * const
 }
 
 template <>
+std::string traits::to_string<glm::vec2>(const glm::vec2 &v, size_t) {
+	return "vec2(" +
+		to_string(v.x) + ", " +
+		to_string(v.y) + ")";
+}
+
+template <>
 std::string traits::to_string<glm::vec3>(const glm::vec3 &v, size_t) {
 	return "vec3(" +
 		to_string(v.x) + ", " +
