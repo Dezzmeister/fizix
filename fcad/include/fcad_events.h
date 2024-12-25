@@ -13,15 +13,6 @@ enum class edit_mode {
 	Select
 };
 
-enum class camera_direction {
-	Left,
-	Right,
-	Up,
-	Down,
-	In,
-	Out
-};
-
 struct window_input_event {
 	const char c;
 
@@ -81,13 +72,6 @@ struct command_submit_event {
 		command(_command) {}
 };
 
-struct camera_move_event {
-	const camera_direction dir;
-
-	camera_move_event(camera_direction _dir) :
-		dir(_dir) {}
-};
-
 struct new_vertex_event {
 	const vec3 vertex;
 
@@ -116,7 +100,6 @@ using fcad_event_bus = event_bus<
 	command_cancel_event,
 	command_input_event,
 	command_submit_event,
-	camera_move_event,
 	new_vertex_event,
 	new_edge_event,
 	new_face_event

@@ -17,7 +17,6 @@ public:
 	virtual ~action() = default;
 
 	virtual action_state test(char c) = 0;
-
 	virtual std::string to_string(size_t indent) const = 0;
 };
 

@@ -18,13 +18,12 @@ public:
 private:
 	std::unique_ptr<world> mesh_world;
 	std::unique_ptr<geometry> vert_geom;
-	std::unique_ptr<material> vert_mtl;
 	std::unique_ptr<mesh> vert_mesh;
 	std::unique_ptr<geometry> edge_geom;
-	std::unique_ptr<material> edge_mtl;
 	std::unique_ptr<mesh> edge_mesh;
 	std::vector<std::unique_ptr<geometry>> face_geoms{};
-	std::unique_ptr<material> face_mtl;
 	std::vector<std::unique_ptr<mesh>> face_meshes{};
+	std::unique_ptr<light> sun{};
+	std::unique_ptr<light> moon{};
 	polyhedron poly{};
 };

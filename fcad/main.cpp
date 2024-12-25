@@ -239,6 +239,31 @@ LRESULT CALLBACK main_window_proc(
 	return DefSubclassProc(hwnd, message, w_param, l_param);
 }
 
+void create_shape(fcad_event_bus &events) {
+	// TODO: macros, replay files
+	std::wstring commands[] = {
+		L":v 1 1 1",
+		L":v 1 1 -1",
+		L":v 1 -1 1",
+		L":v 1 -1 -1",
+		L":v -1 1 1",
+		L":v -1 1 -1",
+		L":v -1 -1 1",
+		L":v -1 -1 -1",
+		L":f 0 1 5 4",
+		L":f 0 2 3 1",
+		L":f 0 4 6 2",
+		L":f 7 3 2 6",
+		L":f 7 6 4 5",
+		L":f 7 5 1 3"
+	};
+
+	for (const std::wstring &str : commands) {
+		command_submit_event event(str);
+		events.fire(event);
+	}
+}
+
 // TODO: Check command line and possibly load file
 int main(int, const char * const * const) {
 	INITCOMMONCONTROLSEX ctrls = {
@@ -358,13 +383,21 @@ int main(int, const char * const * const) {
 	post_render_pass_event post_render_event{};
 
 	key_controller keys(buses, {
-		KEY_ESC
+		KEY_ESC,
+		KEY_H,
+		KEY_J,
+		KEY_K,
+		KEY_L,
+		KEY_I,
+		KEY_O
 	});
 	// TODO: Disable mouse locking
 	mouse_controller mouse(buses, {}, KEY_ESC);
 	screen_controller screen(buses);
 	camera_controller camera(buses, events);
 	geometry_controller geom(buses, events);
+
+	create_shape(events);
 
 	buses.lifecycle.fire(program_start);
 

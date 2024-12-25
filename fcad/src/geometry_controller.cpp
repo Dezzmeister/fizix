@@ -1,5 +1,6 @@
 #include <random>
 #include <color_material.h>
+#include <directional_light.h>
 #include <phong_color_material.h>
 #include <physics/math_util.h>
 #include "geometry_controller.h"
@@ -7,6 +8,19 @@
 using namespace phys::literals;
 
 namespace {
+	// Complementary to Windows BSOD blue
+	// https://www.canva.com/colors/color-wheel/
+	color_material vert_mtl(0xf5d608);
+	color_material edge_mtl(0xf5d608);
+	phong_color_material face_mtl(
+		phong_color_material_properties(
+			glm::vec3(0.25, 0.20725, 0.20725),
+			glm::vec3(1, 0.829, 0.829),
+			glm::vec3(0.296648, 0.296648, 0.296648),
+			128 * 0.088f
+		)
+	);
+
 	std::random_device r{};
 	std::default_random_engine rand_engine(r());
 	std::uniform_real_distribution<float> float_dist(0.0f, 1.0f);
@@ -184,6 +198,11 @@ namespace {
 
 			next_cut:;
 		}
+
+		throw geometry_error(
+			f,
+			"Unable to find cut for face vertex " + traits::to_string(vi1)
+		);
 	}
 
 	// Turns a polygon into triangles by making successive cuts
@@ -215,37 +234,45 @@ geometry_controller::geometry_controller(
 		geometry_primitive_type::Points,
 		vbo_usage_hint::DynamicDraw
 	)),
-	vert_mtl(std::make_unique<color_material>(
-		// Complementary to Windows BSOD blue
-		// https://www.canva.com/colors/color-wheel/
-		0xf5d608
-	)),
 	vert_mesh(std::make_unique<mesh>(
 		vert_geom.get(),
-		vert_mtl.get()
+		&vert_mtl
 	)),
 	edge_geom(std::make_unique<geometry>(
 		std::vector<float>({}),
 		geometry_primitive_type::Lines,
 		vbo_usage_hint::DynamicDraw
 	)),
-	edge_mtl(std::make_unique<color_material>(
-		0xf5d608
-	)),
 	edge_mesh(std::make_unique<mesh>(
 		edge_geom.get(),
-		edge_mtl.get()
+		&edge_mtl
 	)),
-	face_mtl(std::make_unique<color_material>(
-		0xf5d608
+	sun(std::make_unique<directional_light>(
+		glm::normalize(glm::vec3(0.5f, -1.0f, -0.8f)),
+		light_properties(
+			glm::vec3(0.6f),
+			glm::vec3(0.8f),
+			glm::vec3(1.0f)
+		)
+	)),
+	moon(std::make_unique<directional_light>(
+		glm::normalize(glm::vec3(-0.8f, 1.0f, 0.5f)),
+		light_properties(
+			glm::vec3(0.3f),
+			glm::vec3(0.5f),
+			glm::vec3(1.0f)
+		)
 	))
 {
-
 	event_listener<new_vertex_event>::subscribe();
 	event_listener<new_edge_event>::subscribe();
 	event_listener<new_face_event>::subscribe();
 	mesh_world->add_mesh(vert_mesh.get());
 	mesh_world->add_mesh(edge_mesh.get());
+	mesh_world->add_light(sun.get());
+	mesh_world->add_light(moon.get());
+	sun->set_casts_shadow(false);
+	moon->set_casts_shadow(false);
 	glPointSize(3);
 }
 
@@ -305,7 +332,7 @@ int geometry_controller::handle(new_face_event &event) {
 	face_meshes.emplace_back(
 		std::make_unique<mesh>(
 			face_geoms[face_geoms.size() - 1].get(),
-			face_mtl.get()
+			&face_mtl
 		)
 	);
 

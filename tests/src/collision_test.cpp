@@ -21,11 +21,6 @@ namespace {
 	phys::box box_1(&box_body_1, phys::identity<phys::mat4>(), phys::vec3(1.0_r));
 	phys::box box_2(&box_body_2, phys::identity<phys::mat4>(), phys::vec3(1.0_r));
 
-	template <std::ranges::view V>
-	auto to_vec(const V &v) -> decltype(std::vector(std::begin(v), std::end(v))) {
-		return std::vector(std::begin(v), std::end(v));
-	}
-
 	phys::quat make_rot(phys::real angle, const phys::vec3 &axis) {
 		return phys::quat(std::cos(angle / 2.0_r), std::sin(angle / 2.0_r) * axis);
 	}
