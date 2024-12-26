@@ -104,6 +104,7 @@ command_controller make_commands(event_buses&, fcad_event_bus &events) {
 	impls.emplace(std::make_pair(L"v", std::make_unique<create_vertex_command_impl>(events)));
 	impls.emplace(std::make_pair(L"e", std::make_unique<create_edge_command_impl>(events)));
 	impls.emplace(std::make_pair(L"f", std::make_unique<create_face_command_impl>(events)));
+	impls.emplace(std::make_pair(L"focus", std::make_unique<focus_command_impl>(events)));
 
 	return command_controller(events, std::move(impls));
 }

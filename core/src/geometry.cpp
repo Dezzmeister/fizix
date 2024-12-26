@@ -187,6 +187,15 @@ size_t geometry::add_vertex(
 
 void geometry::remove_vertex(size_t vertex_idx) {
 	vbo_data.erase(std::begin(vbo_data) + vertex_idx);
+
+	assert(num_vertices != 0);
+	num_vertices--;
+	vbo_needs_update = true;
+}
+
+void geometry::clear_vertices() {
+	vbo_data.clear();
+	num_vertices = 0;
 	vbo_needs_update = true;
 }
 

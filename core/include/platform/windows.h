@@ -43,6 +43,7 @@
 #define KEY_9				0x39
 #define KEY_SHIFT			VK_SHIFT
 #define KEY_ESC				VK_ESCAPE
+#define KEY_CTRL			VK_CONTROL
 #define KEY_LEFT			VK_LEFT
 #define KEY_UP				VK_UP
 #define KEY_RIGHT			VK_RIGHT

@@ -2,6 +2,7 @@
 #include <util.h>
 #include "action.h"
 #include "actions/create.h"
+#include "actions/misc.h"
 
 void action_impl::on_accept(char) {}
 void action_impl::on_reject(char) {}
@@ -210,23 +211,28 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 	std::unique_ptr<action_impl> create_face = std::make_unique<create_face_impl>(
 		events
 	);
+	std::unique_ptr<action_impl> start_command = std::make_unique<start_command_impl>(
+		events
+	);
 
-	std::unique_ptr<action> new_feature_actions[] = {
+	std::unique_ptr<action> top_level_actions[] = {
 		std::make_unique<char_seq_action>("v", *create_vertex),
 		std::make_unique<char_seq_action>("e", *create_edge),
-		std::make_unique<char_seq_action>("f", *create_face)
+		std::make_unique<char_seq_action>("f", *create_face),
+		std::make_unique<char_seq_action>(":", *start_command)
 	};
 
 	std::unique_ptr<action_impl> action_impls[] = {
 		std::move(create_vertex),
 		std::move(create_edge),
-		std::move(create_face)
+		std::move(create_face),
+		std::move(start_command)
 	};
 
 	action_group actions(
 		std::vector<std::unique_ptr<action>>(
-			std::make_move_iterator(std::begin(new_feature_actions)),
-			std::make_move_iterator(std::end(new_feature_actions))
+			std::make_move_iterator(std::begin(top_level_actions)),
+			std::make_move_iterator(std::end(top_level_actions))
 		)
 	);
 

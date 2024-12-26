@@ -26,4 +26,6 @@ private:
 	std::unique_ptr<light> sun{};
 	std::unique_ptr<light> moon{};
 	polyhedron poly{};
+
+	void regenerate_edge_geom();
 };

@@ -5,45 +5,23 @@
 
 using namespace phys;
 
-struct vertex_coords {
-	std::optional<real> x{};
-	std::optional<real> y{};
-	std::optional<real> z{};
-
-	vertex_coords(const std::wstring &args) {
-		std::wstringstream wss{};
-		std::wstringstream sink{};
-
-		wss << args;
-
-		parsing::parser_state state(wss);
-		x = parse_real(state);
-
-		parsing::parse_one_char(state, L',', sink);
-		parsing::parse_whitespace(state);
-
-		y = parse_real(state);
-
-		parsing::parse_one_char(state, L',', sink);
-		parsing::parse_whitespace(state);
-
-		z = parse_real(state);
-	}
-};
-
 create_vertex_command_impl::create_vertex_command_impl(fcad_event_bus &_events) :
 	events(_events) {}
 
-void create_vertex_command_impl::on_cancel(const std::wstring&) {}
-void create_vertex_command_impl::on_input(const std::wstring&) {}
 void create_vertex_command_impl::on_submit(const std::wstring &args) {
-	vertex_coords pos_opt(args);
+	std::wstringstream wss{};
+	wss << args;
+	parsing::parser_state state(wss);
+	parsing::parse_whitespace(state);
 
-	if (! pos_opt.z || ! pos_opt.y || ! pos_opt.x) {
+	partial_vec3 pos_opt = parse_vec3(state);
+	std::optional<vec3> vertex_opt = pos_opt.try_as_vec3();
+
+	if (! vertex_opt) {
 		return;
 	}
 
-	vec3 vertex(*pos_opt.x, *pos_opt.y, *pos_opt.z);
+	vec3 vertex = *vertex_opt;
 	logger::debug(vertex);
 
 	new_vertex_event event(vertex);

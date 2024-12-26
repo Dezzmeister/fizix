@@ -337,6 +337,25 @@ int geometry_controller::handle(new_face_event &event) {
 	);
 
 	mesh_world->add_mesh(face_meshes[face_meshes.size() - 1].get());
+	// TODO: Be smarter about this
+	regenerate_edge_geom();
 
 	return 0;
+}
+
+void geometry_controller::regenerate_edge_geom() {
+	edge_geom->clear_vertices();
+
+	for (const edge &e : poly.edges) {
+		edge_geom->add_vertex(
+			e.t(poly).v,
+			glm::vec3(0.0f),
+			glm::vec3(0.0f)
+		);
+		edge_geom->add_vertex(
+			e.h(poly).v,
+			glm::vec3(0.0f),
+			glm::vec3(0.0f)
+		);
+	}
 }

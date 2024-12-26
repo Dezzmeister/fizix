@@ -93,6 +93,54 @@ struct new_face_event {
 		f(_f) {}
 };
 
+struct camera_move_event {
+	const vec3 &pos;
+	const vec3 &up;
+	const vec3 &right;
+	const vec3 &target;
+	const mat4 &view;
+	const mat4 &inv_view;
+	const mat4 &proj;
+
+	camera_move_event(
+		const vec3 &_pos,
+		const vec3 &_up,
+		const vec3 &_right,
+		const vec3 &_target,
+		const mat4 &_view,
+		const mat4 &_inv_view,
+		const mat4 &_proj
+	) :
+		pos(_pos),
+		up(_up),
+		right(_right),
+		target(_target),
+		view(_view),
+		inv_view(_inv_view),
+		proj(_proj)
+	{}
+};
+
+struct set_camera_target_event {
+	const vec3 &new_target;
+
+	set_camera_target_event(
+		const vec3 &_new_target
+	) :
+		new_target(_new_target)
+	{}
+};
+
+struct set_camera_pos_event {
+	const vec3 &new_pos;
+
+	set_camera_pos_event(
+		const vec3 &_new_pos
+	) :
+		new_pos(_new_pos)
+	{}
+};
+
 using fcad_event_bus = event_bus<
 	window_input_event,
 	set_mode_event,
@@ -102,7 +150,10 @@ using fcad_event_bus = event_bus<
 	command_submit_event,
 	new_vertex_event,
 	new_edge_event,
-	new_face_event
+	new_face_event,
+	camera_move_event,
+	set_camera_target_event,
+	set_camera_pos_event
 >;
 
 namespace traits {

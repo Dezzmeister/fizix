@@ -38,6 +38,7 @@ public:
 		const glm::vec3 &bitangent = glm::vec3(0.0f)
 	);
 	void remove_vertex(size_t vertex_idx);
+	void clear_vertices();
 	size_t get_num_vertices() const;
 
 	static void write_vertex(

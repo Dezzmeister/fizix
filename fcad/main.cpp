@@ -384,6 +384,7 @@ int main(int, const char * const * const) {
 
 	key_controller keys(buses, {
 		KEY_ESC,
+		KEY_CTRL,
 		KEY_H,
 		KEY_J,
 		KEY_K,

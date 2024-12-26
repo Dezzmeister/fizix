@@ -33,8 +33,6 @@ struct face_indices {
 create_face_command_impl::create_face_command_impl(fcad_event_bus &_events) :
 	events(_events) {}
 
-void create_face_command_impl::on_cancel(const std::wstring&) {}
-void create_face_command_impl::on_input(const std::wstring&) {}
 void create_face_command_impl::on_submit(const std::wstring &args) {
 	face_indices face_opt(args);
 

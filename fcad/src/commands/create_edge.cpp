@@ -28,8 +28,6 @@ struct edge_indices {
 create_edge_command_impl::create_edge_command_impl(fcad_event_bus &_events) :
 	events(_events) {}
 
-void create_edge_command_impl::on_cancel(const std::wstring&) {}
-void create_edge_command_impl::on_input(const std::wstring&) {}
 void create_edge_command_impl::on_submit(const std::wstring &args) {
 	edge_indices edge_opt(args);
 
