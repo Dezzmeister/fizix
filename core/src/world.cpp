@@ -76,7 +76,7 @@ int world::handle(screen_resize_event &event) {
 }
 
 int world::handle(pre_render_pass_event &event) {
-	long long millis = event.delta.count();
+	long long millis = event.delta.count() / 1000;
 
 	for (int64_t i = particle_emitters.size() - 1; i >= 0; i--) {
 		particle_emitters[i]->update((float)millis);

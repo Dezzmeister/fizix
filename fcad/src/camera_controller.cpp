@@ -31,14 +31,17 @@ camera_controller::camera_controller(
 }
 
 int camera_controller::handle(pre_render_pass_event &event) {
-	// TODO: Finer-resolution deltas
-	int delta = event.delta.count() || 1;
+	int delta = (int)event.delta.count();
+
+	if (! delta) {
+		delta = 1;
+	}
 
 	vec3 rel_pos = pos - target;
 
 	if (! is_panning) {
 		if (zoom_dir != 0.0f) {
-			float zoom = zoom_per_s * ((float)delta) / 1000.0f;
+			float zoom = zoom_per_s * ((float)delta) / 1000000.0f;
 
 			rel_pos *= (1.0f + zoom * zoom_dir);
 			pos = target + rel_pos;
@@ -46,7 +49,7 @@ int camera_controller::handle(pre_render_pass_event &event) {
 		}
 
 		if (vel_dir != vec2(0.0f)) {
-			float half_angle = d_ang_per_s * ((float)delta) / 1000.0f;
+			float half_angle = d_ang_per_s * ((float)delta / 1000000.0f);
 			glm::quat total_rot(0.0f, 0.0f, 0.0f, 0.0f);
 
 			if (vel_dir.x != 0.0f) {
@@ -74,7 +77,7 @@ int camera_controller::handle(pre_render_pass_event &event) {
 	} else {
 		// TODO: vector length function
 		float dp_per_s = std::sqrt(dot(rel_pos, rel_pos));
-		float dp = dp_per_s * ((float)delta / 1000.0f);
+		float dp = dp_per_s * ((float)delta / 1000000.0f);
 
 		if (vel_dir != vec2(0.0f) || zoom_dir != 0.0f) {
 			vec3 d_target = dp * (

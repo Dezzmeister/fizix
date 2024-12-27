@@ -18,6 +18,12 @@ void delete_vertex_command_impl::on_submit(const std::wstring &args) {
 		return;
 	}
 
+	parsing::parse_whitespace(state);
+
+	if (! state.eof()) {
+		return;
+	}
+
 	delete_vertex_event event(*vert_idx_opt);
 	events.fire(event);
 }

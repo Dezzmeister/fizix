@@ -419,10 +419,6 @@ platform::window::~window() {
 		if (dc) {
 			ReleaseDC(_hwnd, dc);
 		}
-
-		if (! DestroyWindow(_hwnd)) {
-			throw api_error(win32::get_last_error("DestroyWindow"));
-		}
 	} catch (const api_error &err) {
 		logger::error(
 			"Failed to destroy window: " +

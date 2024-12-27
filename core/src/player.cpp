@@ -80,7 +80,7 @@ int player::handle(pre_render_pass_event &event) {
 	const float vel_norm_f = (input_vel_len > 1.0f ? input_vel_len : 1.0f);
 	const long long delta = event.delta.count() == 0 ? 1 : event.delta.count();
 	// Factor by which to adjust speed based on delta
-	const float delta_f = ((float)delta) / 1000.0f;
+	const float delta_f = ((float)delta) / 1000000.0f;
 	const float full_speed_f = speed * sprint_mul * delta_f / vel_norm_f;
 	const float move_y = input_vel.y * full_speed_f;
 	const float move_x = input_vel.x * full_speed_f;

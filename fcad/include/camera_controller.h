@@ -37,9 +37,9 @@ private:
 	glm::mat4 inv_view{};
 	glm::mat4 projection{};
 	glm::vec2 vel_dir{};
-	float d_ang_per_s{ 1.0f };
+	float d_ang_per_s{ 2.0f };
 	float zoom_dir{};
-	float zoom_per_s{ 0.85f };
+	float zoom_per_s{ 0.92f };
 	bool is_panning{};
 	bool view_mat_needs_update{};
 

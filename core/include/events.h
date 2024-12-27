@@ -57,24 +57,21 @@ struct program_stop_event {
 struct pre_render_pass_event {
 	platform::window * window;
 	hardware_constants * hardware_consts;
-	// The time in ms since the beginning of the previous render pass (i.e., since
+	// The time in us since the beginning of the previous render pass (i.e., since
 	// the last moment this event was fired).
-	std::chrono::milliseconds delta;
-	int screen_width;
-	int screen_height;
+	std::chrono::microseconds delta{};
+	int screen_width{};
+	int screen_height{};
 
 	pre_render_pass_event(platform::window * _window, hardware_constants * _hardware_consts) :
 		window(_window),
 		hardware_consts(_hardware_consts),
-		delta(),
-		screen_width(0),
-		screen_height(0),
 		prev_render_pass(std::chrono::steady_clock::now())
 	{}
 
 	int before_fire() {
 		std::chrono::time_point<std::chrono::steady_clock> now = std::chrono::steady_clock::now();
-		delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - prev_render_pass);
+		delta = std::chrono::duration_cast<std::chrono::microseconds>(now - prev_render_pass);
 		prev_render_pass = now;
 
 		return 0;
