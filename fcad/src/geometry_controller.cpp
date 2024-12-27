@@ -239,6 +239,8 @@ geometry_controller::geometry_controller(
 	event_listener<new_edge_event>(&_events),
 	event_listener<new_face_event>(&_events),
 	event_listener<delete_vertex_event>(&_events),
+	event_listener<delete_edge_event>(&_events),
+	event_listener<delete_face_event>(&_events),
 	event_listener<keydown_event>(&_buses.input),
 	event_listener<post_processing_event>(&_buses.render),
 	event_listener<camera_move_event>(&_events),
@@ -283,6 +285,8 @@ geometry_controller::geometry_controller(
 	event_listener<new_edge_event>::subscribe();
 	event_listener<new_face_event>::subscribe();
 	event_listener<delete_vertex_event>::subscribe();
+	event_listener<delete_edge_event>::subscribe();
+	event_listener<delete_face_event>::subscribe();
 	event_listener<keydown_event>::subscribe();
 	event_listener<post_processing_event>::subscribe();
 	event_listener<camera_move_event>::subscribe();
@@ -368,21 +372,14 @@ int geometry_controller::handle(new_face_event &event) {
 
 int geometry_controller::handle(delete_vertex_event &event) {
 	if (event.vertex_idx >= poly.vertices.size()) {
-		logger::debug("Tried to delete nonexistent vertex: " + traits::to_string(event.vertex_idx));
+		logger::debug("Tried to delete impossible vertex: " + traits::to_string(event.vertex_idx));
 
 		return 0;
 	}
 
 	std::vector<face> deleted_faces = poly.remove_vertex(event.vertex_idx);
 
-	for (int i = (int)face_meshes.size() - 1; i >= 0; i--) {
-		auto it = std::find(std::begin(deleted_faces), std::end(deleted_faces), face_meshes[i]->f);
-
-		if (it != std::end(deleted_faces)) {
-			mesh_world->remove_mesh(&face_meshes[i]->m);
-			face_meshes.erase(std::begin(face_meshes) + i);
-		}
-	}
+	remove_face_geoms(deleted_faces);
 
 	vert_geom->remove_vertex(event.vertex_idx);
 	regenerate_edge_geom();
@@ -396,6 +393,38 @@ int geometry_controller::handle(delete_vertex_event &event) {
 			}
 		}
 	}
+
+	return 0;
+}
+
+int geometry_controller::handle(delete_edge_event &event) {
+	if (! poly.is_possible_edge(event.e)) {
+		logger::debug("Tried to delete impossible edge: " + traits::to_string(event.e));
+
+		return 0;
+	}
+
+	std::vector<face> deleted_faces = poly.remove_edge(event.e);
+
+	remove_face_geoms(deleted_faces);
+	regenerate_edge_geom();
+
+	return 0;
+}
+
+int geometry_controller::handle(delete_face_event &event) {
+	if (! poly.is_possible_face(event.f)) {
+		logger::debug("Tried to delete impossible face: " + traits::to_string(event.f));
+
+		return 0;
+	}
+
+	std::vector<face> deleted_faces = poly.remove_face(event.f);
+	std::vector<face> deleted_faces_rev = poly.remove_face(event.f.flipped());
+
+	remove_face_geoms(deleted_faces);
+	remove_face_geoms(deleted_faces_rev);
+	regenerate_edge_geom();
 
 	return 0;
 }
@@ -484,5 +513,16 @@ void geometry_controller::regenerate_edge_geom() {
 			glm::vec3(0.0f),
 			glm::vec3(0.0f)
 		);
+	}
+}
+
+void geometry_controller::remove_face_geoms(const std::vector<face> &faces) {
+	for (int i = (int)face_meshes.size() - 1; i >= 0; i--) {
+		auto it = std::find(std::begin(faces), std::end(faces), face_meshes[i]->f);
+
+		if (it != std::end(faces)) {
+			mesh_world->remove_mesh(&face_meshes[i]->m);
+			face_meshes.erase(std::begin(face_meshes) + i);
+		}
 	}
 }

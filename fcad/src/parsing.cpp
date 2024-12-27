@@ -68,3 +68,18 @@ partial_vec3 parse_vec3(parsing::parser_state &state) {
 		.z = z
 	};
 }
+
+std::optional<face> parse_implicit_face(parsing::parser_state &state) {
+	std::wstringstream sink{};
+	std::vector<size_t> verts{};
+	std::optional<size_t> i{};
+
+	while ((i = parse_size(state))) {
+		verts.push_back(*i);
+
+		parsing::parse_one_char(state, L',', sink);
+		parsing::parse_whitespace(state);
+	}
+
+	return face(verts, convexity::Unspecified);
+}

@@ -52,6 +52,26 @@ private:
 	fcad_event_bus &events;
 };
 
+class delete_edge_command_impl : public noop_command_impl {
+public:
+	delete_edge_command_impl(fcad_event_bus &_events);
+
+	void on_submit(const std::wstring &args) override;
+
+private:
+	fcad_event_bus &events;
+};
+
+class delete_face_command_impl : public noop_command_impl {
+public:
+	delete_face_command_impl(fcad_event_bus &_events);
+
+	void on_submit(const std::wstring &args) override;
+
+private:
+	fcad_event_bus &events;
+};
+
 class focus_command_impl : public noop_command_impl {
 public:
 	focus_command_impl(fcad_event_bus &_events);

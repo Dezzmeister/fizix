@@ -1,12 +1,10 @@
-#include <logging.h>
-#include <util.h>
 #include "commands.h"
 #include "parsing.h"
 
-create_face_command_impl::create_face_command_impl(fcad_event_bus &_events) :
+delete_face_command_impl::delete_face_command_impl(fcad_event_bus &_events) :
 	events(_events) {}
 
-void create_face_command_impl::on_submit(const std::wstring &args) {
+void delete_face_command_impl::on_submit(const std::wstring &args) {
 	std::wstringstream wss{};
 	wss << args;
 
@@ -24,6 +22,6 @@ void create_face_command_impl::on_submit(const std::wstring &args) {
 		return;
 	}
 
-	new_face_event event(*face_opt);
+	delete_face_event event(*face_opt);
 	events.fire(event);
 }

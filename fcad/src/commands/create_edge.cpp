@@ -16,6 +16,7 @@ struct edge_indices {
 		wss << args;
 
 		parsing::parser_state state(wss);
+		parsing::parse_whitespace(state);
 		start = parse_size(state);
 
 		parsing::parse_one_char(state, L',', sink);

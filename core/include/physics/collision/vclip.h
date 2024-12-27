@@ -48,7 +48,7 @@ namespace phys {
 			// Removes a face, but not its constituent edges. The edges must be removed
 			// separately with `remove_edge` or the face must be removed with
 			// `remove_face_and_dead_edges`.
-			void remove_face(const face &f);
+			std::vector<face> remove_face(const face &f);
 			// Removes a face. If any of the face's constituent edges would be unused after
 			// removing the face, those will be removed as well.
 			void remove_face_and_dead_edges(const face &f);
@@ -181,6 +181,9 @@ namespace phys {
 
 			face_cut_result cut(size_t from_idx, size_t to_idx) const;
 			bool can_make_cut(size_t from_idx, size_t to_idx) const;
+
+			// Returns a copy of this face with the vertices reversed
+			face flipped() const;
 
 			friend bool operator==(const face &f1, const face &f2);
 

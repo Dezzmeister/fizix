@@ -26,6 +26,8 @@ class geometry_controller :
 	public event_listener<new_edge_event>,
 	public event_listener<new_face_event>,
 	public event_listener<delete_vertex_event>,
+	public event_listener<delete_edge_event>,
+	public event_listener<delete_face_event>,
 	public event_listener<keydown_event>,
 	public event_listener<post_processing_event>,
 	public event_listener<camera_move_event>
@@ -38,6 +40,8 @@ public:
 	int handle(new_edge_event &event) override;
 	int handle(new_face_event &event) override;
 	int handle(delete_vertex_event &event) override;
+	int handle(delete_edge_event &event) override;
+	int handle(delete_face_event &event) override;
 	int handle(keydown_event &event) override;
 	int handle(post_processing_event &event) override;
 	int handle(camera_move_event &event) override;
@@ -57,4 +61,5 @@ private:
 	bool show_vert_labels{};
 
 	void regenerate_edge_geom();
+	void remove_face_geoms(const std::vector<face> &faces);
 };

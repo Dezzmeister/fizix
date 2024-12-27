@@ -339,10 +339,14 @@ namespace phys {
 			return out;
 		}
 
-		void polyhedron::remove_face(const face &f) {
+		std::vector<face> polyhedron::remove_face(const face &f) {
 			assert(is_possible_face(f));
 
-			std::erase(faces, f);
+			if (std::erase(faces, f)) {
+				return { f };
+			}
+
+			return {};
 		}
 
 		void polyhedron::remove_face_and_dead_edges(const face &f) {
@@ -393,6 +397,10 @@ namespace phys {
 					}
 				}
 			}
+		}
+
+		int polyhedron::euler_characteristic() const {
+			return (int)(vertices.size() + faces.size()) - (int)edges.size();
 		}
 
 		vertex::vertex(const vec3 &_v, size_t _i) :
@@ -828,8 +836,11 @@ namespace phys {
 			return ! (start == 0 && end == vs.size() - 1);
 		}
 
-		int polyhedron::euler_characteristic() const {
-			return (int)(vertices.size() + faces.size()) - (int)edges.size();
+		face face::flipped() const {
+			return face(
+				std::ranges::views::reverse(vs) | std::ranges::to<std::vector<size_t>>(),
+				convexity_hint
+			);
 		}
 
 		vplane::vplane(
