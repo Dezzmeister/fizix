@@ -148,6 +148,17 @@ int camera_controller::handle(program_start_event &event) {
 int camera_controller::handle(screen_resize_event &event) {
 	update_projection_mat(event.new_width, event.new_height);
 
+	camera_move_event move_event(
+		pos,
+		up,
+		right,
+		target,
+		view,
+		inv_view,
+		projection
+	);
+	events.fire(move_event);
+
 	return 0;
 }
 

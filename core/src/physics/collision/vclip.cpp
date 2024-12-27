@@ -293,7 +293,7 @@ namespace phys {
 			}
 		}
 
-		void polyhedron::remove_vertex(size_t vertex_idx) {
+		std::vector<face> polyhedron::remove_vertex(size_t vertex_idx) {
 			assert(is_possible_vertex(vertex_idx));
 
 			std::vector<edge> edges_to_remove{};
@@ -304,10 +304,15 @@ namespace phys {
 			auto it = std::begin(edges);
 			while ((it = std::find_if(it, std::end(edges), pred)) != std::end(edges)) {
 				edges_to_remove.push_back(*it);
+				++it;
 			}
 
+			std::vector<face> out{};
+
 			for (const edge &e : edges_to_remove) {
-				remove_edge(e);
+				std::vector<face> removed_faces = remove_edge(e);
+
+				std::move(std::begin(removed_faces), std::end(removed_faces), std::back_inserter(out));
 			}
 
 			for (size_t i = vertex_idx + 1; i < vertices.size(); i++) {
@@ -315,16 +320,23 @@ namespace phys {
 			}
 
 			std::erase(vertices, vertices[vertex_idx]);
+
+			return out;
 		}
 
-		void polyhedron::remove_edge(const edge &e) {
+		std::vector<face> polyhedron::remove_edge(const edge &e) {
 			assert(is_possible_edge(e));
 
-			std::erase_if(faces, [&](const face &f) {
-				return f.has_edge(e);
+			auto it = std::partition(std::begin(faces), std::end(faces), [&](const face &f) {
+				return ! f.has_edge(e);
 			});
 
+			std::vector<face> out{};
+			std::move(it, std::end(faces), std::back_inserter(out));
+			faces.erase(it, std::end(faces));
 			std::erase(edges, e);
+
+			return out;
 		}
 
 		void polyhedron::remove_face(const face &f) {

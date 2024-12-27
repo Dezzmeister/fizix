@@ -43,8 +43,8 @@ namespace phys {
 			// Adds a face. If any of the face's constituent edges are new, those
 			// will be added as well.
 			void add_face_and_new_edges(const face &f);
-			void remove_vertex(size_t vertex_idx);
-			void remove_edge(const edge &e);
+			std::vector<face> remove_vertex(size_t vertex_idx);
+			std::vector<face> remove_edge(const edge &e);
 			// Removes a face, but not its constituent edges. The edges must be removed
 			// separately with `remove_edge` or the face must be removed with
 			// `remove_face_and_dead_edges`.

@@ -42,6 +42,16 @@ private:
 	fcad_event_bus &events;
 };
 
+class delete_vertex_command_impl : public noop_command_impl {
+public:
+	delete_vertex_command_impl(fcad_event_bus &_events);
+
+	void on_submit(const std::wstring &args) override;
+
+private:
+	fcad_event_bus &events;
+};
+
 class focus_command_impl : public noop_command_impl {
 public:
 	focus_command_impl(fcad_event_bus &_events);
@@ -50,4 +60,9 @@ public:
 
 private:
 	fcad_event_bus &events;
+};
+
+class quit_command_impl : public noop_command_impl {
+public:
+	void on_submit(const std::wstring &args) override;
 };

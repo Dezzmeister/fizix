@@ -238,6 +238,7 @@ geometry_controller::geometry_controller(
 	event_listener<new_vertex_event>(&_events),
 	event_listener<new_edge_event>(&_events),
 	event_listener<new_face_event>(&_events),
+	event_listener<delete_vertex_event>(&_events),
 	event_listener<keydown_event>(&_buses.input),
 	event_listener<post_processing_event>(&_buses.render),
 	event_listener<camera_move_event>(&_events),
@@ -281,6 +282,7 @@ geometry_controller::geometry_controller(
 	event_listener<new_vertex_event>::subscribe();
 	event_listener<new_edge_event>::subscribe();
 	event_listener<new_face_event>::subscribe();
+	event_listener<delete_vertex_event>::subscribe();
 	event_listener<keydown_event>::subscribe();
 	event_listener<post_processing_event>::subscribe();
 	event_listener<camera_move_event>::subscribe();
@@ -345,24 +347,55 @@ int geometry_controller::handle(new_face_event &event) {
 	std::vector<float> face_verts{};
 	triangulate(poly, event.f, face_verts);
 
-	face_geoms.emplace_back(
-		std::make_unique<geometry>(
-			face_verts,
-			geometry_primitive_type::Triangles,
-			vbo_usage_hint::StaticDraw
-		)
-	);
-
 	face_meshes.emplace_back(
-		std::make_unique<mesh>(
-			face_geoms[face_geoms.size() - 1].get(),
-			&face_mtl
+		std::make_unique<renderable_face>(
+			event.f,
+			&face_mtl,
+			geometry(
+				face_verts,
+				geometry_primitive_type::Triangles,
+				vbo_usage_hint::StaticDraw
+			)
 		)
 	);
 
-	mesh_world->add_mesh(face_meshes[face_meshes.size() - 1].get());
+	mesh_world->add_mesh(&face_meshes[face_meshes.size() - 1]->m);
 	// TODO: Be smarter about this
 	regenerate_edge_geom();
+
+	return 0;
+}
+
+int geometry_controller::handle(delete_vertex_event &event) {
+	if (event.vertex_idx >= poly.vertices.size()) {
+		logger::debug("Tried to delete nonexistent vertex: " + traits::to_string(event.vertex_idx));
+
+		return 0;
+	}
+
+	std::vector<face> deleted_faces = poly.remove_vertex(event.vertex_idx);
+
+	for (int i = (int)face_meshes.size() - 1; i >= 0; i--) {
+		auto it = std::find(std::begin(deleted_faces), std::end(deleted_faces), face_meshes[i]->f);
+
+		if (it != std::end(deleted_faces)) {
+			mesh_world->remove_mesh(&face_meshes[i]->m);
+			face_meshes.erase(std::begin(face_meshes) + i);
+		}
+	}
+
+	vert_geom->remove_vertex(event.vertex_idx);
+	regenerate_edge_geom();
+
+	for (auto &fm : face_meshes) {
+		for (size_t i = 0; i < fm->f.num_verts(); i++) {
+			size_t v = fm->f.vert(i);
+
+			if (v > event.vertex_idx) {
+				fm->f.set_vert(i, v - 1);
+			}
+		}
+	}
 
 	return 0;
 }

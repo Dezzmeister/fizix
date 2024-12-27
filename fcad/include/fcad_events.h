@@ -101,6 +101,27 @@ struct new_face_event {
 		f(_f) {}
 };
 
+struct delete_vertex_event {
+	const size_t vertex_idx;
+
+	delete_vertex_event(size_t _vertex_idx) :
+		vertex_idx(_vertex_idx) {}
+};
+
+struct delete_edge_event {
+	const edge e;
+
+	delete_edge_event(const edge &_e) :
+		e(_e) {}
+};
+
+struct delete_face_event {
+	const face f;
+
+	delete_face_event(const face &_f) :
+		f(_f) {}
+};
+
 struct camera_move_event {
 	const vec3 &pos;
 	const vec3 &up;
@@ -160,6 +181,9 @@ using fcad_event_bus = event_bus<
 	new_vertex_event,
 	new_edge_event,
 	new_face_event,
+	delete_vertex_event,
+	delete_edge_event,
+	delete_face_event,
 	camera_move_event,
 	set_camera_target_event,
 	set_camera_pos_event

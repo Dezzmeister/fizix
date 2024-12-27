@@ -63,8 +63,7 @@ class action_tree : public action {
 public:
 	action_tree(
 		const char_seq_action &_trunk,
-		action_group &_leaves,
-		action_impl &_trunk_impl
+		action_group &&_leaves
 	);
 
 	action_state test(char c) override;
@@ -74,7 +73,6 @@ public:
 private:
 	char_seq_action trunk;
 	action_group leaves;
-	action_impl &trunk_impl;
 	bool in_leaves{};
 };
 

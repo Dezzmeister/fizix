@@ -4,11 +4,28 @@
 #include <world.h>
 #include "fcad_events.h"
 
+struct renderable_face : traits::pinned<renderable_face> {
+	face f;
+	geometry geom;
+	mesh m;
+
+	renderable_face(
+		const face &_f,
+		const material * _mat,
+		geometry &&_geom
+	) :
+		f(_f),
+		geom(std::move(_geom)),
+		m(&geom, _mat)
+	{}
+};
+
 class geometry_controller :
 	public event_listener<program_start_event>,
 	public event_listener<new_vertex_event>,
 	public event_listener<new_edge_event>,
 	public event_listener<new_face_event>,
+	public event_listener<delete_vertex_event>,
 	public event_listener<keydown_event>,
 	public event_listener<post_processing_event>,
 	public event_listener<camera_move_event>
@@ -20,6 +37,7 @@ public:
 	int handle(new_vertex_event &event) override;
 	int handle(new_edge_event &event) override;
 	int handle(new_face_event &event) override;
+	int handle(delete_vertex_event &event) override;
 	int handle(keydown_event &event) override;
 	int handle(post_processing_event &event) override;
 	int handle(camera_move_event &event) override;
@@ -30,8 +48,7 @@ private:
 	std::unique_ptr<mesh> vert_mesh;
 	std::unique_ptr<geometry> edge_geom;
 	std::unique_ptr<mesh> edge_mesh;
-	std::vector<std::unique_ptr<geometry>> face_geoms{};
-	std::vector<std::unique_ptr<mesh>> face_meshes{};
+	std::vector<std::unique_ptr<renderable_face>> face_meshes{};
 	std::unique_ptr<light> sun{};
 	std::unique_ptr<light> moon{};
 	polyhedron poly{};

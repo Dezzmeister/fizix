@@ -186,7 +186,10 @@ size_t geometry::add_vertex(
 }
 
 void geometry::remove_vertex(size_t vertex_idx) {
-	vbo_data.erase(std::begin(vbo_data) + vertex_idx);
+	// TODO: Consolidate strides
+	constexpr size_t stride = (3 + 3 + 2 + 3 + 3);
+
+	vbo_data.erase(std::begin(vbo_data) + vertex_idx * stride, std::begin(vbo_data) + (vertex_idx + 1) * stride);
 
 	assert(num_vertices != 0);
 	num_vertices--;

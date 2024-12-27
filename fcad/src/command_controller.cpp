@@ -28,7 +28,7 @@ int command_controller::handle(command_cancel_event &event) {
 		rest = event.command_buf.substr(space_loc + 1);
 	}
 
-	decltype(command_impls)::iterator pair = command_impls.find(command);
+	auto pair = command_impls.find(command);
 
 	if (pair == std::end(command_impls)) {
 		logger::debug(
@@ -57,7 +57,7 @@ int command_controller::handle(command_input_event &event) {
 		rest = event.command_buf.substr(space_loc + 1);
 	}
 
-	decltype(command_impls)::iterator pair = command_impls.find(command);
+	auto pair = command_impls.find(command);
 
 	if (pair == std::end(command_impls)) {
 		return 0;
@@ -81,7 +81,7 @@ int command_controller::handle(command_submit_event &event) {
 		rest = event.command.substr(space_loc + 1);
 	}
 
-	decltype(command_impls)::iterator pair = command_impls.find(command);
+	auto pair = command_impls.find(command);
 
 	if (pair == std::end(command_impls)) {
 		// TODO: Show error message to user
@@ -101,10 +101,12 @@ int command_controller::handle(command_submit_event &event) {
 command_controller make_commands(event_buses&, fcad_event_bus &events) {
 	std::unordered_map<std::wstring, std::unique_ptr<command_impl>> impls{};
 
+	impls.emplace(std::make_pair(L"q", std::make_unique<quit_command_impl>()));
+	impls.emplace(std::make_pair(L"focus", std::make_unique<focus_command_impl>(events)));
 	impls.emplace(std::make_pair(L"v", std::make_unique<create_vertex_command_impl>(events)));
 	impls.emplace(std::make_pair(L"e", std::make_unique<create_edge_command_impl>(events)));
 	impls.emplace(std::make_pair(L"f", std::make_unique<create_face_command_impl>(events)));
-	impls.emplace(std::make_pair(L"focus", std::make_unique<focus_command_impl>(events)));
+	impls.emplace(std::make_pair(L"dv", std::make_unique<delete_vertex_command_impl>(events)));
 
 	return command_controller(events, std::move(impls));
 }
