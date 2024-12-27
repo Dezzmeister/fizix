@@ -160,7 +160,7 @@ void geometry::prepare_draw() const {
 	}
 }
 
-void geometry::draw(int, unsigned int count) const {
+void geometry::draw(int, int count) const {
 	glDrawArrays(static_cast<GLenum>(primitive_type), 0, count == -1 ? (GLsizei)num_vertices : count);
 }
 

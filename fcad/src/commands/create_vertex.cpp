@@ -21,9 +21,6 @@ void create_vertex_command_impl::on_submit(const std::wstring &args) {
 		return;
 	}
 
-	vec3 vertex = *vertex_opt;
-	logger::debug(vertex);
-
-	new_vertex_event event(vertex);
+	new_vertex_event event(*vertex_opt);
 	events.fire(event);
 }

@@ -28,7 +28,7 @@ public:
 	);
 
 	void prepare_draw() const;
-	void draw(int first, unsigned int count) const;
+	void draw(int first, int count) const;
 
 	size_t add_vertex(
 		const glm::vec3 &pos,

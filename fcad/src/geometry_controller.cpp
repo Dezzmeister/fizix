@@ -20,6 +20,14 @@ namespace {
 			128 * 0.088f
 		)
 	);
+	phong_color_material face_inv_mtl(
+		phong_color_material_properties(
+			glm::vec3(0.368, 0.0, 0.306),
+			glm::vec3(1, 0.829, 1),
+			glm::vec3(0.296648, 0.296648, 0.296648),
+			128 * 0.088f
+		)
+	);
 
 	std::random_device r{};
 	std::default_random_engine rand_engine(r());
@@ -230,6 +238,28 @@ namespace {
 	}
 }
 
+renderable_face::renderable_face(
+	const face &_f,
+	const material * _mat,
+	const material * _inv_mat,
+	geometry &&_geom
+) :
+	f(_f),
+	geom(std::move(_geom)),
+	m(&geom, _mat),
+	inv_m(&geom, _inv_mat, 0, -1, true)
+{}
+
+void renderable_face::add_to_world(world &w) {
+	w.add_mesh(&m);
+	w.add_mesh(&inv_m);
+}
+
+void renderable_face::remove_from_world(world &w) {
+	w.remove_mesh(&m);
+	w.remove_mesh(&inv_m);
+}
+
 geometry_controller::geometry_controller(
 	event_buses &_buses,
 	fcad_event_bus &_events
@@ -355,6 +385,7 @@ int geometry_controller::handle(new_face_event &event) {
 		std::make_unique<renderable_face>(
 			event.f,
 			&face_mtl,
+			&face_inv_mtl,
 			geometry(
 				face_verts,
 				geometry_primitive_type::Triangles,
@@ -363,7 +394,7 @@ int geometry_controller::handle(new_face_event &event) {
 		)
 	);
 
-	mesh_world->add_mesh(&face_meshes[face_meshes.size() - 1]->m);
+	face_meshes[face_meshes.size() - 1]->add_to_world(*mesh_world);
 	// TODO: Be smarter about this
 	regenerate_edge_geom();
 
@@ -521,7 +552,7 @@ void geometry_controller::remove_face_geoms(const std::vector<face> &faces) {
 		auto it = std::find(std::begin(faces), std::end(faces), face_meshes[i]->f);
 
 		if (it != std::end(faces)) {
-			mesh_world->remove_mesh(&face_meshes[i]->m);
+			face_meshes[i]->remove_from_world(*mesh_world);
 			face_meshes.erase(std::begin(face_meshes) + i);
 		}
 	}

@@ -183,6 +183,10 @@ void world::draw_meshes(draw_event &event, const std::vector<mesh *> &_meshes, c
 	);
 
 	for (const mesh * m : _meshes) {
+		if (m->is_inverted()) {
+			glFrontFace(GL_CW);
+		}
+
 		if (m->mat != last_mtl) {
 			render_pass.reset();
 			last_mtl = m->mat;
@@ -206,6 +210,11 @@ void world::draw_meshes(draw_event &event, const std::vector<mesh *> &_meshes, c
 
 		m->prepare_draw(event, *curr_shader, true);
 		m->draw();
+
+		if (m->is_inverted()) {
+			// Assume that most meshes are not inverted
+			glFrontFace(GL_CCW);
+		}
 	}
 }
 

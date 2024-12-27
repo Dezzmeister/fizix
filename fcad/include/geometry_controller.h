@@ -8,16 +8,17 @@ struct renderable_face : traits::pinned<renderable_face> {
 	face f;
 	geometry geom;
 	mesh m;
+	mesh inv_m;
 
 	renderable_face(
 		const face &_f,
 		const material * _mat,
+		const material * _inv_mat,
 		geometry &&_geom
-	) :
-		f(_f),
-		geom(std::move(_geom)),
-		m(&geom, _mat)
-	{}
+	);
+
+	void add_to_world(world &w);
+	void remove_from_world(world &w);
 };
 
 class geometry_controller :

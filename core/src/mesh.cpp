@@ -3,14 +3,21 @@
 #include "shader_store.h"
 #include "util.h"
 
-mesh::mesh(const geometry * _geom, const material * _mat, int _first, unsigned int _count) :
+mesh::mesh(
+	const geometry * _geom,
+	const material * _mat,
+	int _first,
+	int _count,
+	bool _is_inverted
+) :
 	model(glm::identity<glm::mat4>()),
 	inv_model(glm::inverse(model)),
 	geom(_geom),
 	mat(_mat),
 	first(_first),
 	count(_count),
-	alpha(1.0f)
+	alpha(1.0f),
+	inverted(_is_inverted)
 {}
 
 void mesh::prepare_draw(draw_event &event, const shader_program &shader, bool include_normal) const {
@@ -59,6 +66,10 @@ const material * mesh::get_material() const {
 
 bool mesh::has_transparency() const {
 	return alpha != 1.0f;
+}
+
+bool mesh::is_inverted() const {
+	return inverted;
 }
 
 bool operator<(const mesh &a, const mesh &b) {
