@@ -349,6 +349,7 @@ int renderer2d::handle(program_start_event &event) {
 	screen_height = event.screen_height;
 
 	load_font("spleen_6x12", "assets/fonts/spleen_font_6x12.png", 6, 12);
+	load_font("spleen_12x24", "assets/fonts/spleen_font_12x24.png", 12, 24);
 
 	return 0;
 }

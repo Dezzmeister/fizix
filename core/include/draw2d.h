@@ -120,8 +120,8 @@ private:
 	unique_handle<unsigned int> icon_vbo;
 	mutable glm::vec2 icon_vbo_buf[12]{};
 
-	int screen_width{ 0 };
-	int screen_height{ 0 };
+	int screen_width{};
+	int screen_height{};
 
 	void draw_line(size_t num_chars, int x, int y) const;
 

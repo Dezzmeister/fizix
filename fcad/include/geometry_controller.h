@@ -1,19 +1,28 @@
 #pragma once
+#include <draw2d.h>
 #include <mesh.h>
 #include <world.h>
 #include "fcad_events.h"
 
 class geometry_controller :
+	public event_listener<program_start_event>,
 	public event_listener<new_vertex_event>,
 	public event_listener<new_edge_event>,
-	public event_listener<new_face_event>
+	public event_listener<new_face_event>,
+	public event_listener<keydown_event>,
+	public event_listener<post_processing_event>,
+	public event_listener<camera_move_event>
 {
 public:
 	geometry_controller(event_buses &_buses, fcad_event_bus &_events);
 
+	int handle(program_start_event &event) override;
 	int handle(new_vertex_event &event) override;
 	int handle(new_edge_event &event) override;
 	int handle(new_face_event &event) override;
+	int handle(keydown_event &event) override;
+	int handle(post_processing_event &event) override;
+	int handle(camera_move_event &event) override;
 
 private:
 	std::unique_ptr<world> mesh_world;
@@ -26,6 +35,9 @@ private:
 	std::unique_ptr<light> sun{};
 	std::unique_ptr<light> moon{};
 	polyhedron poly{};
+	mat4 vert_world_to_pre_ndc{};
+	const font * vert_label_font{};
+	bool show_vert_labels{};
 
 	void regenerate_edge_geom();
 };

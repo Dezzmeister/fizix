@@ -3,6 +3,8 @@
 layout(points) in;
 layout(triangle_strip, max_vertices = 6) out;
 
+flat in int ascii_val_geom[1];
+
 flat out int ascii_val;
 out vec2 uv;
 
@@ -20,29 +22,29 @@ void main() {
 	float ys = (2.0 * glyph_height) / screen_height;
 
 	gl_Position = vec4(x0, y0, 0.0, 1.0);
-	ascii_val = int(gl_in[0].gl_Position.x);
+	ascii_val = ascii_val_geom[0];
 	uv = vec2(0.0, 0.0);
 	EmitVertex();
 	gl_Position = vec4(x0 + xs, y0, 0.0, 1.0);
-	ascii_val = int(gl_in[0].gl_Position.x);
+	ascii_val = ascii_val_geom[0];
 	uv = vec2(1.0, 0.0);
 	EmitVertex();
 	gl_Position = vec4(x0, y0 + ys, 0.0, 1.0);
-	ascii_val = int(gl_in[0].gl_Position.x);
+	ascii_val = ascii_val_geom[0];
 	uv = vec2(0.0, 1.0);
 	EmitVertex();
 	EndPrimitive();
 
 	gl_Position = vec4(x0 + xs, y0, 0.0, 1.0);
-	ascii_val = int(gl_in[0].gl_Position.x);
+	ascii_val = ascii_val_geom[0];
 	uv = vec2(1.0, 0.0);
 	EmitVertex();
 	gl_Position = vec4(x0 + xs, y0 + ys, 0.0, 1.0);
-	ascii_val = int(gl_in[0].gl_Position.x);
+	ascii_val = ascii_val_geom[0];
 	uv = vec2(1.0, 1.0);
 	EmitVertex();
 	gl_Position = vec4(x0, y0 + ys, 0.0, 1.0);
-	ascii_val = int(gl_in[0].gl_Position.x);
+	ascii_val = ascii_val_geom[0];
 	uv = vec2(0.0, 1.0);
 	EmitVertex();
 	EndPrimitive();

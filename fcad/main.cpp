@@ -390,17 +390,20 @@ int main(int, const char * const * const) {
 		KEY_K,
 		KEY_L,
 		KEY_I,
-		KEY_O
+		KEY_O,
+		KEY_T
 	});
 	// TODO: Disable mouse locking
 	mouse_controller mouse(buses, {}, KEY_ESC);
 	screen_controller screen(buses);
 	camera_controller camera(buses, events);
 	geometry_controller geom(buses, events);
-
-	create_shape(events);
+	fcad_start_event fcad_start(geom);
 
 	buses.lifecycle.fire(program_start);
+	events.fire(fcad_start);
+
+	create_shape(events);
 
 	platform::run([&]() {
 		buses.render.fire(pre_render_event);

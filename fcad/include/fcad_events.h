@@ -13,6 +13,14 @@ enum class edit_mode {
 	Select
 };
 
+class geometry_controller;
+
+struct fcad_start_event {
+	geometry_controller &gc;
+
+	fcad_start_event(geometry_controller &_gc) : gc(_gc) {}
+};
+
 struct window_input_event {
 	const char c;
 
@@ -142,6 +150,7 @@ struct set_camera_pos_event {
 };
 
 using fcad_event_bus = event_bus<
+	fcad_start_event,
 	window_input_event,
 	set_mode_event,
 	mode_switch_event,

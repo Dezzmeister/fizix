@@ -25,6 +25,15 @@ namespace {
 	std::default_random_engine rand_engine(r());
 	std::uniform_real_distribution<float> float_dist(0.0f, 1.0f);
 
+	struct vertex_and_depth {
+		vec3 ndc{};
+		size_t vert_i{};
+
+		friend bool operator<(const vertex_and_depth &a, const vertex_and_depth &b) {
+			return a.ndc.z < b.ndc.z;
+		}
+	};
+
 	// Turns a polygon into triangles by making successive cuts
 	// until only triangles remain
 	void triangulate(
@@ -225,9 +234,13 @@ geometry_controller::geometry_controller(
 	event_buses &_buses,
 	fcad_event_bus &_events
 ) :
+	event_listener<program_start_event>(&_buses.lifecycle),
 	event_listener<new_vertex_event>(&_events),
 	event_listener<new_edge_event>(&_events),
 	event_listener<new_face_event>(&_events),
+	event_listener<keydown_event>(&_buses.input),
+	event_listener<post_processing_event>(&_buses.render),
+	event_listener<camera_move_event>(&_events),
 	mesh_world(std::make_unique<world>(_buses)),
 	vert_geom(std::make_unique<geometry>(
 		std::vector<float>({}),
@@ -264,9 +277,14 @@ geometry_controller::geometry_controller(
 		)
 	))
 {
+	event_listener<program_start_event>::subscribe();
 	event_listener<new_vertex_event>::subscribe();
 	event_listener<new_edge_event>::subscribe();
 	event_listener<new_face_event>::subscribe();
+	event_listener<keydown_event>::subscribe();
+	event_listener<post_processing_event>::subscribe();
+	event_listener<camera_move_event>::subscribe();
+
 	mesh_world->add_mesh(vert_mesh.get());
 	mesh_world->add_mesh(edge_mesh.get());
 	mesh_world->add_light(sun.get());
@@ -274,6 +292,12 @@ geometry_controller::geometry_controller(
 	sun->set_casts_shadow(false);
 	moon->set_casts_shadow(false);
 	glPointSize(3);
+}
+
+int geometry_controller::handle(program_start_event &event) {
+	vert_label_font = &event.draw2d->get_font("spleen_12x24");
+
+	return 0;
 }
 
 int geometry_controller::handle(new_vertex_event &event) {
@@ -339,6 +363,76 @@ int geometry_controller::handle(new_face_event &event) {
 	mesh_world->add_mesh(face_meshes[face_meshes.size() - 1].get());
 	// TODO: Be smarter about this
 	regenerate_edge_geom();
+
+	return 0;
+}
+
+int geometry_controller::handle(keydown_event &event) {
+	if (event.key == KEY_T) {
+		show_vert_labels = ! show_vert_labels;
+	}
+
+	return 0;
+}
+
+int geometry_controller::handle(post_processing_event &event) {
+	if (! show_vert_labels) {
+		return 0;
+	}
+
+	assert(vert_label_font);
+
+	std::vector<vertex_and_depth> verts_and_depths{};
+
+	// TODO: Possibly optimize for performance. We can get OpenGL to do all of this
+	// with a little extra work
+	for (size_t i = 0; i < poly.vertices.size(); i++) {
+		vec4 pre_ndc = vert_world_to_pre_ndc * vec4(poly.vertices[i].v, 1.0f);
+		vec3 ndc = vec3(pre_ndc / pre_ndc.w);
+
+		if (
+			ndc.x < -1.0f || ndc.x > 1.0f ||
+			ndc.y < -1.0f || ndc.y > 1.0f ||
+			ndc.z < 0.0f || ndc.z > 1.0f
+		) {
+			continue;
+		}
+
+		vertex_and_depth vd{
+			.ndc = ndc,
+			.vert_i = i
+		};
+
+		verts_and_depths.push_back(vd);
+	}
+
+	std::sort(std::begin(verts_and_depths), std::end(verts_and_depths));
+
+	for (const auto &vd : std::ranges::views::reverse(verts_and_depths)) {
+		int screen_x = (int)((vd.ndc.x + 1.0f) * event.screen_width / 2.0f);
+		int screen_y = event.screen_height - (int)((vd.ndc.y + 1.0f) * event.screen_height / 2.0f);
+		std::string str = traits::to_string(vd.vert_i);
+
+		event.draw2d.draw_text(
+			str,
+			*vert_label_font,
+			screen_x,
+			screen_y,
+			// Vertex indices won't be over 1M in this little CAD application
+			vert_label_font->glyph_width * 6,
+			vert_label_font->glyph_height,
+			0,
+			vec4(0.0f, 0.0f, 0.0f, 1.0f),
+			vec4(0.7f, 0.7f, 0.7f, 0.7f),
+			false
+		);
+	}
+
+	return 0;
+}
+
+int geometry_controller::handle(camera_move_event &event) {
+	vert_world_to_pre_ndc = event.proj * event.view * vert_mesh->get_model();
 
 	return 0;
 }
