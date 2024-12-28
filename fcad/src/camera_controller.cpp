@@ -54,12 +54,18 @@ int camera_controller::handle(pre_render_pass_event &event) {
 
 			if (vel_dir.x != 0.0f) {
 				float x_half_angle = half_angle * vel_dir.x;
-				glm::quat x_rot(std::cos(x_half_angle), -std::sin(x_half_angle) * up);
+				vec3 axis = up;
+
+				if (rot_axis != vec3(0.0f)) {
+					axis = rot_axis;
+				}
+
+				glm::quat x_rot(std::cos(x_half_angle), -std::sin(x_half_angle) * axis);
 
 				total_rot += x_rot;
 			}
 
-			if (vel_dir.y != 0.0f) {
+			if (vel_dir.y != 0.0f && rot_axis == vec3(0.0f)) {
 				float y_half_angle = half_angle * vel_dir.y;
 				glm::quat y_rot(std::cos(y_half_angle), std::sin(y_half_angle) * right);
 
@@ -180,6 +186,15 @@ int camera_controller::handle(keydown_event &event) {
 		zoom_dir += 1.0f;
 	} else if (event.key == KEY_CTRL) {
 		is_panning = true;
+	} else if (event.key == KEY_X) {
+		rot_axis.x = 1.0f;
+		rot_axis = glm::normalize(rot_axis);
+	} else if (event.key == KEY_Y) {
+		rot_axis.y = 1.0f;
+		rot_axis = glm::normalize(rot_axis);
+	} else if (event.key == KEY_Z) {
+		rot_axis.z = 1.0f;
+		rot_axis = glm::normalize(rot_axis);
 	}
 
 	return 0;
@@ -200,6 +215,24 @@ int camera_controller::handle(keyup_event &event) {
 		zoom_dir -= 1.0f;
 	} else if (event.key == KEY_CTRL) {
 		is_panning = false;
+	} else if (event.key == KEY_X) {
+		rot_axis.x = 0.0f;
+
+		if (rot_axis != vec3(0.0f)) {
+			rot_axis = glm::normalize(rot_axis);
+		}
+	} else if (event.key == KEY_Y) {
+		rot_axis.y = 0.0f;
+
+		if (rot_axis != vec3(0.0f)) {
+			rot_axis = glm::normalize(rot_axis);
+		}
+	} else if (event.key == KEY_Z) {
+		rot_axis.z = 0.0f;
+
+		if (rot_axis != vec3(0.0f)) {
+			rot_axis = glm::normalize(rot_axis);
+		}
 	}
 
 	return 0;

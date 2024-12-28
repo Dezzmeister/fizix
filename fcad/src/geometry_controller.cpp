@@ -10,9 +10,17 @@ using namespace phys::literals;
 namespace {
 	// Complementary to Windows BSOD blue
 	// https://www.canva.com/colors/color-wheel/
-	color_material vert_mtl(0xf5d608);
-	color_material edge_mtl(0xf5d608);
-	phong_color_material face_mtl(
+	const color_material vert_mtl(vec3(
+		0.9607f,
+		0.8392f,
+		0.0314f
+	));
+	const color_material edge_mtl(vec3(
+		0.9607f,
+		0.8392f,
+		0.0314f
+	));
+	const phong_color_material face_mtl(
 		phong_color_material_properties(
 			glm::vec3(0.25, 0.20725, 0.20725),
 			glm::vec3(1, 0.829, 0.829),
@@ -20,7 +28,7 @@ namespace {
 			128 * 0.088f
 		)
 	);
-	phong_color_material face_inv_mtl(
+	const phong_color_material face_inv_mtl(
 		phong_color_material_properties(
 			glm::vec3(0.368, 0.0, 0.306),
 			glm::vec3(1, 0.829, 1),
@@ -274,25 +282,25 @@ geometry_controller::geometry_controller(
 	event_listener<keydown_event>(&_buses.input),
 	event_listener<post_processing_event>(&_buses.render),
 	event_listener<camera_move_event>(&_events),
-	mesh_world(std::make_unique<world>(_buses)),
-	vert_geom(std::make_unique<geometry>(
+	mesh_world(_buses),
+	vert_geom(
 		std::vector<float>({}),
 		geometry_primitive_type::Points,
 		vbo_usage_hint::DynamicDraw
-	)),
-	vert_mesh(std::make_unique<mesh>(
-		vert_geom.get(),
+	),
+	vert_mesh(
+		&vert_geom,
 		&vert_mtl
-	)),
-	edge_geom(std::make_unique<geometry>(
+	),
+	edge_geom(
 		std::vector<float>({}),
 		geometry_primitive_type::Lines,
 		vbo_usage_hint::DynamicDraw
-	)),
-	edge_mesh(std::make_unique<mesh>(
-		edge_geom.get(),
+	),
+	edge_mesh(
+		&edge_geom,
 		&edge_mtl
-	)),
+	),
 	sun(std::make_unique<directional_light>(
 		glm::normalize(glm::vec3(0.5f, -1.0f, -0.8f)),
 		light_properties(
@@ -308,7 +316,8 @@ geometry_controller::geometry_controller(
 			glm::vec3(0.5f),
 			glm::vec3(1.0f)
 		)
-	))
+	)),
+	axes(mesh_world)
 {
 	event_listener<program_start_event>::subscribe();
 	event_listener<new_vertex_event>::subscribe();
@@ -321,13 +330,14 @@ geometry_controller::geometry_controller(
 	event_listener<post_processing_event>::subscribe();
 	event_listener<camera_move_event>::subscribe();
 
-	mesh_world->add_mesh(vert_mesh.get());
-	mesh_world->add_mesh(edge_mesh.get());
-	mesh_world->add_light(sun.get());
-	mesh_world->add_light(moon.get());
+	mesh_world.add_mesh(&vert_mesh);
+	mesh_world.add_mesh(&edge_mesh);
+	mesh_world.add_light(sun.get());
+	mesh_world.add_light(moon.get());
 	sun->set_casts_shadow(false);
 	moon->set_casts_shadow(false);
 	glPointSize(3);
+	glLineWidth(2);
 }
 
 int geometry_controller::handle(program_start_event &event) {
@@ -337,12 +347,17 @@ int geometry_controller::handle(program_start_event &event) {
 }
 
 int geometry_controller::handle(new_vertex_event &event) {
-	vert_geom->add_vertex(
+	vert_geom.add_vertex(
 		event.vertex,
 		glm::vec3(0.0f),
 		glm::vec2(0.0f)
 	);
 	poly.add_vertex(event.vertex);
+
+	aabb bounds = calculate_aabb();
+	float max = bounds.max_diff();
+
+	axes.set_max_axis(max / 2.0f);
 
 	return 0;
 }
@@ -354,12 +369,12 @@ int geometry_controller::handle(new_edge_event &event) {
 		return 0;
 	}
 
-	edge_geom->add_vertex(
+	edge_geom.add_vertex(
 		event.e.t(poly).v,
 		glm::vec3(0.0f),
 		glm::vec2(0.0f)
 	);
-	edge_geom->add_vertex(
+	edge_geom.add_vertex(
 		event.e.h(poly).v,
 		glm::vec3(0.0f),
 		glm::vec2(0.0f)
@@ -394,7 +409,7 @@ int geometry_controller::handle(new_face_event &event) {
 		)
 	);
 
-	face_meshes[face_meshes.size() - 1]->add_to_world(*mesh_world);
+	face_meshes[face_meshes.size() - 1]->add_to_world(mesh_world);
 	// TODO: Be smarter about this
 	regenerate_edge_geom();
 
@@ -412,7 +427,7 @@ int geometry_controller::handle(delete_vertex_event &event) {
 
 	remove_face_geoms(deleted_faces);
 
-	vert_geom->remove_vertex(event.vertex_idx);
+	vert_geom.remove_vertex(event.vertex_idx);
 	regenerate_edge_geom();
 
 	for (auto &fm : face_meshes) {
@@ -423,6 +438,13 @@ int geometry_controller::handle(delete_vertex_event &event) {
 				fm->f.set_vert(i, v - 1);
 			}
 		}
+	}
+
+	aabb bounds = calculate_aabb();
+	float max = bounds.max_diff();
+
+	if (max != infinity) {
+		axes.set_max_axis(max / 2.0f);
 	}
 
 	return 0;
@@ -469,11 +491,12 @@ int geometry_controller::handle(keydown_event &event) {
 }
 
 int geometry_controller::handle(post_processing_event &event) {
+	assert(vert_label_font);
+	axes.draw_labels(event.draw2d, *vert_label_font);
+
 	if (! show_vert_labels) {
 		return 0;
 	}
-
-	assert(vert_label_font);
 
 	std::vector<vertex_and_depth> verts_and_depths{};
 
@@ -486,7 +509,7 @@ int geometry_controller::handle(post_processing_event &event) {
 		if (
 			ndc.x < -1.0f || ndc.x > 1.0f ||
 			ndc.y < -1.0f || ndc.y > 1.0f ||
-			ndc.z < 0.0f || ndc.z > 1.0f
+			ndc.z < -1.0f || ndc.z > 1.0f
 		) {
 			continue;
 		}
@@ -502,15 +525,14 @@ int geometry_controller::handle(post_processing_event &event) {
 	std::sort(std::begin(verts_and_depths), std::end(verts_and_depths));
 
 	for (const auto &vd : std::ranges::views::reverse(verts_and_depths)) {
-		int screen_x = (int)((vd.ndc.x + 1.0f) * event.screen_width / 2.0f);
-		int screen_y = event.screen_height - (int)((vd.ndc.y + 1.0f) * event.screen_height / 2.0f);
+		glm::ivec2 screen = event.draw2d.ndc_to_screen(vd.ndc);
 		std::string str = traits::to_string(vd.vert_i);
 
 		event.draw2d.draw_text(
 			str,
 			*vert_label_font,
-			screen_x,
-			screen_y,
+			screen.x,
+			screen.y,
 			// Vertex indices won't be over 1M in this little CAD application
 			vert_label_font->glyph_width * 6,
 			vert_label_font->glyph_height,
@@ -525,21 +547,24 @@ int geometry_controller::handle(post_processing_event &event) {
 }
 
 int geometry_controller::handle(camera_move_event &event) {
-	vert_world_to_pre_ndc = event.proj * event.view * vert_mesh->get_model();
+	mat4 world_to_pre_ndc = event.proj * event.view;
+
+	axes.set_world_to_pre_ndc(world_to_pre_ndc);
+	vert_world_to_pre_ndc = world_to_pre_ndc * vert_mesh.get_model();
 
 	return 0;
 }
 
 void geometry_controller::regenerate_edge_geom() {
-	edge_geom->clear_vertices();
+	edge_geom.clear_vertices();
 
 	for (const edge &e : poly.edges) {
-		edge_geom->add_vertex(
+		edge_geom.add_vertex(
 			e.t(poly).v,
 			glm::vec3(0.0f),
 			glm::vec3(0.0f)
 		);
-		edge_geom->add_vertex(
+		edge_geom.add_vertex(
 			e.h(poly).v,
 			glm::vec3(0.0f),
 			glm::vec3(0.0f)
@@ -552,8 +577,54 @@ void geometry_controller::remove_face_geoms(const std::vector<face> &faces) {
 		auto it = std::find(std::begin(faces), std::end(faces), face_meshes[i]->f);
 
 		if (it != std::end(faces)) {
-			face_meshes[i]->remove_from_world(*mesh_world);
+			face_meshes[i]->remove_from_world(mesh_world);
 			face_meshes.erase(std::begin(face_meshes) + i);
 		}
 	}
+}
+
+geometry_controller::aabb geometry_controller::calculate_aabb() const {
+	vec3 min(infinity);
+	vec3 max(-infinity);
+
+	for (const vertex &v : poly.vertices) {
+		if (v.v.x < min.x) {
+			min.x = v.v.x;
+		}
+
+		if (v.v.y < min.y) {
+			min.y = v.v.y;
+		}
+
+		if (v.v.z < min.z) {
+			min.z = v.v.z;
+		}
+
+		if (v.v.x > max.x) {
+			max.x = v.v.x;
+		}
+
+		if (v.v.y > max.y) {
+			max.y = v.v.y;
+		}
+
+		if (v.v.z > max.z) {
+			max.z = v.v.z;
+		}
+	}
+
+	return aabb{
+		.min = min,
+		.max = max
+	};
+}
+
+float geometry_controller::aabb::max_diff() const {
+	return std::max(
+		max.x - min.x,
+		std::max(
+			max.y - min.y,
+			max.z - min.z
+		)
+	);
 }

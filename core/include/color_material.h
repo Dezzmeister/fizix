@@ -4,9 +4,9 @@
 // A flat color. An object with this material does not interact with lights.
 class color_material : public material {
 public:
-	const unsigned int color;
+	const glm::vec3 color;
 
-	color_material(unsigned int _color);
+	color_material(const glm::vec3 &_color);
 
 	void prepare_draw(draw_event &event, const shader_program &shader, render_pass_state &render_pass) const override;
 	bool supports_transparency() const override;
@@ -14,6 +14,5 @@ public:
 
 private:
 	const static std::string color_shader_name;
-	glm::vec3 color_vec;
 };
 

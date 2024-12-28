@@ -79,7 +79,9 @@ public:
 		int line_spacing,
 		const glm::vec4 &fg_color,
 		const glm::vec4 &bg_color,
-		bool auto_break = true
+		bool auto_break = true,
+		// TODO: Profile shader with write to gl_FragDepth
+		float depth = 0.0f
 	) const;
 
 	void draw_rect(
@@ -100,6 +102,8 @@ public:
 
 	int handle(program_start_event &event) override;
 	int handle(screen_resize_event &event) override;
+
+	glm::ivec2 ndc_to_screen(const glm::vec3 &ndc) const;
 
 private:
 	std::unordered_map<std::string, font> fonts{};

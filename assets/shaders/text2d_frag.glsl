@@ -9,6 +9,7 @@ layout(location = 3) uniform int glyph_width;
 layout(location = 7) uniform sampler2D font;
 layout(location = 8) uniform vec4 bg_color;
 layout(location = 9) uniform vec4 fg_color;
+layout(location = 12) uniform float depth;
 
 void main() {
 	ivec2 tex_size = textureSize(font, 0);
@@ -22,4 +23,7 @@ void main() {
 	} else {
 		frag_color = bg_color;
 	}
+
+	// TODO?: a version of this shader without a write to gl_FragDepth
+	gl_FragDepth = depth;
 }

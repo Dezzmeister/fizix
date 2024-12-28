@@ -15,7 +15,8 @@ namespace {
 		{ "bg_color", 8 },
 		{ "fg_color", 9 },
 		{ "color", 10 },
-		{ "icon", 11 }
+		{ "icon", 11 },
+		{ "depth", 12 }
 	};
 }
 
@@ -105,7 +106,8 @@ void renderer2d::draw_text(
 	int line_spacing,
 	const glm::vec4 &fg_color,
 	const glm::vec4 &bg_color,
-	bool auto_break
+	bool auto_break,
+	float depth
 ) const {
 	static constexpr int glyph_width_loc = util::find_in_map(text_shader_locs, "glyph_width");
 	static constexpr int glyph_height_loc = util::find_in_map(text_shader_locs, "glyph_height");
@@ -114,6 +116,7 @@ void renderer2d::draw_text(
 	static constexpr int font_loc = util::find_in_map(text_shader_locs, "font");
 	static constexpr int fg_color_loc = util::find_in_map(text_shader_locs, "fg_color");
 	static constexpr int bg_color_loc = util::find_in_map(text_shader_locs, "bg_color");
+	static constexpr int depth_loc = util::find_in_map(text_shader_locs, "depth");
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, f.font_bmp.get_id());
@@ -126,6 +129,7 @@ void renderer2d::draw_text(
 	text_shader->set_uniform(font_loc, 0);
 	text_shader->set_uniform(fg_color_loc, fg_color);
 	text_shader->set_uniform(bg_color_loc, bg_color);
+	text_shader->set_uniform(depth_loc, depth);
 
 	shader_use_event shader_event(*text_shader);
 	buses.render.fire(shader_event);
@@ -134,7 +138,6 @@ void renderer2d::draw_text(
 	glBindBuffer(GL_ARRAY_BUFFER, text_vbo);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDisable(GL_DEPTH_TEST);
 
 	size_t in_char_pos = 0;
 	size_t out_char_pos = 0;
@@ -241,7 +244,6 @@ void renderer2d::draw_text(
 		draw_line(out_char_pos, draw_x, curr_y);
 	}
 
-	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 }
 
@@ -359,6 +361,13 @@ int renderer2d::handle(screen_resize_event &event) {
 	screen_height = event.new_height;
 
 	return 0;
+}
+
+glm::ivec2 renderer2d::ndc_to_screen(const glm::vec3 &ndc) const {
+	int x = (int)((ndc.x + 1.0f) * screen_width / 2.0f);
+	int y = screen_height - (int)((ndc.y + 1.0f) * screen_height / 2.0f);
+
+	return glm::ivec2(x, y);
 }
 
 glm::vec2 renderer2d::screen_to_gl(const glm::ivec2 &v) const {

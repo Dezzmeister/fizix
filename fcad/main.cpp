@@ -391,7 +391,10 @@ int main(int, const char * const * const) {
 		KEY_L,
 		KEY_I,
 		KEY_O,
-		KEY_T
+		KEY_T,
+		KEY_X,
+		KEY_Y,
+		KEY_Z
 	});
 	// TODO: Disable mouse locking
 	mouse_controller mouse(buses, {}, KEY_ESC);

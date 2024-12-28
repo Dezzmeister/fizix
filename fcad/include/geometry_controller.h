@@ -21,7 +21,30 @@ struct renderable_face : traits::pinned<renderable_face> {
 	void remove_from_world(world &w);
 };
 
+class axes_controller : traits::pinned<axes_controller> {
+public:
+	axes_controller(world &_mesh_world);
+
+	void set_max_axis(float max);
+	void set_world_to_pre_ndc(const mat4 &_world_to_pre_ndc);
+	void draw_labels(const renderer2d &draw2d, const font &f) const;
+
+private:
+	geometry x_axis_geom;
+	geometry y_axis_geom;
+	geometry z_axis_geom;
+	mesh x_axis;
+	mesh y_axis;
+	mesh z_axis;
+	mat4 world_to_pre_ndc{};
+	float max_axis{ 1.0f };
+	float world_axes_scale{ 1.0f };
+
+	vec3 world_to_ndc(const vec3 &world) const;
+};
+
 class geometry_controller :
+	traits::pinned<geometry_controller>,
 	public event_listener<program_start_event>,
 	public event_listener<new_vertex_event>,
 	public event_listener<new_edge_event>,
@@ -48,19 +71,28 @@ public:
 	int handle(camera_move_event &event) override;
 
 private:
-	std::unique_ptr<world> mesh_world;
-	std::unique_ptr<geometry> vert_geom;
-	std::unique_ptr<mesh> vert_mesh;
-	std::unique_ptr<geometry> edge_geom;
-	std::unique_ptr<mesh> edge_mesh;
+	struct aabb {
+		vec3 min{};
+		vec3 max{};
+
+		float max_diff() const;
+	};
+
+	world mesh_world;
+	geometry vert_geom;
+	mesh vert_mesh;
+	geometry edge_geom;
+	mesh edge_mesh;
 	std::vector<std::unique_ptr<renderable_face>> face_meshes{};
 	std::unique_ptr<light> sun{};
 	std::unique_ptr<light> moon{};
 	polyhedron poly{};
 	mat4 vert_world_to_pre_ndc{};
 	const font * vert_label_font{};
+	axes_controller axes;
 	bool show_vert_labels{};
 
 	void regenerate_edge_geom();
 	void remove_face_geoms(const std::vector<face> &faces);
+	aabb calculate_aabb() const;
 };
