@@ -13,6 +13,7 @@ void noop_command_impl::on_submit(const std::wstring&) {}
 
 int noop_command_impl::handle(fcad_start_event &event) {
 	history = &event.command_history;
+	files = &event.fc;
 
 	return 0;
 }

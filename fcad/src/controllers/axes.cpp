@@ -1,5 +1,5 @@
 #include <color_material.h>
-#include "geometry_controller.h"
+#include "controllers/geometry.h"
 
 namespace {
 	const vec3 x_color(1.0f, 0.0f, 0.0f);

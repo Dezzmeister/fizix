@@ -60,6 +60,8 @@ namespace phys {
 			std::ranges::range auto features() const &;
 			std::ranges::range auto features() const && = delete;
 
+			void clear();
+
 		private:
 			void move_vertex(size_t from, size_t to);
 		};

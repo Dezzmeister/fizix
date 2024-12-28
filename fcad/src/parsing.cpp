@@ -83,3 +83,30 @@ std::optional<face> parse_implicit_face(parsing::parser_state &state) {
 
 	return face(verts, convexity::Unspecified);
 }
+
+std::wstring parse_line(parsing::parser_state &state) {
+	std::wstringstream out{};
+
+	wchar_t c;
+	while (! state.eof()) {
+		c = state.get();
+
+		if (c == L'\n' || c == L'\r') {
+			break;
+		}
+
+		out << c;
+	}
+
+	while (! state.eof()) {
+		c = state.peek();
+
+		if (c != L'\n' && c != L'\r') {
+			break;
+		}
+
+		state.get();
+	}
+
+	return out.str();
+}

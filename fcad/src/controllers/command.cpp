@@ -1,5 +1,5 @@
-#include "command_controller.h"
 #include "commands.h"
+#include "controllers/command.h"
 
 command_controller::command_controller(
 	fcad_event_bus &_events,
@@ -110,6 +110,7 @@ command_controller make_commands(event_buses&, fcad_event_bus &events) {
 	impls.emplace(std::make_pair(L"de", std::make_unique<delete_edge_command_impl>(events)));
 	impls.emplace(std::make_pair(L"df", std::make_unique<delete_face_command_impl>(events)));
 	impls.emplace(std::make_pair(L"w", std::make_unique<write_replay_file_command_impl>(events)));
+	impls.emplace(std::make_pair(L"r", std::make_unique<load_replay_file_command_impl>(events)));
 
 	return command_controller(events, std::move(impls));
 }

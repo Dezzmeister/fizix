@@ -1,6 +1,6 @@
-#include "window_action_controller.h"
+#include "controllers/action.h"
 
-window_action_controller::window_action_controller(
+action_controller::action_controller(
 	fcad_event_bus &_events,
 	action_group &_window_actions
 ) :
@@ -10,7 +10,7 @@ window_action_controller::window_action_controller(
 	event_listener<window_input_event>::subscribe();
 }
 
-int window_action_controller::handle(window_input_event &event) {
+int action_controller::handle(window_input_event &event) {
 	window_actions.test(event.c);
 
 	return 0;

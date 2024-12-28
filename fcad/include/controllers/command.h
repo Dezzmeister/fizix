@@ -1,7 +1,7 @@
 #pragma once
 #include <unordered_map>
 #include <events.h>
-#include "command.h"
+#include "../command.h"
 #include "fcad_events.h"
 
 class command_controller :

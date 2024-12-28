@@ -1,6 +1,6 @@
 #include <shader_constants.h>
 #include <util.h>
-#include "camera_controller.h"
+#include "controllers/camera.h"
 
 camera_controller::camera_controller(
 	event_buses &_buses,

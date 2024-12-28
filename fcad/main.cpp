@@ -18,13 +18,14 @@
 #include <util.h>
 #include <world.h>
 #include "action.h"
-#include "camera_controller.h"
-#include "command_controller.h"
-#include "command_history_controller.h"
+#include "controllers/action.h"
+#include "controllers/camera.h"
+#include "controllers/command.h"
+#include "controllers/command_history.h"
 #include "fcad_events.h"
-#include "geometry_controller.h"
-#include "mode_controller.h"
-#include "window_action_controller.h"
+#include "controllers/file.h"
+#include "controllers/geometry.h"
+#include "controllers/mode.h"
 
 const int mode_section_width = 256;
 
@@ -322,10 +323,11 @@ int main(int, const char * const * const) {
 	fcad_event_bus events;
 	win32_bridge bridge(events, main_window.hwnd(), statusbar, command_input);
 	window_actions actions = make_window_actions(buses, events);
-	window_action_controller action_controller(events, actions.actions);
+	action_controller ac(events, actions.actions);
 	mode_controller modes(buses, events);
 	command_controller commands = make_commands(buses, events);
-	command_history_controller command_history(events);
+	command_history_controller command_history{};
+	file_controller fc(events);
 
 	if (! SetWindowSubclass(main_window.hwnd(), main_window_proc, 1, (DWORD_PTR)&bridge)) {
 		logger::error("Failed to set main window subclass proc");
@@ -403,7 +405,7 @@ int main(int, const char * const * const) {
 	screen_controller screen(buses);
 	camera_controller camera(buses, events);
 	geometry_controller geom(buses, events);
-	fcad_start_event fcad_start(geom, command_history);
+	fcad_start_event fcad_start(geom, command_history, fc);
 
 	buses.lifecycle.fire(program_start);
 	events.fire(fcad_start);

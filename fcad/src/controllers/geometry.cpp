@@ -3,7 +3,7 @@
 #include <directional_light.h>
 #include <phong_color_material.h>
 #include <physics/math_util.h>
-#include "geometry_controller.h"
+#include "controllers/geometry.h"
 
 using namespace phys::literals;
 
@@ -338,6 +338,18 @@ geometry_controller::geometry_controller(
 	moon->set_casts_shadow(false);
 	glPointSize(3);
 	glLineWidth(2);
+}
+
+void geometry_controller::reset() {
+	for (const auto &rf : face_meshes) {
+		rf->remove_from_world(mesh_world);
+	}
+
+	face_meshes.clear();
+
+	edge_geom.clear_vertices();
+	vert_geom.clear_vertices();
+	poly.clear();
 }
 
 int geometry_controller::handle(program_start_event &event) {

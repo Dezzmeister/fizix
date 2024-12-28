@@ -15,17 +15,21 @@ enum class edit_mode {
 
 class geometry_controller;
 class command_history_controller;
+class file_controller;
 
 struct fcad_start_event {
 	geometry_controller &gc;
 	command_history_controller &command_history;
+	file_controller &fc;
 
 	fcad_start_event(
 		geometry_controller &_gc,
-		command_history_controller &_command_history
+		command_history_controller &_command_history,
+		file_controller &_fc
 	) :
 		gc(_gc),
-		command_history(_command_history)
+		command_history(_command_history),
+		fc(_fc)
 	{}
 };
 

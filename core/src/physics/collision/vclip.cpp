@@ -380,6 +380,12 @@ namespace phys {
 			return true;
 		}
 
+		void polyhedron::clear() {
+			faces.clear();
+			edges.clear();
+			vertices.clear();
+		}
+
 		void polyhedron::move_vertex(size_t from, size_t to) {
 			for (edge &e : edges) {
 				if (e.v_is[0] == from) {

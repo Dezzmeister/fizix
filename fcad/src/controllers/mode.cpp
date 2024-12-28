@@ -1,4 +1,4 @@
-#include "mode_controller.h"
+#include "controllers/mode.h"
 
 mode_controller::mode_controller(
 	event_buses &_buses,

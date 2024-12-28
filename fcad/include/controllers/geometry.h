@@ -59,6 +59,8 @@ class geometry_controller :
 public:
 	geometry_controller(event_buses &_buses, fcad_event_bus &_events);
 
+	void reset();
+
 	int handle(program_start_event &event) override;
 	int handle(new_vertex_event &event) override;
 	int handle(new_edge_event &event) override;
