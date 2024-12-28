@@ -20,6 +20,7 @@
 #include "action.h"
 #include "camera_controller.h"
 #include "command_controller.h"
+#include "command_history_controller.h"
 #include "fcad_events.h"
 #include "geometry_controller.h"
 #include "mode_controller.h"
@@ -324,6 +325,7 @@ int main(int, const char * const * const) {
 	window_action_controller action_controller(events, actions.actions);
 	mode_controller modes(buses, events);
 	command_controller commands = make_commands(buses, events);
+	command_history_controller command_history(events);
 
 	if (! SetWindowSubclass(main_window.hwnd(), main_window_proc, 1, (DWORD_PTR)&bridge)) {
 		logger::error("Failed to set main window subclass proc");
@@ -401,7 +403,7 @@ int main(int, const char * const * const) {
 	screen_controller screen(buses);
 	camera_controller camera(buses, events);
 	geometry_controller geom(buses, events);
-	fcad_start_event fcad_start(geom);
+	fcad_start_event fcad_start(geom, command_history);
 
 	buses.lifecycle.fire(program_start);
 	events.fire(fcad_start);

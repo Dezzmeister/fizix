@@ -3,9 +3,6 @@
 
 using namespace phys;
 
-delete_vertex_command_impl::delete_vertex_command_impl(fcad_event_bus &_events) :
-	events(_events) {}
-
 void delete_vertex_command_impl::on_submit(const std::wstring &args) {
 	std::wstringstream wss{};
 	wss << args;
@@ -26,4 +23,6 @@ void delete_vertex_command_impl::on_submit(const std::wstring &args) {
 
 	delete_vertex_event event(*vert_idx_opt);
 	events.fire(event);
+
+	history->add_command(L":dv " + args);
 }

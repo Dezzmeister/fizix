@@ -1,88 +1,90 @@
 #pragma once
 #include "command.h"
+#include "command_history_controller.h"
 #include "fcad_events.h"
 
-class noop_command_impl : public command_impl {
+class noop_command_impl :
+	public command_impl,
+	public event_listener<fcad_start_event>
+{
 public:
+	noop_command_impl(fcad_event_bus &_events);
 	// TODO: Does this need to be redeclared as virtual?
 	virtual ~noop_command_impl() = default;
 
 	void on_cancel(const std::wstring &args_buf) override;
 	void on_input(const std::wstring &args_buf) override;
 	void on_submit(const std::wstring &args) override;
+
+	int handle(fcad_start_event &event) override;
+
+protected:
+	fcad_event_bus &events;
+	command_history_controller * history{};
 };
 
 class create_vertex_command_impl : public noop_command_impl {
 public:
-	create_vertex_command_impl(fcad_event_bus &_events);
+	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
-
-private:
-	fcad_event_bus &events;
 };
 
 class create_edge_command_impl : public noop_command_impl {
 public:
-	create_edge_command_impl(fcad_event_bus &_events);
+	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
-
-private:
-	fcad_event_bus &events;
 };
 
 class create_face_command_impl : public noop_command_impl {
 public:
-	create_face_command_impl(fcad_event_bus &_events);
+	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
-
-private:
-	fcad_event_bus &events;
 };
 
 class delete_vertex_command_impl : public noop_command_impl {
 public:
-	delete_vertex_command_impl(fcad_event_bus &_events);
+	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
-
-private:
-	fcad_event_bus &events;
 };
 
 class delete_edge_command_impl : public noop_command_impl {
 public:
-	delete_edge_command_impl(fcad_event_bus &_events);
+	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
-
-private:
-	fcad_event_bus &events;
 };
 
 class delete_face_command_impl : public noop_command_impl {
 public:
-	delete_face_command_impl(fcad_event_bus &_events);
+	using noop_command_impl::noop_command_impl;
+
+	void on_submit(const std::wstring &args) override;
+};
+
+class write_replay_file_command_impl : public noop_command_impl {
+public:
+	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
 
 private:
-	fcad_event_bus &events;
+	std::optional<std::wstring> active_file{};
 };
 
 class focus_command_impl : public noop_command_impl {
 public:
-	focus_command_impl(fcad_event_bus &_events);
+	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
-
-private:
-	fcad_event_bus &events;
 };
 
 class quit_command_impl : public noop_command_impl {
 public:
+	using noop_command_impl::noop_command_impl;
+
 	void on_submit(const std::wstring &args) override;
 };

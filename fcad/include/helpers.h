@@ -6,3 +6,5 @@ namespace win32 {
 		using std::runtime_error::runtime_error;
 	};
 }
+
+std::wstring trim(const std::wstring &s);

@@ -1,9 +1,6 @@
 #include "commands.h"
 #include "parsing.h"
 
-focus_command_impl::focus_command_impl(fcad_event_bus &_events) :
-	events(_events) {}
-
 void focus_command_impl::on_submit(const std::wstring &args) {
 	std::wstringstream wss{};
 	wss << args;

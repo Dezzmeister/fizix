@@ -1,9 +1,6 @@
 #include "commands.h"
 #include "parsing.h"
 
-delete_edge_command_impl::delete_edge_command_impl(fcad_event_bus &_events) :
-	events(_events) {}
-
 void delete_edge_command_impl::on_submit(const std::wstring &args) {
 	std::wstringstream wss{};
 	wss << args;
@@ -32,4 +29,6 @@ void delete_edge_command_impl::on_submit(const std::wstring &args) {
 	edge e(*v1_opt, *v2_opt);
 	delete_edge_event event(e);
 	events.fire(event);
+
+	history->add_command(L":de " + args);
 }

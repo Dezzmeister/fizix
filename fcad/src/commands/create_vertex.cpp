@@ -5,9 +5,6 @@
 
 using namespace phys;
 
-create_vertex_command_impl::create_vertex_command_impl(fcad_event_bus &_events) :
-	events(_events) {}
-
 void create_vertex_command_impl::on_submit(const std::wstring &args) {
 	std::wstringstream wss{};
 	wss << args;
@@ -23,4 +20,6 @@ void create_vertex_command_impl::on_submit(const std::wstring &args) {
 
 	new_vertex_event event(*vertex_opt);
 	events.fire(event);
+
+	history->add_command(L":v " + args);
 }

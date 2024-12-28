@@ -14,11 +14,19 @@ enum class edit_mode {
 };
 
 class geometry_controller;
+class command_history_controller;
 
 struct fcad_start_event {
 	geometry_controller &gc;
+	command_history_controller &command_history;
 
-	fcad_start_event(geometry_controller &_gc) : gc(_gc) {}
+	fcad_start_event(
+		geometry_controller &_gc,
+		command_history_controller &_command_history
+	) :
+		gc(_gc),
+		command_history(_command_history)
+	{}
 };
 
 struct window_input_event {
@@ -170,6 +178,20 @@ struct set_camera_pos_event {
 	{}
 };
 
+struct new_replay_file_event {
+	const std::wstring path;
+
+	new_replay_file_event(const std::wstring &_path) :
+		path(_path) {}
+};
+
+struct load_replay_file_event {
+	const std::wstring path;
+
+	load_replay_file_event(const std::wstring &_path) :
+		path(_path) {}
+};
+
 using fcad_event_bus = event_bus<
 	fcad_start_event,
 	window_input_event,
@@ -186,7 +208,9 @@ using fcad_event_bus = event_bus<
 	delete_face_event,
 	camera_move_event,
 	set_camera_target_event,
-	set_camera_pos_event
+	set_camera_pos_event,
+	new_replay_file_event,
+	load_replay_file_event
 >;
 
 namespace traits {

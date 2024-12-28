@@ -26,9 +26,6 @@ struct edge_indices {
 	}
 };
 
-create_edge_command_impl::create_edge_command_impl(fcad_event_bus &_events) :
-	events(_events) {}
-
 void create_edge_command_impl::on_submit(const std::wstring &args) {
 	edge_indices edge_opt(args);
 
@@ -39,4 +36,6 @@ void create_edge_command_impl::on_submit(const std::wstring &args) {
 	edge e(*edge_opt.start, *edge_opt.end);
 	new_edge_event event(e);
 	events.fire(event);
+
+	history->add_command(L":e " + args);
 }
