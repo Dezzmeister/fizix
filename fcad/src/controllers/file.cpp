@@ -4,24 +4,20 @@
 
 file_controller::file_controller(fcad_event_bus &_events) :
 	event_listener<fcad_start_event>(&_events),
-	event_listener<new_replay_file_event>(&_events),
-	event_listener<load_replay_file_event>(&_events),
 	events(_events)
 {
 	event_listener<fcad_start_event>::subscribe();
-	event_listener<new_replay_file_event>::subscribe();
-	event_listener<load_replay_file_event>::subscribe();
 }
 
 int file_controller::handle(fcad_start_event &event) {
-	command_history = &event.command_history;
+	edit_history = &event.edit_history;
 	geom = &event.gc;
 
 	return 0;
 }
 
-int file_controller::handle(new_replay_file_event &event) {
-	std::wstring trimmed_path = trim(event.path);
+void file_controller::write_replay_file(const std::wstring &path_str) {
+	std::wstring trimmed_path = trim(path_str);
 	std::optional<std::filesystem::path> path = active_file;
 
 	if (! trimmed_path.empty()) {
@@ -29,20 +25,25 @@ int file_controller::handle(new_replay_file_event &event) {
 	}
 
 	if (! path) {
-		return false;
+		return;
 	}
 
-	logger::info("Saving replay file to " + path->string());
+	write_replay_file_event event(path->wstring());
+	if (events.fire(event)) {
+		logger::info("Cancelled writing replay file to " + path->string());
+
+		return;
+	}
+
+	logger::info("Writing replay file to " + path->string());
 
 	std::wofstream wfs(*path);
-	command_history->write_replay_file(wfs);
+	edit_history->write_replay_file(wfs);
 	active_file = path;
-
-	return true;
 }
 
-int file_controller::handle(load_replay_file_event &event) {
-	std::wstring trimmed_path = trim(event.path);
+void file_controller::read_replay_file(const std::wstring &path_str) {
+	std::wstring trimmed_path = trim(path_str);
 	std::optional<std::filesystem::path> path = active_file;
 
 	if (! trimmed_path.empty()) {
@@ -50,13 +51,25 @@ int file_controller::handle(load_replay_file_event &event) {
 	}
 
 	if (! path) {
-		return false;
+		return;
 	}
 
-	logger::info("Loading replay file from " + path->string());
+	read_replay_file_event event(path->wstring());
+	if (events.fire(event)) {
+		logger::info("Cancelled reading replay file from " + path->string());
+
+		return;
+	}
+
+	logger::info("Reading replay file from " + path->string());
 
 	std::wifstream wfs(*path);
 	parsing::parser_state state(wfs);
+
+	if (! wfs.is_open() || state.eof()) {
+		logger::error("Unable to open replay file");
+		return;
+	}
 
 	geom->reset();
 
@@ -70,6 +83,4 @@ int file_controller::handle(load_replay_file_event &event) {
 	}
 
 	active_file = path;
-
-	return 0;
 }

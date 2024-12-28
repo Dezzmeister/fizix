@@ -21,7 +21,7 @@
 #include "controllers/action.h"
 #include "controllers/camera.h"
 #include "controllers/command.h"
-#include "controllers/command_history.h"
+#include "controllers/edit_history.h"
 #include "fcad_events.h"
 #include "controllers/file.h"
 #include "controllers/geometry.h"
@@ -326,7 +326,7 @@ int main(int, const char * const * const) {
 	action_controller ac(events, actions.actions);
 	mode_controller modes(buses, events);
 	command_controller commands = make_commands(buses, events);
-	command_history_controller command_history{};
+	edit_history_controller edit_history(events);
 	file_controller fc(events);
 
 	if (! SetWindowSubclass(main_window.hwnd(), main_window_proc, 1, (DWORD_PTR)&bridge)) {
@@ -405,7 +405,7 @@ int main(int, const char * const * const) {
 	screen_controller screen(buses);
 	camera_controller camera(buses, events);
 	geometry_controller geom(buses, events);
-	fcad_start_event fcad_start(geom, command_history, fc);
+	fcad_start_event fcad_start(geom, edit_history, fc);
 
 	buses.lifecycle.fire(program_start);
 	events.fire(fcad_start);

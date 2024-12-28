@@ -14,21 +14,21 @@ enum class edit_mode {
 };
 
 class geometry_controller;
-class command_history_controller;
+class edit_history_controller;
 class file_controller;
 
 struct fcad_start_event {
 	geometry_controller &gc;
-	command_history_controller &command_history;
+	edit_history_controller &edit_history;
 	file_controller &fc;
 
 	fcad_start_event(
 		geometry_controller &_gc,
-		command_history_controller &_command_history,
+		edit_history_controller &_edit_history,
 		file_controller &_fc
 	) :
 		gc(_gc),
-		command_history(_command_history),
+		edit_history(_edit_history),
 		fc(_fc)
 	{}
 };
@@ -182,17 +182,17 @@ struct set_camera_pos_event {
 	{}
 };
 
-struct new_replay_file_event {
+struct write_replay_file_event {
 	const std::wstring path;
 
-	new_replay_file_event(const std::wstring &_path) :
+	write_replay_file_event(const std::wstring &_path) :
 		path(_path) {}
 };
 
-struct load_replay_file_event {
+struct read_replay_file_event {
 	const std::wstring path;
 
-	load_replay_file_event(const std::wstring &_path) :
+	read_replay_file_event(const std::wstring &_path) :
 		path(_path) {}
 };
 
@@ -213,8 +213,8 @@ using fcad_event_bus = event_bus<
 	camera_move_event,
 	set_camera_target_event,
 	set_camera_pos_event,
-	new_replay_file_event,
-	load_replay_file_event
+	write_replay_file_event,
+	read_replay_file_event
 >;
 
 namespace traits {

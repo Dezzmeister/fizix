@@ -230,6 +230,12 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 	std::unique_ptr<action_impl> delete_face = std::make_unique<delete_face_impl>(
 		events
 	);
+	std::unique_ptr<action_impl> undo_edit = std::make_unique<undo_edit_impl>(
+		events
+	);
+	std::unique_ptr<action_impl> redo_edit = std::make_unique<redo_edit_impl>(
+		events
+	);
 
 	std::unique_ptr<action> delete_actions[] = {
 		std::make_unique<char_seq_action>("v", *delete_vertex),
@@ -248,7 +254,9 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 				std::make_move_iterator(std::begin(delete_actions)),
 				std::make_move_iterator(std::end(delete_actions))
 			))
-		)
+		),
+		std::make_unique<char_seq_action>("u", *undo_edit),
+		std::make_unique<char_seq_action>("r", *redo_edit)
 	};
 
 	std::unique_ptr<action_impl> action_impls[] = {
@@ -259,7 +267,9 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 		std::move(create_face),
 		std::move(delete_vertex),
 		std::move(delete_edge),
-		std::move(delete_face)
+		std::move(delete_face),
+		std::move(undo_edit),
+		std::move(redo_edit)
 	};
 
 	action_group actions(

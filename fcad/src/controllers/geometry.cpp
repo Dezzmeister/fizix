@@ -367,7 +367,7 @@ int geometry_controller::handle(new_vertex_event &event) {
 	poly.add_vertex(event.vertex);
 
 	aabb bounds = calculate_aabb();
-	float max = bounds.max_diff();
+	float max = std::max(bounds.max_diff(), 2.0f);
 
 	axes.set_max_axis(max / 2.0f);
 
@@ -453,7 +453,7 @@ int geometry_controller::handle(delete_vertex_event &event) {
 	}
 
 	aabb bounds = calculate_aabb();
-	float max = bounds.max_diff();
+	float max = std::max(bounds.max_diff(), 2.0f);
 
 	if (max != infinity) {
 		axes.set_max_axis(max / 2.0f);
