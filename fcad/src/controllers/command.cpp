@@ -111,6 +111,8 @@ command_controller make_commands(event_buses&, fcad_event_bus &events) {
 	impls.emplace(std::make_pair(L"df", std::make_unique<delete_face_command_impl>(events)));
 	impls.emplace(std::make_pair(L"w", std::make_unique<write_file_command_impl>(events)));
 	impls.emplace(std::make_pair(L"r", std::make_unique<read_file_command_impl>(events)));
+	impls.emplace(std::make_pair(L"labels", std::make_unique<labels_command_impl>(events)));
+	impls.emplace(std::make_pair(L"labeltype", std::make_unique<labeltype_command_impl>(events)));
 
 	return command_controller(events, std::move(impls));
 }

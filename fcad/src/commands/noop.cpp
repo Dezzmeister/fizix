@@ -14,6 +14,7 @@ void noop_command_impl::on_submit(const std::wstring&) {}
 int noop_command_impl::handle(fcad_start_event &event) {
 	history = &event.edit_history;
 	files = &event.fc;
+	geom = &event.gc;
 
 	return 0;
 }

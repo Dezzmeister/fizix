@@ -43,6 +43,11 @@ private:
 	vec3 world_to_ndc(const vec3 &world) const;
 };
 
+enum class vert_label_type {
+	IndexOnly,
+	IndexAndPos
+};
+
 class geometry_controller :
 	traits::pinned<geometry_controller>,
 	public event_listener<program_start_event>,
@@ -60,6 +65,8 @@ public:
 	geometry_controller(event_buses &_buses, fcad_event_bus &_events);
 
 	void reset();
+	void set_vert_label_type(vert_label_type _label_type);
+	void set_vert_labels_visible(bool _visible);
 
 	int handle(program_start_event &event) override;
 	int handle(new_vertex_event &event) override;
@@ -91,7 +98,9 @@ private:
 	polyhedron poly{};
 	mat4 vert_world_to_pre_ndc{};
 	const font * vert_label_font{};
+	const font * axis_label_font{};
 	axes_controller axes;
+	vert_label_type label_type{ vert_label_type::IndexAndPos };
 	bool show_vert_labels{};
 
 	void regenerate_edge_geom();

@@ -2,6 +2,7 @@
 #include "command.h"
 #include "controllers/edit_history.h"
 #include "controllers/file.h"
+#include "controllers/geometry.h"
 #include "fcad_events.h"
 
 class noop_command_impl :
@@ -23,6 +24,7 @@ protected:
 	fcad_event_bus &events;
 	edit_history_controller * history{};
 	file_controller * files{};
+	geometry_controller * geom{};
 };
 
 class create_vertex_command_impl : public noop_command_impl {
@@ -92,6 +94,20 @@ public:
 };
 
 class quit_command_impl : public noop_command_impl {
+public:
+	using noop_command_impl::noop_command_impl;
+
+	void on_submit(const std::wstring &args) override;
+};
+
+class labels_command_impl : public noop_command_impl {
+public:
+	using noop_command_impl::noop_command_impl;
+
+	void on_submit(const std::wstring &args) override;
+};
+
+class labeltype_command_impl : public noop_command_impl {
 public:
 	using noop_command_impl::noop_command_impl;
 

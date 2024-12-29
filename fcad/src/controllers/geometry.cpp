@@ -244,6 +244,17 @@ namespace {
 
 		triangulate_nonconvex(p, f, out);
 	}
+
+	std::string format_vec3(const vec3 &v) {
+		std::stringstream ss{};
+		ss << std::setprecision(4);
+
+		ss << "(" << v.x << ",";
+		ss << v.y << ",";
+		ss << v.z << ")";
+
+		return ss.str();
+	}
 }
 
 renderable_face::renderable_face(
@@ -352,8 +363,17 @@ void geometry_controller::reset() {
 	poly.clear();
 }
 
+void geometry_controller::set_vert_label_type(vert_label_type _label_type) {
+	label_type = _label_type;
+}
+
+void geometry_controller::set_vert_labels_visible(bool _visible) {
+	show_vert_labels = _visible;
+}
+
 int geometry_controller::handle(program_start_event &event) {
-	vert_label_font = &event.draw2d->get_font("spleen_12x24");
+	vert_label_font = &event.draw2d->get_font("spleen_6x12");
+	axis_label_font = &event.draw2d->get_font("spleen_12x24");
 
 	return 0;
 }
@@ -504,7 +524,7 @@ int geometry_controller::handle(keydown_event &event) {
 
 int geometry_controller::handle(post_processing_event &event) {
 	assert(vert_label_font);
-	axes.draw_labels(event.draw2d, *vert_label_font);
+	axes.draw_labels(event.draw2d, *axis_label_font);
 
 	if (! show_vert_labels) {
 		return 0;
@@ -538,16 +558,30 @@ int geometry_controller::handle(post_processing_event &event) {
 
 	for (const auto &vd : std::ranges::views::reverse(verts_and_depths)) {
 		glm::ivec2 screen = event.draw2d.ndc_to_screen(vd.ndc);
-		std::string str = traits::to_string(vd.vert_i);
+		std::string index_str = traits::to_string(vd.vert_i);
+		std::string str{};
+
+		switch (label_type) {
+			case vert_label_type::IndexOnly: {
+				str = index_str;
+				break;
+			}
+			case vert_label_type::IndexAndPos: {
+				str = index_str + " " + format_vec3(poly.vertices[vd.vert_i].v);
+				break;
+			}
+		}
+
+		int label_width = vert_label_font->glyph_width * (int)str.size();
+		int label_height = vert_label_font->glyph_height;
 
 		event.draw2d.draw_text(
 			str,
 			*vert_label_font,
-			screen.x,
-			screen.y,
-			// Vertex indices won't be over 1M in this little CAD application
-			vert_label_font->glyph_width * 6,
-			vert_label_font->glyph_height,
+			screen.x - label_width / 2,
+			screen.y + label_height / 2,
+			label_width,
+			label_height,
 			0,
 			vec4(0.0f, 0.0f, 0.0f, 1.0f),
 			vec4(0.7f, 0.7f, 0.7f, 0.7f),
