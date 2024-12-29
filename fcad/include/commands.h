@@ -5,6 +5,7 @@
 #include "controllers/file.h"
 #include "controllers/geometry.h"
 #include "fcad_events.h"
+#include "fcad_platform/platform.h"
 
 class noop_command_impl :
 	public command_impl,
@@ -25,6 +26,7 @@ protected:
 	file_controller * files{};
 	geometry_controller * geom{};
 	camera_controller * camera{};
+	platform_bridge * platform{};
 };
 
 class create_vertex_command_impl : public noop_command_impl {
@@ -108,6 +110,13 @@ public:
 };
 
 class labeltype_command_impl : public noop_command_impl {
+public:
+	using noop_command_impl::noop_command_impl;
+
+	void on_submit(const std::wstring &args) override;
+};
+
+class help_command_impl : public noop_command_impl {
 public:
 	using noop_command_impl::noop_command_impl;
 

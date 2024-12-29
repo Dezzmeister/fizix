@@ -19,7 +19,8 @@ void create_vertex_command_impl::on_submit(const std::wstring &args) {
 	}
 
 	new_vertex_event event(*vertex_opt);
-	events.fire(event);
 
-	history->add_command(L":v " + args);
+	if (! events.fire(event)) {
+		history->add_command(L":v " + args);
+	}
 }

@@ -35,7 +35,8 @@ void create_edge_command_impl::on_submit(const std::wstring &args) {
 
 	edge e(*edge_opt.start, *edge_opt.end);
 	new_edge_event event(e);
-	events.fire(event);
 
-	history->add_command(L":e " + args);
+	if (! events.fire(event)) {
+		history->add_command(L":e " + args);
+	}
 }

@@ -51,6 +51,7 @@ enum class vert_label_type {
 class geometry_controller :
 	traits::pinned<geometry_controller>,
 	public event_listener<program_start_event>,
+	public event_listener<fcad_start_event>,
 	public event_listener<new_vertex_event>,
 	public event_listener<new_edge_event>,
 	public event_listener<new_face_event>,
@@ -69,6 +70,7 @@ public:
 	void set_vert_labels_visible(bool _visible);
 
 	int handle(program_start_event &event) override;
+	int handle(fcad_start_event &event) override;
 	int handle(new_vertex_event &event) override;
 	int handle(new_edge_event &event) override;
 	int handle(new_face_event &event) override;
@@ -87,6 +89,7 @@ private:
 		float max_diff() const;
 	};
 
+	platform_bridge * platform{};
 	world mesh_world;
 	geometry vert_geom;
 	mesh vert_mesh;

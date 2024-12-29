@@ -132,6 +132,8 @@ int main(int, const char * const * const) {
 		camera
 	);
 
+	platform.set_cue_text(L"Type :h and press ENTER for help");
+
 	buses.lifecycle.fire(program_start);
 	events.fire(fcad_start);
 

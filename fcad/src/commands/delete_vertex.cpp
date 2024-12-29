@@ -22,7 +22,8 @@ void delete_vertex_command_impl::on_submit(const std::wstring &args) {
 	}
 
 	delete_vertex_event event(*vert_idx_opt);
-	events.fire(event);
 
-	history->add_command(L":dv " + args);
+	if (! events.fire(event)) {
+		history->add_command(L":dv " + args);
+	}
 }

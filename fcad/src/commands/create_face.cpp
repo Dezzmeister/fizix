@@ -22,7 +22,8 @@ void create_face_command_impl::on_submit(const std::wstring &args) {
 	}
 
 	new_face_event event(*face_opt);
-	events.fire(event);
 
-	history->add_command(L":f " + args);
+	if (! events.fire(event)) {
+		history->add_command(L":f " + args);
+	}
 }

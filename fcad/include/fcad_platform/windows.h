@@ -17,6 +17,8 @@ public:
 		mode_controller &_mode
 	);
 
+	void set_cue_text(const std::wstring &text) const;
+
 	int handle(mode_switch_event &event) override;
 
 	friend LRESULT CALLBACK main_window_proc(
@@ -53,4 +55,5 @@ private:
 	HWND statusbar{};
 	HWND command_input{};
 	std::wstring mode_str{ L"UNKNOWN" };
+	mutable bool is_cue_banner_set{};
 };

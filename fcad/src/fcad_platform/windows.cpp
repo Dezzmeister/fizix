@@ -57,6 +57,11 @@ LRESULT CALLBACK command_input_proc(
 
 	switch (message) {
 		case WM_CHAR: {
+			if (bridge->is_cue_banner_set) {
+				SendMessageW(hwnd, EM_SETCUEBANNER, FALSE, (LPARAM)L"");
+				bridge->is_cue_banner_set = false;
+			}
+
 			if (w_param != VK_ESCAPE && w_param != VK_RETURN) {
 				break;
 			}
@@ -229,6 +234,11 @@ platform_bridge::platform_bridge(
 	int start_sections[] = { start_width, -1 };
 	SendMessageW(statusbar, SB_SETPARTS, util::c_arr_size(start_sections), (LPARAM)&start_sections);
 	SendMessageW(statusbar, SB_SETTEXTW, SBT_OWNERDRAW, NULL);
+}
+
+void platform_bridge::set_cue_text(const std::wstring &text) const {
+	SendMessageW(command_input, EM_SETCUEBANNER, FALSE, (LPARAM)text.data());
+	is_cue_banner_set = true;
 }
 
 int platform_bridge::handle(mode_switch_event &event) {

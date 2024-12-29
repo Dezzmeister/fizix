@@ -16,6 +16,7 @@ int noop_command_impl::handle(fcad_start_event &event) {
 	files = &event.fc;
 	geom = &event.gc;
 	camera = &event.camera;
+	platform = &event.platform;
 
 	return 0;
 }
