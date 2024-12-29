@@ -13,6 +13,5 @@ void focus_command_impl::on_submit(const std::wstring &args) {
 		new_target = *target_opt;
 	}
 
-	set_camera_target_event event(new_target);
-	events.fire(event);
+	camera->set_target(new_target);
 }

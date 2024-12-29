@@ -1,5 +1,6 @@
 #pragma once
 #include "command.h"
+#include "controllers/camera.h"
 #include "controllers/edit_history.h"
 #include "controllers/file.h"
 #include "controllers/geometry.h"
@@ -11,8 +12,6 @@ class noop_command_impl :
 {
 public:
 	noop_command_impl(fcad_event_bus &_events);
-	// TODO: Does this need to be redeclared as virtual?
-	virtual ~noop_command_impl() = default;
 
 	void on_cancel(const std::wstring &args_buf) override;
 	void on_input(const std::wstring &args_buf) override;
@@ -25,6 +24,7 @@ protected:
 	edit_history_controller * history{};
 	file_controller * files{};
 	geometry_controller * geom{};
+	camera_controller * camera{};
 };
 
 class create_vertex_command_impl : public noop_command_impl {

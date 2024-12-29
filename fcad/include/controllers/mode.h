@@ -3,7 +3,7 @@
 #include "fcad_events.h"
 
 class mode_controller :
-	public event_listener<set_mode_event>,
+	traits::pinned<mode_controller>,
 	public event_listener<program_start_event>
 {
 public:
@@ -12,7 +12,8 @@ public:
 		fcad_event_bus &_events
 	);
 
-	int handle(set_mode_event &event) override;
+	void set_mode(edit_mode new_mode, const std::wstring &command_hint = L"");
+
 	int handle(program_start_event &event) override;
 
 private:

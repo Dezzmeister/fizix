@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <vector>
 #include <traits.h>
+#include "controllers/edit_history.h"
+#include "controllers/mode.h"
 #include "fcad_events.h"
 
 enum class action_state {
@@ -24,9 +26,28 @@ class action_impl {
 public:
 	virtual ~action_impl() = default;
 
-	virtual void on_accept(char c);
-	virtual void on_reject(char c);
-	virtual void on_continue(char c);
+	virtual void on_accept(char c) = 0;
+	virtual void on_reject(char c) = 0;
+	virtual void on_continue(char c) = 0;
+};
+
+class noop_action_impl : 
+	public action_impl,
+	public event_listener<fcad_start_event>
+{
+public:
+	noop_action_impl(fcad_event_bus &_events);
+
+	void on_accept(char c) override;
+	void on_reject(char c) override;
+	void on_continue(char c) override;
+
+	int handle(fcad_start_event &event) override;
+
+protected:
+	fcad_event_bus &events;
+	edit_history_controller * history{};
+	mode_controller * mode{};
 };
 
 class char_seq_action : public action {

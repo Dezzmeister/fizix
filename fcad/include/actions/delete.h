@@ -1,32 +1,23 @@
 #pragma once
 #include "action.h"
 
-class delete_vertex_impl : public action_impl {
+class delete_vertex_impl : public noop_action_impl {
 public:
-	delete_vertex_impl(fcad_event_bus &_events);
+	using noop_action_impl::noop_action_impl;
 
 	void on_accept(char c) override;
-
-private:
-	fcad_event_bus &events;
 };
 
-class delete_edge_impl : public action_impl {
+class delete_edge_impl : public noop_action_impl {
 public:
-	delete_edge_impl(fcad_event_bus &_events);
+	using noop_action_impl::noop_action_impl;
 
 	void on_accept(char c) override;
-
-private:
-	fcad_event_bus &events;
 };
 
-class delete_face_impl : public action_impl {
+class delete_face_impl : public noop_action_impl {
 public:
-	delete_face_impl(fcad_event_bus &_events);
+	using noop_action_impl::noop_action_impl;
 
 	void on_accept(char c) override;
-
-private:
-	fcad_event_bus &events;
 };

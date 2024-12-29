@@ -5,9 +5,23 @@
 #include "actions/delete.h"
 #include "actions/misc.h"
 
-void action_impl::on_accept(char) {}
-void action_impl::on_reject(char) {}
-void action_impl::on_continue(char) {}
+noop_action_impl::noop_action_impl(fcad_event_bus &_events) :
+	event_listener<fcad_start_event>(&_events),
+	events(_events)
+{
+	event_listener<fcad_start_event>::subscribe();
+}
+
+void noop_action_impl::on_accept(char) {}
+void noop_action_impl::on_reject(char) {}
+void noop_action_impl::on_continue(char) {}
+
+int noop_action_impl::handle(fcad_start_event &event) {
+	history = &event.edit_history;
+	mode = &event.mode;
+
+	return 0;
+}
 
 char_seq_action::char_seq_action(
 	const std::string &_char_seq,
@@ -208,7 +222,7 @@ window_actions::window_actions(
 {}
 
 window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
-	std::unique_ptr<action_impl> noop = std::make_unique<action_impl>();
+	std::unique_ptr<action_impl> noop = std::make_unique<noop_action_impl>(events);
 	std::unique_ptr<action_impl> start_command = std::make_unique<start_command_impl>(
 		events
 	);

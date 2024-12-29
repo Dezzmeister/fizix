@@ -13,8 +13,6 @@ camera_controller::camera_controller(
 	event_listener<screen_resize_event>(&_buses.render),
 	event_listener<keydown_event>(&_buses.input),
 	event_listener<keyup_event>(&_buses.input),
-	event_listener<set_camera_target_event>(&_events),
-	event_listener<set_camera_pos_event>(&_events),
 	events(_events)
 {
 	event_listener<pre_render_pass_event>::subscribe();
@@ -24,8 +22,6 @@ camera_controller::camera_controller(
 	event_listener<screen_resize_event>::subscribe();
 	event_listener<keydown_event>::subscribe();
 	event_listener<keyup_event>::subscribe();
-	event_listener<set_camera_target_event>::subscribe();
-	event_listener<set_camera_pos_event>::subscribe();
 
 	update_view_mat();
 }
@@ -238,26 +234,22 @@ int camera_controller::handle(keyup_event &event) {
 	return 0;
 }
 
-int camera_controller::handle(set_camera_target_event &event) {
-	target = event.new_target;
+void camera_controller::set_target(const vec3 &new_target) {
+	target = new_target;
 
 	assert(target != pos);
 
 	update_dirs();
 	view_mat_needs_update = true;
-
-	return 0;
 }
 
-int camera_controller::handle(set_camera_pos_event &event) {
-	pos = event.new_pos;
+void camera_controller::set_pos(const vec3 &new_pos) {
+	pos = new_pos;
 
 	assert(target != pos);
 
 	update_dirs();
 	view_mat_needs_update = true;
-
-	return 0;
 }
 
 void camera_controller::update_projection_mat(int width, int height) {

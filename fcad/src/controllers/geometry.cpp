@@ -224,6 +224,7 @@ namespace {
 			next_cut:;
 		}
 
+		// TODO: Tell the user that the face is invalid
 		throw geometry_error(
 			f,
 			"Unable to find cut for face vertex " + traits::to_string(vi1)

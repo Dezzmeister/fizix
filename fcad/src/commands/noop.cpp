@@ -15,6 +15,7 @@ int noop_command_impl::handle(fcad_start_event &event) {
 	history = &event.edit_history;
 	files = &event.fc;
 	geom = &event.gc;
+	camera = &event.camera;
 
 	return 0;
 }

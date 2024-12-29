@@ -3,18 +3,20 @@
 #include "fcad_events.h"
 
 class camera_controller :
+	traits::pinned<camera_controller>,
 	public event_listener<pre_render_pass_event>,
 	public event_listener<shader_use_event>,
 	public event_listener<draw_event>,
 	public event_listener<program_start_event>,
 	public event_listener<screen_resize_event>,
 	public event_listener<keydown_event>,
-	public event_listener<keyup_event>,
-	public event_listener<set_camera_target_event>,
-	public event_listener<set_camera_pos_event>
+	public event_listener<keyup_event>
 {
 public:
 	camera_controller(event_buses &_buses, fcad_event_bus &_events);
+
+	void set_target(const vec3 &new_target);
+	void set_pos(const vec3 &new_pos);
 
 	int handle(pre_render_pass_event &event) override;
 	int handle(shader_use_event &event) override;
@@ -23,9 +25,6 @@ public:
 	int handle(screen_resize_event &event) override;
 	int handle(keydown_event &event) override;
 	int handle(keyup_event &event) override;
-
-	int handle(set_camera_target_event &event) override;
-	int handle(set_camera_pos_event &event) override;
 
 private:
 	fcad_event_bus &events;

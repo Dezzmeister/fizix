@@ -13,23 +13,35 @@ enum class edit_mode {
 	Select
 };
 
+class platform_bridge;
 class geometry_controller;
 class edit_history_controller;
 class file_controller;
+class mode_controller;
+class camera_controller;
 
 struct fcad_start_event {
+	platform_bridge &platform;
 	geometry_controller &gc;
 	edit_history_controller &edit_history;
 	file_controller &fc;
+	mode_controller &mode;
+	camera_controller &camera;
 
 	fcad_start_event(
+		platform_bridge &_platform,
 		geometry_controller &_gc,
 		edit_history_controller &_edit_history,
-		file_controller &_fc
+		file_controller &_fc,
+		mode_controller &_mode,
+		camera_controller &_camera
 	) :
+		platform(_platform),
 		gc(_gc),
 		edit_history(_edit_history),
-		fc(_fc)
+		fc(_fc),
+		mode(_mode),
+		camera(_camera)
 	{}
 };
 
@@ -39,21 +51,6 @@ struct window_input_event {
 	window_input_event(char _c) : c(_c) {}
 };
 
-// Initiates a mode switch
-struct set_mode_event {
-	const edit_mode new_mode;
-	const std::wstring hint;
-
-	set_mode_event(
-		edit_mode _new_mode,
-		const std::wstring &_hint = L""
-	) :
-		new_mode(_new_mode),
-		hint(_hint)
-	{}
-};
-
-// TODO: Delete this and use only set_mode_event?
 struct mode_switch_event {
 	const edit_mode old_mode;
 	const edit_mode new_mode;
@@ -162,26 +159,8 @@ struct camera_move_event {
 	{}
 };
 
-struct set_camera_target_event {
-	const vec3 &new_target;
-
-	set_camera_target_event(
-		const vec3 &_new_target
-	) :
-		new_target(_new_target)
-	{}
-};
-
-struct set_camera_pos_event {
-	const vec3 &new_pos;
-
-	set_camera_pos_event(
-		const vec3 &_new_pos
-	) :
-		new_pos(_new_pos)
-	{}
-};
-
+// Fired before a replay file is written. If this event is cancelled, the replay
+// file won't be written.
 struct write_replay_file_event {
 	const std::wstring path;
 
@@ -189,6 +168,8 @@ struct write_replay_file_event {
 		path(_path) {}
 };
 
+// Fired before a replay file is read and played back. If this event is cancelled,
+// the replay file won't be read.
 struct read_replay_file_event {
 	const std::wstring path;
 
@@ -199,7 +180,6 @@ struct read_replay_file_event {
 using fcad_event_bus = event_bus<
 	fcad_start_event,
 	window_input_event,
-	set_mode_event,
 	mode_switch_event,
 	command_cancel_event,
 	command_input_event,
@@ -211,8 +191,6 @@ using fcad_event_bus = event_bus<
 	delete_edge_event,
 	delete_face_event,
 	camera_move_event,
-	set_camera_target_event,
-	set_camera_pos_event,
 	write_replay_file_event,
 	read_replay_file_event
 >;
