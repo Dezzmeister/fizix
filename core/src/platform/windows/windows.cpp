@@ -696,6 +696,13 @@ void platform::set_gpu_preference(gpu_preference pref) {
 	}
 }
 
+void platform::enable_fp_exceptions() {
+	#pragma warning(push)
+	#pragma warning(disable: 4996)
+		_controlfp(EM_DENORMAL | EM_UNDERFLOW | EM_INEXACT, _MCW_EM);
+	#pragma warning(pop)
+}
+
 std::string platform::win32::get_last_error(const std::string &method) {
 	DWORD err_code = GetLastError();
 	LPSTR buf = NULL;

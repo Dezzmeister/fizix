@@ -532,7 +532,7 @@ int main(int, const char * const * const) {
 	flashlight lc(buses, pl, w, KEY_F);
 
 	logger::info(help_text);
-	platform::run([&]() {
+	platform_state.run([&]() {
 		buses.render.fire(pre_render_event);
 		buses.render.fire(draw_event_inst);
 		buses.render.fire(post_processing_event_inst);

@@ -50,7 +50,12 @@ namespace {
 				e2
 			};
 
-			glm::mat2x3 tb = e * glm::inverse(duv);
+			glm::mat2x3 tb{};
+
+			if (glm::determinant(duv) != 0.0f) {
+				tb = e * glm::inverse(duv);
+			}
+
 			glm::vec3 t = tb[0];
 			glm::vec3 bt = tb[1];
 
@@ -189,11 +194,40 @@ void geometry::remove_vertex(size_t vertex_idx) {
 	// TODO: Consolidate strides
 	constexpr size_t stride = (3 + 3 + 2 + 3 + 3);
 
+	if (vertex_idx >= num_vertices) {
+		// TODO: Better error type
+		throw "Bad vertex index";
+	}
+
 	vbo_data.erase(std::begin(vbo_data) + vertex_idx * stride, std::begin(vbo_data) + (vertex_idx + 1) * stride);
 
 	assert(num_vertices != 0);
 	num_vertices--;
 	vbo_needs_update = true;
+}
+
+vbo_entry * geometry::get_vertex(size_t vertex_idx) {
+	// TODO: Consolidate strides
+	constexpr size_t stride = (3 + 3 + 2 + 3 + 3);
+
+	if (vertex_idx >= num_vertices) {
+		// TODO: Better error type
+		throw "Bad vertex index";
+	}
+
+	return (vbo_entry *)(vbo_data.data() + vertex_idx * stride);
+}
+
+const vbo_entry * geometry::get_vertex(size_t vertex_idx) const {
+	// TODO: Consolidate strides
+	constexpr size_t stride = (3 + 3 + 2 + 3 + 3);
+
+	if (vertex_idx * stride >= num_vertices) {
+		// TODO: Better error type
+		throw "Bad vertex index";
+	}
+
+	return (const vbo_entry *)(vbo_data.data() + vertex_idx * stride);
 }
 
 void geometry::clear_vertices() {

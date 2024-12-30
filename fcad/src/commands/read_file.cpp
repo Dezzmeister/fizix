@@ -2,7 +2,7 @@
 #include "helpers.h"
 
 void read_file_command_impl::on_submit(const std::wstring &args) {
-	files->read_replay_file(args);
+	files->read_file(args);
 }
 
 void read_file_command_impl::write_help_text(std::ostream &os) const {

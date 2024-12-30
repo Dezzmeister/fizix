@@ -11,8 +11,8 @@ class file_controller :
 public:
 	file_controller(fcad_event_bus &_events);
 
-	void write_replay_file(const std::wstring &path);
-	void read_replay_file(const std::wstring &path);
+	void write_file(const std::wstring &path);
+	void read_file(const std::wstring &path);
 
 	int handle(fcad_start_event &event) override;
 
@@ -21,4 +21,8 @@ private:
 	edit_history_controller * edit_history{};
 	geometry_controller * geom{};
 	std::optional<std::filesystem::path> active_file{};
+
+	void write_replay_file(const std::filesystem::path &path);
+	void read_replay_file(const std::filesystem::path &path);
+	void write_stl_file(const std::filesystem::path &path);
 };

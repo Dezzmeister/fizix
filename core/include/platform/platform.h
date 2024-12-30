@@ -17,4 +17,5 @@ namespace platform {
 	void enable_stdout_colors();
 	bool stdout_colors_enabled();
 	void set_gpu_preference(gpu_preference pref);
+	void enable_fp_exceptions();
 }

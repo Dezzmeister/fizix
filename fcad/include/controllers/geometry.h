@@ -48,6 +48,13 @@ enum class vert_label_type {
 	IndexAndPos
 };
 
+struct triangle {
+	vec3 v1{};
+	vec3 v2{};
+	vec3 v3{};
+	vec3 normal{};
+};
+
 class geometry_controller :
 	traits::pinned<geometry_controller>,
 	public event_listener<program_start_event>,
@@ -72,6 +79,8 @@ public:
 	void set_vert_label_type(vert_label_type _label_type);
 	void set_vert_labels_visible(bool _visible);
 	bool are_vert_labels_visible() const;
+
+	std::experimental::generator<triangle> faces() const;
 
 	int handle(program_start_event &event) override;
 	int handle(fcad_start_event &event) override;

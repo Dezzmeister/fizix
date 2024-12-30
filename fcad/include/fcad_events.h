@@ -1,4 +1,5 @@
 #pragma once
+#include <filesystem>
 #include <event.h>
 #include <traits.h>
 #include <world.h>
@@ -174,18 +175,27 @@ struct camera_move_event {
 // Fired before a replay file is written. If this event is cancelled, the replay
 // file won't be written.
 struct write_replay_file_event {
-	const std::wstring path;
+	const std::filesystem::path path;
 
-	write_replay_file_event(const std::wstring &_path) :
+	write_replay_file_event(const std::filesystem::path &_path) :
 		path(_path) {}
 };
 
 // Fired before a replay file is read and played back. If this event is cancelled,
 // the replay file won't be read.
 struct read_replay_file_event {
-	const std::wstring path;
+	const std::filesystem::path path;
 
-	read_replay_file_event(const std::wstring &_path) :
+	read_replay_file_event(const std::filesystem::path &_path) :
+		path(_path) {}
+};
+
+// Fired before an STL file is written. If this event is cancelled, the STL file
+// won't be written.
+struct write_stl_file_event {
+	const std::filesystem::path path;
+
+	write_stl_file_event(const std::filesystem::path &_path) :
 		path(_path) {}
 };
 
@@ -204,7 +214,8 @@ using fcad_event_bus = event_bus<
 	delete_face_event,
 	camera_move_event,
 	write_replay_file_event,
-	read_replay_file_event
+	read_replay_file_event,
+	write_stl_file_event
 >;
 
 namespace traits {

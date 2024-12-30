@@ -378,6 +378,34 @@ bool geometry_controller::are_vert_labels_visible() const {
 	return show_vert_labels;
 }
 
+std::experimental::generator<triangle> geometry_controller::faces() const {
+	for (const auto &rf : face_meshes) {
+		for (size_t i = 0; i < rf->geom.get_num_vertices(); i += 3) {
+			vbo_entry * vbo1 = rf->geom.get_vertex(i);
+			vbo_entry * vbo2 = rf->geom.get_vertex(i + 1);
+			vbo_entry * vbo3 = rf->geom.get_vertex(i + 2);
+			vec3 v1(vbo1->vertex[0], vbo1->vertex[1], vbo1->vertex[2]);
+			vec3 v2(vbo2->vertex[0], vbo2->vertex[1], vbo2->vertex[2]);
+			vec3 v3(vbo3->vertex[0], vbo3->vertex[1], vbo3->vertex[2]);
+			vec3 normal1(vbo1->normal[0], vbo1->normal[1], vbo1->normal[2]);
+			vec3 normal2(vbo2->normal[0], vbo2->normal[1], vbo2->normal[2]);
+			vec3 normal3(vbo3->normal[0], vbo3->normal[1], vbo3->normal[2]);
+
+			assert(normal1 == normal2);
+			assert(normal2 == normal3);
+
+			triangle out = {
+				.v1 = v1,
+				.v2 = v2,
+				.v3 = v3,
+				.normal = normal1
+			};
+
+			co_yield out;
+		}
+	}
+}
+
 int geometry_controller::handle(program_start_event &event) {
 	vert_label_font = &event.draw2d->get_font("spleen_6x12");
 	axis_label_font = &event.draw2d->get_font("spleen_12x24");

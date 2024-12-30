@@ -45,12 +45,8 @@ R"(Controls:
 )";
 
 int main(int, const char * const * const) {
-#pragma warning(push)
-#pragma warning(disable: 4996)
-	_controlfp(EM_DENORMAL | EM_UNDERFLOW | EM_INEXACT, _MCW_EM);
-#pragma warning(pop)
-
 	logger::init();
+	platform::enable_fp_exceptions();
 	platform::state platform_state{};
 	platform::window main_window(platform_state, 800, 600, L"Physics Demo");
 	event_buses buses;
@@ -130,7 +126,7 @@ int main(int, const char * const * const) {
 
 	logger::info(help_text);
 
-	platform::run([&]() {
+	platform_state.run([&]() {
 		buses.render.fire(pre_render_event);
 		buses.render.fire(draw_event_inst);
 		buses.render.fire(post_processing_event_inst);

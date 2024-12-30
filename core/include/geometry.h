@@ -15,6 +15,15 @@ enum class vbo_usage_hint {
 	DynamicDraw = GL_STATIC_DRAW
 };
 
+// TODO: Make vbo_data a vector of these rather than plain floats
+struct vbo_entry {
+	float vertex[3]{};
+	float normal[3]{};
+	float uv[2]{};
+	float tangent[3]{};
+	float bitangent[3]{};
+};
+
 class geometry {
 public:
 	// Vertices, normals, and UVs are interleaved in the input buffer.
@@ -38,6 +47,8 @@ public:
 		const glm::vec3 &bitangent = glm::vec3(0.0f)
 	);
 	void remove_vertex(size_t vertex_idx);
+	vbo_entry * get_vertex(size_t vertex_idx);
+	const vbo_entry * get_vertex(size_t vertex_idx) const;
 	void clear_vertices();
 	size_t get_num_vertices() const;
 

@@ -55,6 +55,7 @@ void create_shape(fcad_event_bus &events) {
 // TODO: Check command line and possibly load file
 int main(int, const char * const * const) {
 	logger::init();
+	platform::enable_fp_exceptions();
 	platform::state platform_state{};
 	platform::window main_window(platform_state, 800, 800, L"FCAD");
 
