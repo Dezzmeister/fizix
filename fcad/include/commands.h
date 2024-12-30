@@ -17,6 +17,7 @@ public:
 	void on_cancel(const std::wstring &args_buf) override;
 	void on_input(const std::wstring &args_buf) override;
 	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
 
 	int handle(fcad_start_event &event) override;
 
@@ -34,6 +35,7 @@ public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
 };
 
 class create_edge_command_impl : public noop_command_impl {
@@ -41,6 +43,7 @@ public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
 };
 
 class create_face_command_impl : public noop_command_impl {
@@ -48,6 +51,7 @@ public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
 };
 
 class delete_vertex_command_impl : public noop_command_impl {
@@ -55,6 +59,7 @@ public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
 };
 
 class delete_edge_command_impl : public noop_command_impl {
@@ -62,6 +67,7 @@ public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
 };
 
 class delete_face_command_impl : public noop_command_impl {
@@ -69,6 +75,7 @@ public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
 };
 
 class write_file_command_impl : public noop_command_impl {
@@ -76,9 +83,7 @@ public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
-
-private:
-	std::optional<std::wstring> active_file{};
+	void write_help_text(std::ostream &os) const override;
 };
 
 class read_file_command_impl : public noop_command_impl {
@@ -86,6 +91,7 @@ public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
 };
 
 class focus_command_impl : public noop_command_impl {
@@ -93,6 +99,7 @@ public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
 };
 
 class quit_command_impl : public noop_command_impl {
@@ -100,6 +107,7 @@ public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
 };
 
 class labels_command_impl : public noop_command_impl {
@@ -107,6 +115,7 @@ public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
 };
 
 class labeltype_command_impl : public noop_command_impl {
@@ -114,11 +123,19 @@ public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
 };
 
 class help_command_impl : public noop_command_impl {
 public:
 	using noop_command_impl::noop_command_impl;
 
+	int handle(fcad_start_event &event) override;
+
 	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
+
+private:
+	// TODO: Help URL just in case
+	std::string help_text{ "Something went wrong" };
 };

@@ -10,3 +10,10 @@ void labeltype_command_impl::on_submit(const std::wstring &args) {
 		geom->set_vert_label_type(vert_label_type::IndexAndPos);
 	}
 }
+
+void labeltype_command_impl::write_help_text(std::ostream &os) const {
+	write_help_rtf_row(os, ":labeltype (index|pos)",
+		"Sets the vertex label type. {\\b index} shows only the vertex index; "
+		"{\\b pos} shows the vertex index and position."
+	);
+}

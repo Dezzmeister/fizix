@@ -3,7 +3,7 @@
 
 command_controller::command_controller(
 	fcad_event_bus &_events,
-	std::unordered_map<std::wstring, std::unique_ptr<command_impl>> &&_command_impls
+	std::map<std::wstring, std::unique_ptr<command_impl>> &&_command_impls
 ) :
 	event_listener<command_cancel_event>(&_events),
 	event_listener<command_input_event>(&_events),
@@ -13,6 +13,12 @@ command_controller::command_controller(
 	event_listener<command_cancel_event>::subscribe();
 	event_listener<command_input_event>::subscribe();
 	event_listener<command_submit_event>::subscribe();
+}
+
+void command_controller::write_help_text(std::ostream &os) const {
+	for (const auto &pair : command_impls) {
+		pair.second->write_help_text(os);
+	}
 }
 
 int command_controller::handle(command_cancel_event &event) {
@@ -99,7 +105,7 @@ int command_controller::handle(command_submit_event &event) {
 }
 
 command_controller make_commands(event_buses&, fcad_event_bus &events) {
-	std::unordered_map<std::wstring, std::unique_ptr<command_impl>> impls{};
+	std::map<std::wstring, std::unique_ptr<command_impl>> impls{};
 
 	impls.emplace(std::make_pair(L"q", std::make_unique<quit_command_impl>(events)));
 	impls.emplace(std::make_pair(L"focus", std::make_unique<focus_command_impl>(events)));

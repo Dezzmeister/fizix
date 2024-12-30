@@ -113,7 +113,6 @@ int main(int, const char * const * const) {
 		KEY_L,
 		KEY_I,
 		KEY_O,
-		KEY_T,
 		KEY_X,
 		KEY_Y,
 		KEY_Z
@@ -129,7 +128,9 @@ int main(int, const char * const * const) {
 		edit_history,
 		fc,
 		mode,
-		camera
+		camera,
+		ac,
+		commands
 	);
 
 	platform.set_cue_text(L"Type :h and press ENTER for help");
@@ -139,7 +140,7 @@ int main(int, const char * const * const) {
 
 	create_shape(events);
 
-	platform::run([&]() {
+	platform_state.run([&]() {
 		buses.render.fire(pre_render_event);
 		buses.render.fire(draw_event_inst);
 		buses.render.fire(post_processing_event_inst);

@@ -58,7 +58,6 @@ class geometry_controller :
 	public event_listener<delete_vertex_event>,
 	public event_listener<delete_edge_event>,
 	public event_listener<delete_face_event>,
-	public event_listener<keydown_event>,
 	public event_listener<post_processing_event>,
 	public event_listener<camera_move_event>
 {
@@ -68,6 +67,7 @@ public:
 	void reset();
 	void set_vert_label_type(vert_label_type _label_type);
 	void set_vert_labels_visible(bool _visible);
+	bool are_vert_labels_visible() const;
 
 	int handle(program_start_event &event) override;
 	int handle(fcad_start_event &event) override;
@@ -77,7 +77,6 @@ public:
 	int handle(delete_vertex_event &event) override;
 	int handle(delete_edge_event &event) override;
 	int handle(delete_face_event &event) override;
-	int handle(keydown_event &event) override;
 	int handle(post_processing_event &event) override;
 	int handle(camera_move_event &event) override;
 

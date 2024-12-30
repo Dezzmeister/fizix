@@ -10,6 +10,10 @@ action_controller::action_controller(
 	event_listener<window_input_event>::subscribe();
 }
 
+void action_controller::write_help_text(std::ostream &os) const {
+	window_actions.write_help_text(os);
+}
+
 int action_controller::handle(window_input_event &event) {
 	window_actions.test(event.c);
 

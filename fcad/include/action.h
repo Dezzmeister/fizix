@@ -4,8 +4,6 @@
 #include <stdexcept>
 #include <vector>
 #include <traits.h>
-#include "controllers/edit_history.h"
-#include "controllers/mode.h"
 #include "fcad_events.h"
 
 enum class action_state {
@@ -20,6 +18,7 @@ public:
 
 	virtual action_state test(char c) = 0;
 	virtual std::string to_string(size_t indent) const = 0;
+	virtual void write_help_text(std::ostream &os) const = 0;
 };
 
 class action_impl {
@@ -48,22 +47,26 @@ protected:
 	fcad_event_bus &events;
 	edit_history_controller * history{};
 	mode_controller * mode{};
+	geometry_controller * geom{};
 };
 
 class char_seq_action : public action {
 public:
 	char_seq_action(
 		const std::string &_char_seq,
-		action_impl &_impl
+		action_impl &_impl,
+		const std::string &_help_desc = ""
 	);
 
 	action_state test(char c) override;
 
 	std::string to_string(size_t indent) const override;
+	void write_help_text(std::ostream &os) const override;
 
 private:
 	const std::string char_seq;
 	action_impl &impl;
+	const std::string help_desc;
 	int curr_pos{};
 };
 
@@ -74,6 +77,7 @@ public:
 	action_state test(char c) override;
 
 	std::string to_string(size_t indent) const override;
+	void write_help_text(std::ostream &os) const override;
 
 private:
 	std::vector<std::unique_ptr<action>> actions;
@@ -84,16 +88,21 @@ class action_tree : public action {
 public:
 	action_tree(
 		const char_seq_action &_trunk,
-		action_group &&_leaves
+		action_group &&_leaves,
+		const std::string &_help_tree_summary = "",
+		const std::string &_help_desc = ""
 	);
 
 	action_state test(char c) override;
 
 	std::string to_string(size_t indent) const override;
+	void write_help_text(std::ostream &os) const override;
 
 private:
 	char_seq_action trunk;
 	action_group leaves;
+	const std::string help_tree_summary;
+	const std::string help_desc;
 	bool in_leaves{};
 };
 

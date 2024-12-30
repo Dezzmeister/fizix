@@ -1,4 +1,5 @@
 #include "actions/delete.h"
+#include "controllers/mode.h"
 
 void delete_vertex_impl::on_accept(char) {
 	mode->set_mode(edit_mode::Command, L":dv ");

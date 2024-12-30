@@ -293,7 +293,6 @@ geometry_controller::geometry_controller(
 	event_listener<delete_vertex_event>(&_events),
 	event_listener<delete_edge_event>(&_events),
 	event_listener<delete_face_event>(&_events),
-	event_listener<keydown_event>(&_buses.input),
 	event_listener<post_processing_event>(&_buses.render),
 	event_listener<camera_move_event>(&_events),
 	mesh_world(_buses),
@@ -341,7 +340,6 @@ geometry_controller::geometry_controller(
 	event_listener<delete_vertex_event>::subscribe();
 	event_listener<delete_edge_event>::subscribe();
 	event_listener<delete_face_event>::subscribe();
-	event_listener<keydown_event>::subscribe();
 	event_listener<post_processing_event>::subscribe();
 	event_listener<camera_move_event>::subscribe();
 
@@ -373,6 +371,10 @@ void geometry_controller::set_vert_label_type(vert_label_type _label_type) {
 
 void geometry_controller::set_vert_labels_visible(bool _visible) {
 	show_vert_labels = _visible;
+}
+
+bool geometry_controller::are_vert_labels_visible() const {
+	return show_vert_labels;
 }
 
 int geometry_controller::handle(program_start_event &event) {
@@ -587,14 +589,6 @@ int geometry_controller::handle(delete_face_event &event) {
 	remove_face_geoms(deleted_faces);
 	remove_face_geoms(deleted_faces_rev);
 	regenerate_edge_geom();
-
-	return 0;
-}
-
-int geometry_controller::handle(keydown_event &event) {
-	if (event.key == KEY_T) {
-		show_vert_labels = ! show_vert_labels;
-	}
 
 	return 0;
 }

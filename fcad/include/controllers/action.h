@@ -11,6 +11,8 @@ public:
 		action_group &_window_actions
 	);
 
+	void write_help_text(std::ostream &os) const;
+
 	int handle(window_input_event &event) override;
 
 private:

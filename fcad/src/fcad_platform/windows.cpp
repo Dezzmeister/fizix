@@ -1,8 +1,35 @@
 #include "fcad_platform/platform.h"
 #include <CommCtrl.h>
+#include <Richedit.h>
 #include "controllers/mode.h"
 
-const int mode_section_width = 256;
+namespace {
+	const int mode_section_width = 256;
+	HWND help_dialog{};
+
+	struct help_text_stream {
+		const std::string &text;
+		int curr_pos{};
+
+		help_text_stream(const std::string &_text) : text(_text) {}
+	};
+
+	DWORD CALLBACK help_edit_stream_cb(DWORD_PTR cookie, LPBYTE lp_buf, LONG cb, PLONG pcb) {
+		help_text_stream * stream = (help_text_stream *)cookie;
+		int remaining = (int)stream->text.size() - stream->curr_pos;
+		int num_bytes_to_read = cb;
+
+		if (num_bytes_to_read >= remaining) {
+			num_bytes_to_read = remaining;
+		}
+
+		memcpy(lp_buf, stream->text.data() + stream->curr_pos, num_bytes_to_read);
+		stream->curr_pos += num_bytes_to_read;
+		*pcb = num_bytes_to_read;
+
+		return 0;
+	}
+}
 
 LRESULT CALLBACK statusbar_proc(
 	HWND hwnd,
@@ -155,18 +182,58 @@ LRESULT CALLBACK main_window_proc(
 	return DefSubclassProc(hwnd, message, w_param, l_param);
 }
 
+BOOL CALLBACK help_proc(HWND dlg, UINT message, WPARAM w_param, LPARAM l_param) {
+	UNREFERENCED_PARAMETER(l_param);
+	SetLastError(0);
+	LONG_PTR user_lp = GetWindowLongPtrW(dlg, GWLP_USERDATA);
+
+	if (! user_lp) {
+		if (GetLastError()) {
+			logger::error(
+				"Failed to get window userdata: " +
+				platform::win32::get_last_error("GetWindowLongPtrW")
+			);
+		}
+
+		return false;
+	}
+
+	platform_bridge * platform = (platform_bridge *)user_lp;
+
+	switch (message) {
+		case WM_COMMAND: {
+			switch (LOWORD(w_param)) {
+				case IDCANCEL:
+				case IDOK: {
+					platform->destroy_help_dialog();
+					return TRUE;
+				}
+			}
+		}
+	}
+
+	return FALSE;
+}
+
 platform_bridge::platform_bridge(
 	fcad_event_bus &_events,
-	const platform::state &_platform,
+	platform::state &_platform,
 	const platform::window &_main_window,
 	mode_controller &_mode
 ) :
 	event_listener<mode_switch_event>(&_events),
 	events(_events),
 	mode(_mode),
+	platform(_platform),
 	main_window(_main_window.hwnd())
 {
 	event_listener<mode_switch_event>::subscribe();
+
+	// Rich Edit 4.1 supports word wrap in table cells, but Rich Edit 2.0
+	// (and maybe also 3.0) does not.
+	if (! LoadLibraryW(L"Msftedit.dll")) {
+		throw platform::api_error("Failed to load Rich Edit 4.1 (Msftedit.dll)");
+	}
 
 	INITCOMMONCONTROLSEX ctrls = {
 		.dwSize = sizeof INITCOMMONCONTROLSEX,
@@ -239,6 +306,48 @@ platform_bridge::platform_bridge(
 void platform_bridge::set_cue_text(const std::wstring &text) const {
 	SendMessageW(command_input, EM_SETCUEBANNER, FALSE, (LPARAM)text.data());
 	is_cue_banner_set = true;
+}
+
+void platform_bridge::create_help_dialog(const std::string &help_text) {
+	if (help_dialog) {
+		return;
+	}
+
+	help_dialog = CreateDialogW(
+		platform.h_inst(),
+		MAKEINTRESOURCEW(IDD_HELP),
+		main_window,
+		(DLGPROC)help_proc
+	);
+	platform.add_dialog(help_dialog);
+	SetLastError(0);
+
+	if (! SetWindowLongPtrW(help_dialog, GWLP_USERDATA, (LONG_PTR)this) && GetLastError()) {
+		throw platform::api_error(
+			"Failed to attach user data to help dialog: " +
+			platform::win32::get_last_error("SetWindowLongPtr")
+		);
+	}
+
+	ShowWindow(help_dialog, SW_SHOW);
+
+	help_text_stream stream(help_text);
+	EDITSTREAM es{};
+
+	es.pfnCallback = help_edit_stream_cb;
+	es.dwCookie = (DWORD_PTR)&stream;
+
+	SendMessageW(GetDlgItem(help_dialog, IDC_HELP_TEXT), EM_STREAMIN, SF_RTF, (LPARAM)&es);
+
+	if (es.dwError != 0) {
+		logger::error("Failed to set RTF text in help dialog rich edit control");
+	}
+}
+
+void platform_bridge::destroy_help_dialog() {
+	DestroyWindow(help_dialog);
+	platform.remove_dialog(help_dialog);
+	help_dialog = NULL;
 }
 
 int platform_bridge::handle(mode_switch_event &event) {

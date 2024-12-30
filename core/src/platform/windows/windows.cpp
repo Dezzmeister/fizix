@@ -289,6 +289,51 @@ ATOM platform::state::default_window_class() const {
 	return default_wc;
 }
 
+void platform::state::add_dialog(HWND dialog) {
+	dialogs.push_back(dialog);
+}
+
+void platform::state::remove_dialog(HWND dialog) {
+	std::erase(dialogs, dialog);
+}
+
+void platform::state::run(const std::function<void(void)> &do_frame) {
+	MSG msg;
+	BOOL msg_result;
+
+	while (true) {
+		while (PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE)) {
+			msg_result = GetMessageW(&msg, NULL, 0, 0);
+
+			if (msg_result == 0) {
+				return;
+			} else if (msg_result == -1) {
+				throw api_error(
+					"Failed to get message on message queue: " +
+					win32::get_last_error("GetMessageW")
+				);
+			} else {
+				for (const HWND dialog : dialogs) {
+					if (! IsWindow(dialog)) {
+						logger::error("Dialog no longer exists");
+					}
+
+					if (IsDialogMessageW(dialog, &msg)) {
+						goto done;
+					}
+				}
+
+				TranslateMessage(&msg);
+				DispatchMessageW(&msg);
+
+				done:;
+			}
+		}
+
+		do_frame();
+	}
+}
+
 platform::window::window(
 	const state &platform_state,
 	int width,
@@ -617,31 +662,6 @@ void platform::window::handle_raw_mouse() {
 		mouse.delta_vscroll = (short)input->data.mouse.usButtonData;
 	} else if (input->data.mouse.usButtonFlags & RI_MOUSE_HWHEEL) {
 		mouse.delta_hscroll = (short)input->data.mouse.usButtonData;
-	}
-}
-
-void platform::run(const std::function<void(void)> &do_frame) {
-	MSG msg;
-	BOOL msg_result;
-
-	while (true) {
-		while (PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE)) {
-			msg_result = GetMessageW(&msg, NULL, 0, 0);
-
-			if (msg_result == 0) {
-				return;
-			} else if (msg_result == -1) {
-				throw api_error(
-					"Failed to get message on message queue: " +
-					win32::get_last_error("GetMessageW")
-				);
-			} else {
-				TranslateMessage(&msg);
-				DispatchMessageW(&msg);
-			}
-		}
-
-		do_frame();
 	}
 }
 

@@ -1,4 +1,5 @@
 #include "commands.h"
+#include "helpers.h"
 #include "parsing.h"
 
 void delete_edge_command_impl::on_submit(const std::wstring &args) {
@@ -32,4 +33,10 @@ void delete_edge_command_impl::on_submit(const std::wstring &args) {
 	if (! events.fire(event)) {
 		history->add_command(L":de " + args);
 	}
+}
+
+void delete_edge_command_impl::write_help_text(std::ostream &os) const {
+	write_help_rtf_row(os, ":de <v1> <v2>",
+		"Deletes an edge given two vertex indices."
+	);
 }

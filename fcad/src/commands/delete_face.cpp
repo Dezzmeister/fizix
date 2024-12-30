@@ -1,4 +1,5 @@
 #include "commands.h"
+#include "helpers.h"
 #include "parsing.h"
 
 void delete_face_command_impl::on_submit(const std::wstring &args) {
@@ -24,4 +25,11 @@ void delete_face_command_impl::on_submit(const std::wstring &args) {
 	if (! events.fire(event)) {
 		history->add_command(L":df " + args);
 	}
+}
+
+void delete_face_command_impl::write_help_text(std::ostream &os) const {
+	write_help_rtf_row(os, ":df <v1> <v2> ... <vN>",
+		"Deletes a face given at least three vertex indices. "
+		"The vertices can be specified in clockwise or counter-clockwise order."
+	);
 }

@@ -73,10 +73,19 @@ namespace platform {
 		HINSTANCE h_inst() const;
 		ATOM default_window_class() const;
 
+		void add_dialog(HWND dialog);
+		void remove_dialog(HWND dialog);
+
+		// Runs the message loop for all windows. The `do_frame` callback
+		// is called after handling all queued messages. Any input processing
+		// and OpenGL rendering should happen in `do_frame`.
+		void run(const std::function<void(void)> &do_frame);
+
 	private:
 		HINSTANCE _h_inst{};
 		WNDCLASSEXW default_wc_spec{};
 		ATOM default_wc{};
+		std::vector<HWND> dialogs{};
 	};
 
 	struct dimensions {
@@ -168,11 +177,6 @@ namespace platform {
 
 		void handle_raw_mouse();
 	};
-
-	// Runs the message loop for all windows. The `do_frame` callback
-	// is called after handling all queued messages. Any input processing
-	// and OpenGL rendering should happen in `do_frame`.
-	void run(const std::function<void(void)> &do_frame);
 
 	namespace win32 {
 		std::string get_last_error(const std::string &method);

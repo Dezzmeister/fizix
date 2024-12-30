@@ -22,3 +22,10 @@ public:
 
 	void on_accept(char c) override;
 };
+
+class toggle_labels_impl : public noop_action_impl {
+public:
+	using noop_action_impl::noop_action_impl;
+
+	void on_accept(char c) override;
+};

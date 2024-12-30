@@ -1,6 +1,7 @@
 #include <logging.h>
 #include <util.h>
 #include "commands.h"
+#include "helpers.h"
 #include "parsing.h"
 
 using namespace phys;
@@ -39,4 +40,8 @@ void create_edge_command_impl::on_submit(const std::wstring &args) {
 	if (! events.fire(event)) {
 		history->add_command(L":e " + args);
 	}
+}
+
+void create_edge_command_impl::write_help_text(std::ostream &os) const {
+	write_help_rtf_row(os, ":e <v1> <v2>", "Creates an edge given two vertex indices.");
 }

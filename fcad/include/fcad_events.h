@@ -19,6 +19,8 @@ class edit_history_controller;
 class file_controller;
 class mode_controller;
 class camera_controller;
+class action_controller;
+class command_controller;
 
 struct fcad_start_event {
 	platform_bridge &platform;
@@ -27,6 +29,8 @@ struct fcad_start_event {
 	file_controller &fc;
 	mode_controller &mode;
 	camera_controller &camera;
+	action_controller &actions;
+	command_controller &commands;
 
 	fcad_start_event(
 		platform_bridge &_platform,
@@ -34,14 +38,18 @@ struct fcad_start_event {
 		edit_history_controller &_edit_history,
 		file_controller &_fc,
 		mode_controller &_mode,
-		camera_controller &_camera
+		camera_controller &_camera,
+		action_controller &_actions,
+		command_controller &_commands
 	) :
 		platform(_platform),
 		gc(_gc),
 		edit_history(_edit_history),
 		fc(_fc),
 		mode(_mode),
-		camera(_camera)
+		camera(_camera),
+		actions(_actions),
+		commands(_commands)
 	{}
 };
 

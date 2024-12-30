@@ -1,4 +1,5 @@
 #include "commands.h"
+#include "helpers.h"
 #include "parsing.h"
 
 void focus_command_impl::on_submit(const std::wstring &args) {
@@ -14,4 +15,11 @@ void focus_command_impl::on_submit(const std::wstring &args) {
 	}
 
 	camera->set_target(new_target);
+}
+
+void focus_command_impl::write_help_text(std::ostream &os) const {
+	write_help_rtf_row(os, ":focus [x y z]",
+		"Sets the target to the given position. The position is optional: "
+		"if it's not provided, the target will be set to (0, 0, 0)."
+	);
 }

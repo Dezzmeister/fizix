@@ -4,6 +4,7 @@
 #define _UNICODE
 #include <platform/platform.h>
 #include "fcad_events.h"
+#include "resource.h"
 
 class platform_bridge :
 	traits::pinned<platform_bridge>,
@@ -12,12 +13,14 @@ class platform_bridge :
 public:
 	platform_bridge(
 		fcad_event_bus &_events,
-		const platform::state &_platform,
+		platform::state &_platform,
 		const platform::window &_main_window,
 		mode_controller &_mode
 	);
 
 	void set_cue_text(const std::wstring &text) const;
+	void create_help_dialog(const std::string &help_text);
+	void destroy_help_dialog();
 
 	int handle(mode_switch_event &event) override;
 
@@ -48,12 +51,21 @@ public:
 		DWORD_PTR
 	);
 
+	friend BOOL CALLBACK help_proc(
+		HWND,
+		UINT,
+		WPARAM,
+		LPARAM
+	);
+
 private:
 	fcad_event_bus &events;
 	mode_controller &mode;
+	platform::state &platform;
 	HWND main_window{};
 	HWND statusbar{};
 	HWND command_input{};
+	HWND help_dialog{};
 	std::wstring mode_str{ L"UNKNOWN" };
 	mutable bool is_cue_banner_set{};
 };

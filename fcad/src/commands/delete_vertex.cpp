@@ -1,4 +1,5 @@
 #include "commands.h"
+#include "helpers.h"
 #include "parsing.h"
 
 using namespace phys;
@@ -26,4 +27,10 @@ void delete_vertex_command_impl::on_submit(const std::wstring &args) {
 	if (! events.fire(event)) {
 		history->add_command(L":dv " + args);
 	}
+}
+
+void delete_vertex_command_impl::write_help_text(std::ostream &os) const {
+	write_help_rtf_row(os, ":dv <v1>",
+		"Deletes a vertex given a vertex index."
+	);
 }

@@ -1,6 +1,7 @@
 #include <logging.h>
 #include <util.h>
 #include "commands.h"
+#include "helpers.h"
 #include "parsing.h"
 
 using namespace phys;
@@ -23,4 +24,10 @@ void create_vertex_command_impl::on_submit(const std::wstring &args) {
 	if (! events.fire(event)) {
 		history->add_command(L":v " + args);
 	}
+}
+
+void create_vertex_command_impl::write_help_text(std::ostream &os) const {
+	write_help_rtf_row(os, ":v <x> <y> <z>",
+		"Creates a vertex given X, Y, and Z coordinates."
+	);
 }

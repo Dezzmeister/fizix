@@ -4,6 +4,10 @@
 #include "actions/create.h"
 #include "actions/delete.h"
 #include "actions/misc.h"
+#include "controllers/edit_history.h"
+#include "controllers/geometry.h"
+#include "controllers/mode.h"
+#include "helpers.h"
 
 noop_action_impl::noop_action_impl(fcad_event_bus &_events) :
 	event_listener<fcad_start_event>(&_events),
@@ -19,16 +23,19 @@ void noop_action_impl::on_continue(char) {}
 int noop_action_impl::handle(fcad_start_event &event) {
 	history = &event.edit_history;
 	mode = &event.mode;
+	geom = &event.gc;
 
 	return 0;
 }
 
 char_seq_action::char_seq_action(
 	const std::string &_char_seq,
-	action_impl &_impl
+	action_impl &_impl,
+	const std::string &_help_desc
 ) :
 	char_seq(_char_seq),
-	impl(_impl)
+	impl(_impl),
+	help_desc(_help_desc)
 {
 	if (char_seq.empty()) {
 		throw action_error(
@@ -65,6 +72,10 @@ action_state char_seq_action::test(char c) {
 
 std::string char_seq_action::to_string(size_t) const {
 	return "char_seq_action(" + char_seq + ")";
+}
+
+void char_seq_action::write_help_text(std::ostream &os) const {
+	write_help_rtf_row(os, char_seq, help_desc);
 }
 
 action_group::action_group(std::vector<std::unique_ptr<action>> &&_actions) :
@@ -133,12 +144,22 @@ std::string action_group::to_string(size_t indent) const {
 	return out.str();
 }
 
+void action_group::write_help_text(std::ostream &os) const {
+	for (const auto &a : actions) {
+		a->write_help_text(os);
+	}
+}
+
 action_tree::action_tree(
 	const char_seq_action &_trunk,
-	action_group &&_leaves
+	action_group &&_leaves,
+	const std::string &_help_tree_summary,
+	const std::string &_help_desc
 ) :
 	trunk(_trunk),
-	leaves(std::move(_leaves))
+	leaves(std::move(_leaves)),
+	help_tree_summary(_help_tree_summary),
+	help_desc(_help_desc)
 {}
 
 action_state action_tree::test(char c) {
@@ -177,6 +198,10 @@ std::string action_tree::to_string(size_t indent) const {
 		util::named_val("trunk", trunk),
 		util::named_val("leaves", leaves)
 	);
+}
+
+void action_tree::write_help_text(std::ostream &os) const {
+	write_help_rtf_row(os, help_tree_summary, help_desc);
 }
 
 template <>
@@ -250,6 +275,9 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 	std::unique_ptr<action_impl> redo_edit = std::make_unique<redo_edit_impl>(
 		events
 	);
+	std::unique_ptr<action_impl> toggle_labels = std::make_unique<toggle_labels_impl>(
+		events
+	);
 
 	std::unique_ptr<action> delete_actions[] = {
 		std::make_unique<char_seq_action>("v", *delete_vertex),
@@ -258,19 +286,38 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 	};
 
 	std::unique_ptr<action> top_level_actions[] = {
-		std::make_unique<char_seq_action>(":", *start_command),
-		std::make_unique<char_seq_action>("v", *create_vertex),
-		std::make_unique<char_seq_action>("e", *create_edge),
-		std::make_unique<char_seq_action>("f", *create_face),
+		std::make_unique<char_seq_action>(":", *start_command,
+			"Switches to command mode, fills the command bar with a "
+			"{\\b :} character, and focuses the command bar."
+		),
+		std::make_unique<char_seq_action>("v", *create_vertex,
+			"Shortcut for the {\\b :v} command to create a vertex."
+		),
+		std::make_unique<char_seq_action>("e", *create_edge,
+			"Shortcut for the {\\b :e} command to create an edge."
+		),
+		std::make_unique<char_seq_action>("f", *create_face,
+			"Shortcut for the {\\b :f} command to create a face."
+		),
 		std::make_unique<action_tree>(
 			char_seq_action("d", *noop),
 			action_group(std::vector<std::unique_ptr<action>>(
 				std::make_move_iterator(std::begin(delete_actions)),
 				std::make_move_iterator(std::end(delete_actions))
-			))
+			)),
+			"d(v|e|f)",
+			"Shortcuts for the feature deletion commands."
 		),
-		std::make_unique<char_seq_action>("u", *undo_edit),
-		std::make_unique<char_seq_action>("r", *redo_edit)
+		std::make_unique<char_seq_action>("u", *undo_edit,
+			"Undoes the last edit. If another edit is performed after this "
+			"action, the undone edit(s) are lost."
+		),
+		std::make_unique<char_seq_action>("r", *redo_edit,
+			"Redoes the last undone edit."
+		),
+		std::make_unique<char_seq_action>("t", *toggle_labels,
+			"Toggles vertex labels."
+		)
 	};
 
 	std::unique_ptr<action_impl> action_impls[] = {
@@ -283,7 +330,8 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 		std::move(delete_edge),
 		std::move(delete_face),
 		std::move(undo_edit),
-		std::move(redo_edit)
+		std::move(redo_edit),
+		std::move(toggle_labels)
 	};
 
 	action_group actions(
