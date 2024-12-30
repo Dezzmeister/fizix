@@ -57,6 +57,11 @@ int main(int, const char * const * const) {
 	logger::init();
 	platform::state platform_state{};
 	platform::window main_window(platform_state, 800, 800, L"FCAD");
+
+	main_window.show();
+	main_window.make_gl_context_current();
+	shapes::init();
+
 	event_buses buses;
 	fcad_event_bus events;
 	mode_controller mode(buses, events);
@@ -73,9 +78,6 @@ int main(int, const char * const * const) {
 	file_controller fc(events);
 	gdi_plus_context gdi_plus;
 
-	main_window.show();
-	main_window.make_gl_context_current();
-
 	glViewport(0, 0, 800, 800);
 	// Old Windows BSOD blue
 	glClearColor(0.031f, 0.152f, 0.961f, 0.0f);
@@ -85,8 +87,6 @@ int main(int, const char * const * const) {
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
-
-	shapes::init();
 
 	hardware_constants hw_consts(buses);
 	program_start_event program_start(&main_window);
@@ -121,7 +121,8 @@ int main(int, const char * const * const) {
 	mouse_controller mouse(buses, {}, KEY_ESC);
 	screen_controller screen(buses);
 	camera_controller camera(buses, events);
-	geometry_controller geom(buses, events);
+	world mesh_world(buses);
+	geometry_controller geom(buses, events, mesh_world);
 	fcad_start_event fcad_start(
 		platform,
 		geom,
@@ -130,7 +131,8 @@ int main(int, const char * const * const) {
 		mode,
 		camera,
 		ac,
-		commands
+		commands,
+		mesh_world
 	);
 
 	platform.set_cue_text(L"Type :h and press ENTER for help");

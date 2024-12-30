@@ -62,7 +62,11 @@ class geometry_controller :
 	public event_listener<camera_move_event>
 {
 public:
-	geometry_controller(event_buses &_buses, fcad_event_bus &_events);
+	geometry_controller(
+		event_buses &_buses,
+		fcad_event_bus &_events,
+		world &_mesh_world
+	);
 
 	void reset();
 	void set_vert_label_type(vert_label_type _label_type);
@@ -89,7 +93,7 @@ private:
 	};
 
 	platform_bridge * platform{};
-	world mesh_world;
+	world &mesh_world;
 	geometry vert_geom;
 	mesh vert_mesh;
 	geometry edge_geom;

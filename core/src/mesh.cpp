@@ -8,7 +8,7 @@ mesh::mesh(
 	const material * _mat,
 	int _first,
 	int _count,
-	bool _is_inverted
+	mesh_side _side
 ) :
 	model(glm::identity<glm::mat4>()),
 	inv_model(glm::inverse(model)),
@@ -17,7 +17,7 @@ mesh::mesh(
 	first(_first),
 	count(_count),
 	alpha(1.0f),
-	inverted(_is_inverted)
+	side(_side)
 {}
 
 void mesh::prepare_draw(draw_event &event, const shader_program &shader, bool include_normal) const {
@@ -68,8 +68,8 @@ bool mesh::has_transparency() const {
 	return alpha != 1.0f;
 }
 
-bool mesh::is_inverted() const {
-	return inverted;
+mesh_side mesh::get_side() const {
+	return side;
 }
 
 bool operator<(const mesh &a, const mesh &b) {

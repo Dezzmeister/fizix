@@ -48,6 +48,7 @@ protected:
 	edit_history_controller * history{};
 	mode_controller * mode{};
 	geometry_controller * geom{};
+	world * mesh_world{};
 };
 
 class char_seq_action : public action {

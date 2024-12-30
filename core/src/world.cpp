@@ -183,8 +183,12 @@ void world::draw_meshes(draw_event &event, const std::vector<mesh *> &_meshes, c
 	);
 
 	for (const mesh * m : _meshes) {
-		if (m->is_inverted()) {
-			glFrontFace(GL_CW);
+		mesh_side side = m->get_side();
+
+		if (side == mesh_side::Back) {
+			glCullFace(GL_FRONT);
+		} else if (side == mesh_side::Both) {
+			glDisable(GL_CULL_FACE);
 		}
 
 		if (m->mat != last_mtl) {
@@ -211,9 +215,11 @@ void world::draw_meshes(draw_event &event, const std::vector<mesh *> &_meshes, c
 		m->prepare_draw(event, *curr_shader, true);
 		m->draw();
 
-		if (m->is_inverted()) {
-			// Assume that most meshes are not inverted
-			glFrontFace(GL_CCW);
+		// Assume that most meshes are front-side only
+		if (side == mesh_side::Back) {
+			glCullFace(GL_BACK);
+		} else if (side == mesh_side::Both) {
+			glEnable(GL_CULL_FACE);
 		}
 	}
 }

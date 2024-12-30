@@ -31,23 +31,23 @@ renderer2d::renderer2d(event_buses &_buses) :
 	event_listener<screen_resize_event>(&_buses.render),
 	buses(_buses),
 	text_vao(0, [](unsigned int vao) {
-	glDeleteVertexArrays(1, &vao);
-		}),
+		glDeleteVertexArrays(1, &vao);
+	}),
 	text_vbo(0, [](unsigned int vbo) {
-	glDeleteBuffers(1, &vbo);
-		}),
+		glDeleteBuffers(1, &vbo);
+	}),
 	rect_vao(0, [](unsigned int vao) {
-	glDeleteVertexArrays(1, &vao);
-		}),
+		glDeleteVertexArrays(1, &vao);
+	}),
 	rect_vbo(0, [](unsigned int vbo) {
-	glDeleteBuffers(1, &vbo);
-		}),
+		glDeleteBuffers(1, &vbo);
+	}),
 	icon_vao(0, [](unsigned int vao) {
-	glDeleteVertexArrays(1, &vao);
-		}),
+		glDeleteVertexArrays(1, &vao);
+	}),
 	icon_vbo(0, [](unsigned int vbo) {
-	glDeleteBuffers(1, &vbo);
-		})
+		glDeleteBuffers(1, &vbo);
+	})
 {
 	event_listener<program_start_event>::subscribe();
 	event_listener<screen_resize_event>::subscribe();

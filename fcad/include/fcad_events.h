@@ -1,6 +1,7 @@
 #pragma once
 #include <event.h>
 #include <traits.h>
+#include <world.h>
 #include <physics/math.h>
 #include <physics/collision/vclip.h>
 
@@ -31,6 +32,7 @@ struct fcad_start_event {
 	camera_controller &camera;
 	action_controller &actions;
 	command_controller &commands;
+	world &mesh_world;
 
 	fcad_start_event(
 		platform_bridge &_platform,
@@ -40,7 +42,8 @@ struct fcad_start_event {
 		mode_controller &_mode,
 		camera_controller &_camera,
 		action_controller &_actions,
-		command_controller &_commands
+		command_controller &_commands,
+		world &_mesh_world
 	) :
 		platform(_platform),
 		gc(_gc),
@@ -49,7 +52,8 @@ struct fcad_start_event {
 		mode(_mode),
 		camera(_camera),
 		actions(_actions),
-		commands(_commands)
+		commands(_commands),
+		mesh_world(_mesh_world)
 	{}
 };
 

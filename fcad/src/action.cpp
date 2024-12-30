@@ -24,6 +24,7 @@ int noop_action_impl::handle(fcad_start_event &event) {
 	history = &event.edit_history;
 	mode = &event.mode;
 	geom = &event.gc;
+	mesh_world = &event.mesh_world;
 
 	return 0;
 }

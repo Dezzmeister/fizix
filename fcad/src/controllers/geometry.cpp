@@ -268,7 +268,7 @@ renderable_face::renderable_face(
 	f(_f),
 	geom(std::move(_geom)),
 	m(&geom, _mat),
-	inv_m(&geom, _inv_mat, 0, -1, true)
+	inv_m(&geom, _inv_mat, 0, -1, mesh_side::Back)
 {}
 
 void renderable_face::add_to_world(world &w) {
@@ -283,7 +283,8 @@ void renderable_face::remove_from_world(world &w) {
 
 geometry_controller::geometry_controller(
 	event_buses &_buses,
-	fcad_event_bus &_events
+	fcad_event_bus &_events,
+	world &_mesh_world
 ) :
 	event_listener<program_start_event>(&_buses.lifecycle),
 	event_listener<fcad_start_event>(&_events),
@@ -295,7 +296,7 @@ geometry_controller::geometry_controller(
 	event_listener<delete_face_event>(&_events),
 	event_listener<post_processing_event>(&_buses.render),
 	event_listener<camera_move_event>(&_events),
-	mesh_world(_buses),
+	mesh_world(_mesh_world),
 	vert_geom(
 		std::vector<float>({}),
 		geometry_primitive_type::Points,

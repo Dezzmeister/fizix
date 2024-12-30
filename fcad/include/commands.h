@@ -30,12 +30,43 @@ protected:
 	platform_bridge * platform{};
 };
 
-class create_vertex_command_impl : public noop_command_impl {
-public:
-	using noop_command_impl::noop_command_impl;
+struct create_vertex_preview :
+	traits::pinned<create_vertex_preview>
+{
+	mesh preview;
+	mat4 base_transform;
+	bool is_visible{};
 
+	create_vertex_preview(
+		mesh &&_preview,
+		const mat4 &_base_transform = glm::identity<glm::mat4>()
+	);
+
+	void show(world &w, const vec3 &at = vec3(0.0f));
+	void hide(world &w);
+};
+
+class create_vertex_command_impl : 
+	traits::pinned<create_vertex_command_impl>,
+	public noop_command_impl
+{
+public:
+	create_vertex_command_impl(fcad_event_bus &_events);
+
+	void on_cancel(const std::wstring &args_buf) override;
+	void on_input(const std::wstring &args_buf) override;
 	void on_submit(const std::wstring &args) override;
 	void write_help_text(std::ostream &os) const override;
+
+	int handle(fcad_start_event &event) override;
+
+private:
+	world * mesh_world{};
+	geometry vert_geom;
+	geometry line_geom;
+	create_vertex_preview vert_preview;
+	create_vertex_preview line_preview;
+	create_vertex_preview plane_preview;
 };
 
 class create_edge_command_impl : public noop_command_impl {
