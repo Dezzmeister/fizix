@@ -120,6 +120,7 @@ command_controller make_commands(event_buses&, fcad_event_bus &events) {
 	impls.emplace(std::make_pair(L"labels", std::make_unique<labels_command_impl>(events)));
 	impls.emplace(std::make_pair(L"labeltype", std::make_unique<labeltype_command_impl>(events)));
 	impls.emplace(std::make_pair(L"h", std::make_unique<help_command_impl>(events)));
+	impls.emplace(std::make_pair(L"flip", std::make_unique<flip_command_impl>(events)));
 
 	return command_controller(events, std::move(impls));
 }

@@ -33,6 +33,9 @@ int help_command_impl::handle(fcad_start_event &event) {
 	write_help_rtf_row(oss, "HJKL",
 		"Rotates the camera about the target. The target is at the origin by default."
 	);
+	write_help_rtf_row(oss, "B<PERIOD>",
+		"Rolls the camera about the radial axis (from the camera position to the target)."
+	);
 	write_help_rtf_row(oss, "CTRL + HJKL", "Moves the target.");
 	write_help_rtf_row(oss, "IO",
 		"Moves the camera in and out (towards and away from the target)."

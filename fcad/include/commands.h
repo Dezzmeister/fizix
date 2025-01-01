@@ -170,3 +170,11 @@ private:
 	// TODO: Help URL just in case
 	std::string help_text{ "Something went wrong" };
 };
+
+class flip_command_impl : public noop_command_impl {
+public:
+	using noop_command_impl::noop_command_impl;
+
+	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
+};

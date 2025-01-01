@@ -35,6 +35,7 @@ public:
 	const material * get_material() const;
 	bool has_transparency() const;
 	mesh_side get_side() const;
+	void set_side(mesh_side _side);
 
 	friend bool operator<(const mesh &a, const mesh &b);
 	friend bool operator==(const mesh &a, const mesh &b);

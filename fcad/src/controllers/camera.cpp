@@ -44,7 +44,7 @@ int camera_controller::handle(pre_render_pass_event &event) {
 			view_mat_needs_update = true;
 		}
 
-		if (vel_dir != vec2(0.0f)) {
+		if (vel_dir != vec3(0.0f)) {
 			float half_angle = d_ang_per_s * ((float)delta / 1000000.0f);
 			glm::quat total_rot(0.0f, 0.0f, 0.0f, 0.0f);
 
@@ -68,6 +68,14 @@ int camera_controller::handle(pre_render_pass_event &event) {
 				total_rot += y_rot;
 			}
 
+			if (vel_dir.z != 0.0f) {
+				float z_half_angle = half_angle * vel_dir.z;
+				vec3 axis = normalize(target - pos);
+				glm::quat z_rot(std::cos(z_half_angle), std::sin(z_half_angle) * axis);
+
+				total_rot += z_rot;
+			}
+
 			total_rot = glm::normalize(total_rot);
 
 			rel_pos = total_rot * rel_pos;
@@ -81,7 +89,7 @@ int camera_controller::handle(pre_render_pass_event &event) {
 		float dp_per_s = std::sqrt(dot(rel_pos, rel_pos));
 		float dp = dp_per_s * ((float)delta / 1000000.0f);
 
-		if (vel_dir != vec2(0.0f) || zoom_dir != 0.0f) {
+		if (vel_dir != vec3(0.0f) || zoom_dir != 0.0f) {
 			vec3 d_target = dp * (
 				-vel_dir.x * right
 				- vel_dir.y * up
@@ -176,6 +184,10 @@ int camera_controller::handle(keydown_event &event) {
 		vel_dir.y += 1.0f;
 	} else if (event.key == KEY_L) {
 		vel_dir.x += 1.0f;
+	} else if (event.key == KEY_B) {
+		vel_dir.z += 1.0f;
+	} else if (event.key == KEY_PERIOD) {
+		vel_dir.z -= 1.0f;
 	} else if (event.key == KEY_I) {
 		zoom_dir -= 1.0f;
 	} else if (event.key == KEY_O) {
@@ -205,6 +217,10 @@ int camera_controller::handle(keyup_event &event) {
 		vel_dir.y -= 1.0f;
 	} else if (event.key == KEY_L) {
 		vel_dir.x -= 1.0f;
+	} else if (event.key == KEY_B) {
+		vel_dir.z -= 1.0f;
+	} else if (event.key == KEY_PERIOD) {
+		vel_dir.z += 1.0f;
 	} else if (event.key == KEY_I) {
 		zoom_dir += 1.0f;
 	} else if (event.key == KEY_O) {

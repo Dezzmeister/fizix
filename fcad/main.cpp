@@ -88,6 +88,8 @@ int main(int, const char * const * const) {
 		KEY_J,
 		KEY_K,
 		KEY_L,
+		KEY_B,
+		KEY_PERIOD,
 		KEY_I,
 		KEY_O,
 		KEY_X,

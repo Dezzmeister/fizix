@@ -83,6 +83,8 @@ public:
 	void set_vert_labels_visible(bool _visible);
 	bool are_vert_labels_visible() const;
 
+	void flip(const face &f);
+
 	std::experimental::generator<triangle> faces() const;
 
 	int handle(program_start_event &event) override;

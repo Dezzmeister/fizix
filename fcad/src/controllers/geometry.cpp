@@ -488,6 +488,39 @@ bool geometry_controller::are_vert_labels_visible() const {
 	return show_vert_labels;
 }
 
+void geometry_controller::flip(const face &f) {
+	face flipped_f = f.flipped();
+
+	for (face &pf : poly.faces) {
+		if (pf == f || pf == flipped_f) {
+			pf = pf.flipped();
+		}
+	}
+
+	for (auto &rf : face_meshes) {
+		if (rf->f != f && rf->f != flipped_f) {
+			continue;
+		}
+
+		rf->f = rf->f.flipped();
+		mesh_side side = rf->m.get_side();
+
+		assert(side != rf->inv_m.get_side());
+
+		if (side == mesh_side::Front) {
+			rf->m.set_side(mesh_side::Back);
+			rf->inv_m.set_side(mesh_side::Front);
+		} else {
+			assert(side != mesh_side::Both);
+
+			rf->m.set_side(mesh_side::Front);
+			rf->inv_m.set_side(mesh_side::Back);
+		}
+
+		return;
+	}
+}
+
 std::experimental::generator<triangle> geometry_controller::faces() const {
 	for (const auto &rf : face_meshes) {
 		for (size_t i = 0; i < rf->geom.get_num_vertices(); i += 3) {

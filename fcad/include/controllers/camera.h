@@ -35,7 +35,7 @@ private:
 	glm::mat4 view{};
 	glm::mat4 inv_view{};
 	glm::mat4 projection{};
-	glm::vec2 vel_dir{};
+	glm::vec3 vel_dir{};
 	glm::vec3 rot_axis{};
 	float d_ang_per_s{ 2.0f };
 	float zoom_dir{};

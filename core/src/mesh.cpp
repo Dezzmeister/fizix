@@ -72,6 +72,10 @@ mesh_side mesh::get_side() const {
 	return side;
 }
 
+void mesh::set_side(mesh_side _side) {
+	side = _side;
+}
+
 bool operator<(const mesh &a, const mesh &b) {
 	return std::make_tuple(
 		a.mat, a.geom,
