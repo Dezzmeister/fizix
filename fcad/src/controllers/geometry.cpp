@@ -257,6 +257,60 @@ namespace {
 
 		return ss.str();
 	}
+
+	size_t add_or_get_vertex(polyhedron &p, const vec3 &vertex) {
+		for (size_t i = 0; i < p.vertices.size(); i++) {
+			if (p.vertices[i].v == vertex) {
+				return i;
+			}
+		}
+
+		return p.add_vertex(vertex);
+	}
+
+	face join_faces(const face &f1, const face &f2, const edge &f1e) {
+		std::vector<size_t> new_vs{};
+
+		for (size_t i = 0; i < f1.num_verts(); i++) {
+			size_t v1i = f1.vert(i);
+
+			new_vs.push_back(v1i);
+
+			if (v1i == f1e.v_is[0]) {
+				size_t v2i1 = 0;
+				size_t v2i2 = 0;
+
+				for (size_t j = 0; j < f2.num_verts(); j++) {
+					if (f2.vert(j) == f1e.v_is[0]) {
+						v2i2 = j;
+					} else if (f2.vert(j) == f1e.v_is[1]) {
+						v2i1 = j;
+					}
+				}
+
+				assert(v2i2 != v2i1);
+
+				for (size_t j = v2i2 + 1; j < f2.num_verts(); j++) {
+					size_t vi = f2.vert(j);
+
+					if (j == v2i1) {
+						continue;
+					}
+
+					new_vs.push_back(vi);
+				}
+
+				for (size_t j = 0; j < std::min(v2i1, v2i2); j++) {
+					assert(j != v2i1);
+					assert(j != v2i2);
+
+					new_vs.push_back(f2.vert(j));
+				}
+			}
+		}
+
+		return face(new_vs, convexity::Unspecified);
+	}
 }
 
 renderable_face::renderable_face(
@@ -364,6 +418,105 @@ void geometry_controller::reset() {
 	edge_geom.clear_vertices();
 	vert_geom.clear_vertices();
 	poly.clear();
+}
+
+void geometry_controller::add_triangle(const triangle &tri) {
+	size_t v1i = add_or_get_vertex(poly, tri.v1);
+	size_t v2i = add_or_get_vertex(poly, tri.v2);
+	size_t v3i = add_or_get_vertex(poly, tri.v3);
+	face f1({ v1i, v2i, v3i }, convexity::Convex);
+	vec3 f1_norm = f1.normal(poly);
+
+	if (dot(f1_norm, tri.normal) < 0.0f) {
+		f1 = f1.flipped();
+		f1_norm = -f1_norm;
+	}
+
+	// Try to join f1 to an existing face. We look for a face with a shared edge
+	// where the faces have the same normal, and the edge is in the opposite
+	// direction. This is a simple way to join faces, and it doesn't account for
+	// faces that share part of an edge.
+	// TODO: Partial shared edge
+	for (const edge &e : poly.edges) {
+		if (! f1.has_edge(e)) {
+			continue;
+		}
+
+		for (const face &f2 : e.faces(poly)) {
+			vec3 f2_norm = f2.normal(poly);
+
+			if (f1_norm != f2_norm) {
+				continue;
+			}
+
+			edge f1e = f1.get_ccw(e);
+			edge f2e = f2.get_ccw(e);
+
+			assert(f1e == f2e);
+
+			// The shared edge must be in the opposite direction on
+			// the other face in order for the faces to be joinable
+			if (f1e.v_is[0] == f2e.v_is[0]) {
+				continue;
+			}
+
+			face new_face = join_faces(f1, f2, f1e);
+
+			for (auto &rf : face_meshes) {
+				if (rf->f == f2) {
+					assert(f1.num_verts() == 3);
+
+					for (size_t vi : f1.verts()) {
+						rf->geom.add_vertex(
+							poly.vertices[vi].v,
+							f1_norm,
+							vec2(0.0f)
+						);
+					}
+
+					rf->f = new_face;
+
+					continue;
+				}
+			}
+
+			poly.remove_face_and_dead_edges(f2);
+			poly.add_face_and_new_edges(new_face);
+
+			return;
+		}
+	}
+
+	// We couldn't find any face to join f1 with, so we can add f1
+	// as-is
+	poly.add_face_and_new_edges(f1);
+	face_meshes.emplace_back(
+		std::make_unique<renderable_face>(
+			f1,
+			&face_mtl,
+			&face_inv_mtl,
+			geometry(
+				{},
+				geometry_primitive_type::Triangles,
+				vbo_usage_hint::StaticDraw
+			)
+		)
+	);
+
+	for (size_t vi : f1.verts()) {
+		face_meshes[face_meshes.size() - 1]->geom.add_vertex(
+			poly.vertices[vi].v,
+			f1_norm,
+			vec2(0.0f)
+		);
+	}
+
+	face_meshes[face_meshes.size() - 1]->add_to_world(mesh_world);
+
+	aabb bounds = calculate_aabb();
+	float max = std::max(bounds.max_diff(), 2.0f);
+
+	axes.set_max_axis(max / 2.0f);
 }
 
 void geometry_controller::set_vert_label_type(vert_label_type _label_type) {

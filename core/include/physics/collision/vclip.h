@@ -34,7 +34,8 @@ namespace phys {
 			void validate_references() const;
 			void validate_geometry() const;
 
-			void add_vertex(const vec3 &v);
+			// Adds a vertex and returns its index.
+			size_t add_vertex(const vec3 &v);
 			void add_edge(const edge &e);
 			// Adds a face, but not its constituent edges. The edges must be added
 			// separately with `add_edge` or the face must be added with
@@ -160,13 +161,15 @@ namespace phys {
 
 			size_t num_verts() const;
 
-			// Computes the normal of the face. For a convex face, this is an O(1)
+			// Returns the normal of the face. For a convex face, this is an O(1)
 			// operation; for a nonconvex face, this is an O(N) operation where N
-			// is the number of vertices.
+			// is the number of vertices. Note that the normal is cached; if no changes
+			// have been made to the face, this is an O(1) operation (unless `force_recompute`
+			// is set).
 			// The normal is defined by the winding order of the vertices so that
 			// it points in the direction of whatever side has the vertices in CCW
 			// winding order.
-			vec3 normal(const polyhedron &p) const;
+			vec3 normal(const polyhedron &p, bool force_recompute = false) const;
 			// Returns a copy of `e` with its two vertices arranged in CCW winding
 			// order around the face
 			edge get_ccw(const edge &e) const;
@@ -193,7 +196,7 @@ namespace phys {
 			std::vector<size_t> vs;
 			mutable vec3 norm{};
 			convexity convexity_hint;
-			bool norm_needs_update{ true };
+			mutable bool norm_needs_update{ true };
 		};
 
 		struct face_cut_result {

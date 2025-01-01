@@ -264,8 +264,10 @@ namespace phys {
 			}
 		}
 
-		void polyhedron::add_vertex(const vec3 &v) {
+		size_t polyhedron::add_vertex(const vec3 &v) {
 			vertices.push_back(vertex(v, vertices.size()));
+
+			return vertices.size() - 1;
 		}
 
 		void polyhedron::add_edge(const edge &e) {
@@ -352,10 +354,11 @@ namespace phys {
 		void polyhedron::remove_face_and_dead_edges(const face &f) {
 			assert(is_possible_face(f));
 
+			face old_f = f;
 			std::erase(faces, f);
 
 			// TODO: reduce time complexity
-			for (const edge &face_edge : f.edges()) {
+			for (const edge &face_edge : old_f.edges()) {
 				if (face_edge.faces(*this).empty()) {
 					std::erase(edges, face_edge);
 				}
@@ -553,10 +556,12 @@ namespace phys {
 			return vs.size();
 		}
 
-		vec3 face::normal(const polyhedron &p) const {
-			if (! norm_needs_update) {
+		vec3 face::normal(const polyhedron &p, bool force_recompute) const {
+			if (! norm_needs_update && ! force_recompute) {
 				return norm;
 			}
+
+			norm_needs_update = false;
 
 			if (convexity_hint == convexity::Convex) {
 				vec3 v1 = p.vertices[vs[0]].v;

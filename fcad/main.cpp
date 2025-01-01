@@ -26,31 +26,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include "controllers/file.h"
 #include "controllers/geometry.h"
 #include "controllers/mode.h"
-
-void create_shape(fcad_event_bus &events) {
-	// TODO: macros, replay files
-	std::wstring commands[] = {
-		L":v 1 1 1",
-		L":v 1 1 -1",
-		L":v 1 -1 1",
-		L":v 1 -1 -1",
-		L":v -1 1 1",
-		L":v -1 1 -1",
-		L":v -1 -1 1",
-		L":v -1 -1 -1",
-		L":f 0 1 5 4",
-		L":f 0 2 3 1",
-		L":f 0 4 6 2",
-		L":f 7 3 2 6",
-		L":f 7 6 4 5",
-		L":f 7 5 1 3"
-	};
-
-	for (const std::wstring &str : commands) {
-		command_submit_event event(str);
-		events.fire(event);
-	}
-}
+#include "controllers/preferences.h"
 
 // TODO: Check command line and possibly load file
 int main(int, const char * const * const) {
@@ -118,12 +94,12 @@ int main(int, const char * const * const) {
 		KEY_Y,
 		KEY_Z
 	});
-	// TODO: Disable mouse locking
-	mouse_controller mouse(buses, {}, KEY_ESC);
+	mouse_controller mouse(buses, {}, -1);
 	screen_controller screen(buses);
 	camera_controller camera(buses, events);
 	world mesh_world(buses);
 	geometry_controller geom(buses, events, mesh_world);
+	preferences_controller prefs(events);
 	fcad_start_event fcad_start(
 		platform,
 		geom,
@@ -133,6 +109,7 @@ int main(int, const char * const * const) {
 		camera,
 		ac,
 		commands,
+		prefs,
 		mesh_world
 	);
 
@@ -140,8 +117,6 @@ int main(int, const char * const * const) {
 
 	buses.lifecycle.fire(program_start);
 	events.fire(fcad_start);
-
-	create_shape(events);
 
 	platform_state.run([&]() {
 		buses.render.fire(pre_render_event);

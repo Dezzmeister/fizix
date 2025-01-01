@@ -1,4 +1,5 @@
 #include "controllers/file.h"
+#include "fcad_platform/platform.h"
 #include "helpers.h"
 #include "parsing.h"
 
@@ -7,13 +8,6 @@ file_controller::file_controller(fcad_event_bus &_events) :
 	events(_events)
 {
 	event_listener<fcad_start_event>::subscribe();
-}
-
-int file_controller::handle(fcad_start_event &event) {
-	edit_history = &event.edit_history;
-	geom = &event.gc;
-
-	return 0;
 }
 
 void file_controller::write_file(const std::wstring &_path_str) {
@@ -39,7 +33,7 @@ void file_controller::write_file(const std::wstring &_path_str) {
 	active_file = path;
 }
 
-void file_controller::read_file(const std::wstring &path_str) {
+void file_controller::read_file(const std::wstring &path_str, bool make_active) {
 	std::wstring trimmed_path = trim(path_str);
 	std::optional<std::filesystem::path> path = active_file;
 
@@ -51,9 +45,29 @@ void file_controller::read_file(const std::wstring &path_str) {
 		return;
 	}
 
-	// TODO: STL
-	read_replay_file(*path);
-	active_file = path;
+	read_file(*path, make_active);
+}
+
+void file_controller::read_file(const std::filesystem::path &path, bool make_active) {
+	std::wstring path_str = path.wstring();
+
+	if (path_str.ends_with(L".stl") || path_str.ends_with(L".STL")) {
+		read_stl_file(path);
+	} else {
+		read_replay_file(path);
+	}
+
+	if (make_active) {
+		active_file = path;
+	}
+}
+
+int file_controller::handle(fcad_start_event &event) {
+	edit_history = &event.edit_history;
+	geom = &event.gc;
+	platform = &event.platform;
+
+	return 0;
 }
 
 void file_controller::write_replay_file(const std::filesystem::path &path) {
@@ -73,7 +87,10 @@ void file_controller::write_replay_file(const std::filesystem::path &path) {
 		return;
 	}
 
+	wfs << "FCAD replay file" << std::endl;
+
 	edit_history->write_replay_file(wfs);
+	platform->set_cue_text(L"Wrote replay file to " + path.wstring());
 }
 
 void file_controller::read_replay_file(const std::filesystem::path &path) {
@@ -97,6 +114,13 @@ void file_controller::read_replay_file(const std::filesystem::path &path) {
 	geom->reset();
 
 	std::wstring line = parse_line(state);
+
+	if (line != L"FCAD replay file") {
+		logger::error("Invalid replay file (missing magic string header)");
+		return;
+	}
+
+	line = parse_line(state);
 
 	while (! line.empty()) {
 		command_submit_event command_event(line);
@@ -155,4 +179,6 @@ void file_controller::write_stl_file(const std::filesystem::path &path) {
 	}
 
 	wfs << "endsolid " << solid_name;
+
+	platform->set_cue_text(L"Wrote STL file to " + path.wstring());
 }

@@ -55,7 +55,7 @@ int mouse_controller::handle(pre_render_pass_event &event) {
 		buses.input.fire(mouse_event);
 	}
 
-	if (! mouse.is_locked && event.window->is_mouse_btn_down(MOUSE_LEFT)) {
+	if (! mouse.is_locked && event.window->is_mouse_btn_down(MOUSE_LEFT) && mouse_unlock_key != -1) {
 		event.window->lock_cursor();
 
 		mouse_lock_event lock_event(event.window);

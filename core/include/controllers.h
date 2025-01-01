@@ -47,8 +47,8 @@ class mouse_controller :
 public:
 	mouse_controller(
 		event_buses &_buses,
-		std::vector<uint8_t>
-		_watched_buttons,
+		std::vector<uint8_t> _watched_buttons,
+		// -1 to disable mouse lock
 		short _mouse_unlock_key
 	);
 

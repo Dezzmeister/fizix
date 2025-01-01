@@ -76,6 +76,9 @@ public:
 	);
 
 	void reset();
+	void add_triangle(const triangle &tri);
+	void regenerate_edge_geom();
+
 	void set_vert_label_type(vert_label_type _label_type);
 	void set_vert_labels_visible(bool _visible);
 	bool are_vert_labels_visible() const;
@@ -118,7 +121,6 @@ private:
 	vert_label_type label_type{ vert_label_type::IndexAndPos };
 	bool show_vert_labels{};
 
-	void regenerate_edge_geom();
 	void remove_face_geoms(const std::vector<face> &faces);
 	aabb calculate_aabb() const;
 };

@@ -214,6 +214,26 @@ namespace parsing {
 		return false;
 	}
 
+	bool parse_string(parser_state &state, const std::wstring &expected, std::wstringstream &out) {
+		for (wchar_t c : expected) {
+			if (! parse_one_char(state, c, out)) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	size_t parse_until(parser_state &state, wchar_t sentinel, std::wstringstream &out) {
+		size_t start = state.get_total_chars();
+
+		while (! state.eof() && state.peek() != sentinel) {
+			out << state.get();
+		}
+
+		return state.get_total_chars() - start;
+	}
+
 	bool parse_char_in_range(parser_state &state, wchar_t start, wchar_t end, std::wstringstream &out) {
 		wchar_t curr_char = state.peek();
 

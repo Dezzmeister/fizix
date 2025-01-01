@@ -74,6 +74,16 @@ namespace parsing {
 	// char to the output stream and returns true. Returns false if unsuccessful.
 	bool parse_one_char(parser_state &state, wchar_t expected, std::wstringstream &out);
 
+	// Tries to parse a string. If successful, writes the string to the output stream and
+	// returns true. Returns false if unsuccessful. Note that this does not put parsed chars
+	// back into the input stream, even if there is only a partial match.
+	bool parse_string(parser_state &state, const std::wstring &expected, std::wstringstream &out);
+
+	// Parses chars until a given sentinel. Writes parsed chars to the output stream.
+	// Note that this function will return if it reaches EOF, so you should check that the next
+	// char is the expected sentinel. Returns the total number of chars parsed.
+	size_t parse_until(parser_state &state, wchar_t sentinel, std::wstringstream &out);
+
 	// Parses a character in the range [start, end].
 	bool parse_char_in_range(parser_state &state, wchar_t start, wchar_t end, std::wstringstream &out);
 

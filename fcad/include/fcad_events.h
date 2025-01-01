@@ -23,6 +23,7 @@ class mode_controller;
 class camera_controller;
 class action_controller;
 class command_controller;
+class preferences_controller;
 
 struct fcad_start_event {
 	platform_bridge &platform;
@@ -33,6 +34,7 @@ struct fcad_start_event {
 	camera_controller &camera;
 	action_controller &actions;
 	command_controller &commands;
+	preferences_controller &prefs;
 	world &mesh_world;
 
 	fcad_start_event(
@@ -44,6 +46,7 @@ struct fcad_start_event {
 		camera_controller &_camera,
 		action_controller &_actions,
 		command_controller &_commands,
+		preferences_controller &_prefs,
 		world &_mesh_world
 	) :
 		platform(_platform),
@@ -54,6 +57,7 @@ struct fcad_start_event {
 		camera(_camera),
 		actions(_actions),
 		commands(_commands),
+		prefs(_prefs),
 		mesh_world(_mesh_world)
 	{}
 };
@@ -199,6 +203,15 @@ struct write_stl_file_event {
 		path(_path) {}
 };
 
+// Fired before an STL file is read. If this event is cancelled, the STL file
+// won't be read.
+struct read_stl_file_event {
+	const std::filesystem::path path;
+
+	read_stl_file_event(const std::filesystem::path &_path) :
+		path(_path) {}
+};
+
 using fcad_event_bus = event_bus<
 	fcad_start_event,
 	window_input_event,
@@ -215,7 +228,8 @@ using fcad_event_bus = event_bus<
 	camera_move_event,
 	write_replay_file_event,
 	read_replay_file_event,
-	write_stl_file_event
+	write_stl_file_event,
+	read_stl_file_event
 >;
 
 namespace traits {
