@@ -403,6 +403,54 @@ namespace phys {
 			return false;
 		}
 
+		std::optional<face> polyhedron::superset_face(const face &f) const {
+			assert(f.num_verts() >= 3);
+
+			for (size_t i = 0; i < faces.size(); i++) {
+				const face &pf = faces[i];
+				int64_t pf_start = -1;
+
+				for (size_t j = 0; j < pf.num_verts(); j++) {
+					if (pf.vert(j) == f.vert(0)) {
+						pf_start = j + 1;
+						break;
+					}
+				}
+
+				if (pf_start == -1) {
+					continue;
+				}
+
+				size_t fi = 1;
+
+				for (size_t j = (size_t)pf_start; j < pf.num_verts(); j++) {
+					if (fi >= f.num_verts()) {
+						return pf;
+					}
+
+					if (pf.vert(j) == f.vert(fi)) {
+						fi++;
+					}
+				}
+
+				for (size_t j = 0; j < (size_t)pf_start; j++) {
+					if (fi >= f.num_verts()) {
+						return pf;
+					}
+
+					if (pf.vert(j) == f.vert(fi)) {
+						fi++;
+					}
+				}
+
+				if (fi >= f.num_verts()) {
+					return pf;
+				}
+			}
+
+			return std::nullopt;
+		}
+
 		void polyhedron::clear() {
 			faces.clear();
 			edges.clear();

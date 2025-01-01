@@ -61,6 +61,11 @@ namespace phys {
 			bool has_edge(const edge &e) const;
 			bool has_face(const face &f) const;
 
+			// Returns a face whose vertices include those given in `f`, in the order given
+			// in `f`. `f` is expected to have at least 3 vertices, and the polyhedron is expected
+			// to have at most one face with the vertices of `f` in the proper order.
+			std::optional<face> superset_face(const face &f) const;
+
 			std::ranges::range auto features() const &;
 			std::ranges::range auto features() const && = delete;
 

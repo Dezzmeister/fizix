@@ -478,20 +478,48 @@ bool geometry_controller::are_vert_labels_visible() const {
 }
 
 void geometry_controller::flip(const face &f) {
-	face flipped_f = f.flipped();
+	if (! poly.is_possible_face(f)) {
+		logger::debug("Tried to flip impossible face: " + traits::to_string(f));
+		platform->set_cue_text(L"Face refers to nonexistent vertex");
+
+		return;
+	}
+
+	if (f.num_verts() < 3) {
+		logger::debug("Tried to flip face with < 3 vertices: " + traits::to_string(f));
+		platform->set_cue_text(L"Face cannot have less than 3 vertices");
+
+		return;
+	}
+
+	std::optional<face> face_to_flip_opt = poly.superset_face(f);
+
+	if (! face_to_flip_opt) {
+		face_to_flip_opt = poly.superset_face(f.flipped());
+	}
+
+	if (! face_to_flip_opt) {
+		logger::debug("Tried to flip nonexistent face: " + traits::to_string(f));
+		platform->set_cue_text(L"Face does not exist");
+
+		return;
+	}
+
+	const face &face_to_flip = *face_to_flip_opt;
+	face flipped = face_to_flip.flipped();
 
 	for (face &pf : poly.faces) {
-		if (pf == f || pf == flipped_f) {
-			pf = pf.flipped();
+		if (pf == face_to_flip) {
+			pf = flipped;
 		}
 	}
 
 	for (auto &rf : face_meshes) {
-		if (rf->f != f && rf->f != flipped_f) {
+		if (rf->f != face_to_flip) {
 			continue;
 		}
 
-		rf->f = rf->f.flipped();
+		rf->f = flipped;
 		mesh_side side = rf->m.get_side();
 
 		assert(side != rf->inv_m.get_side());
@@ -772,7 +800,6 @@ bool geometry_controller::delete_edge(const edge &e) {
 }
 
 bool geometry_controller::delete_face(const face &f) {
-	// TODO: Delete by subset of face vertices
 	if (! poly.is_possible_face(f)) {
 		logger::debug("Tried to delete impossible face: " + traits::to_string(f));
 		platform->set_cue_text(L"Face refers to nonexistent vertex");
@@ -780,25 +807,37 @@ bool geometry_controller::delete_face(const face &f) {
 		return false;
 	}
 
-	face flipped_f = f.flipped();
+	if (f.num_verts() < 3) {
+		logger::debug("Tried to delete face with < 3 vertices: " + traits::to_string(f));
+		platform->set_cue_text(L"Face cannot have less than 3 vertices");
 
-	if (! poly.has_face(f) && ! poly.has_face(flipped_f)) {
+		return false;
+	}
+
+	face flipped_f = f.flipped();
+	std::optional<face> face_to_delete_opt = poly.superset_face(f);
+
+	if (! face_to_delete_opt) {
+		face_to_delete_opt = poly.superset_face(flipped_f);
+	}
+
+	if (! face_to_delete_opt) {
 		logger::debug("Tried to delete nonexistent face: " + traits::to_string(f));
 		platform->set_cue_text(L"Face does not exist");
 
 		return false;
 	}
 
-	delete_face_event event(f);
+	const face &face_to_delete = *face_to_delete_opt;
+
+	delete_face_event event(face_to_delete);
 	if (events.fire(event)) {
 		return false;
 	}
 
-	std::vector<face> deleted_faces = poly.remove_face(f);
-	std::vector<face> deleted_faces_rev = poly.remove_face(flipped_f);
+	std::vector<face> deleted_faces = poly.remove_face(face_to_delete);
 
 	remove_face_geoms(deleted_faces);
-	remove_face_geoms(deleted_faces_rev);
 	regenerate_edge_geom();
 
 	return true;
