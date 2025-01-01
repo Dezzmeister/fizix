@@ -114,6 +114,8 @@ namespace phys {
 
 			vec3 at(const polyhedron &p, real l) const;
 
+			friend bool is_colinear(const polyhedron &p, const edge &e1, const edge &e2);
+
 			friend bool operator==(const edge &e1, const edge &e2);
 		};
 
@@ -186,6 +188,7 @@ namespace phys {
 
 			face_cut_result cut(size_t from_idx, size_t to_idx) const;
 			bool can_make_cut(size_t from_idx, size_t to_idx) const;
+			void fix_colinear_edges(const polyhedron &p);
 
 			// Returns a copy of this face with the vertices reversed
 			face flipped() const;

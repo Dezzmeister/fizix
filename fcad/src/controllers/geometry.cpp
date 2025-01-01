@@ -92,62 +92,10 @@ namespace {
 			return;
 		}
 
-		size_t v1_idx = (size_t)(float_dist(rand_engine) * f.num_verts());
-		size_t v2_idx = (size_t)(float_dist(rand_engine) * f.num_verts());
+		face_cut_result cut = f.cut(0, 2);
 
-		// We may have to adjust the chosen vertices to ensure that they
-		// actually split the polygon
-		if (v2_idx == v1_idx) {
-			v2_idx += 2;
-
-			if (v2_idx >= f.num_verts()) {
-				v2_idx -= f.num_verts();
-			}
-		} else if (v2_idx == v1_idx + 1) {
-			v2_idx++;
-
-			if (v2_idx == f.num_verts()) {
-				v2_idx = 0;
-			}
-		} else if (v1_idx == (f.num_verts() - 1) && v2_idx == 0) {
-			v2_idx++;
-		} else if (v1_idx == v2_idx + 1) {
-			v1_idx++;
-
-			if (v1_idx == f.num_verts()) {
-				v1_idx = 0;
-			}
-		} else if (v1_idx == 0 && v2_idx == (f.num_verts() - 1)) {
-			v1_idx++;
-		}
-
-		assert(v1_idx < f.num_verts());
-		assert(v2_idx < f.num_verts());
-
-		if (v2_idx < v1_idx) {
-			std::swap(v1_idx, v2_idx);
-		}
-
-		std::vector<size_t> f1_verts{};
-		std::vector<size_t> f2_verts{};
-
-		for (size_t i = v1_idx; i <= v2_idx; i++) {
-			f1_verts.push_back(f.vert(i));
-		}
-
-		for (size_t i = v2_idx; i < f.num_verts(); i++) {
-			f2_verts.push_back(f.vert(i));
-		}
-
-		for (size_t i = 0; i <= v1_idx; i++) {
-			f2_verts.push_back(f.vert(i));
-		}
-
-		face f1(f1_verts);
-		face f2(f2_verts);
-
-		triangulate(p, f1, out);
-		triangulate(p, f2, out);
+		triangulate(p, cut.f1, out);
+		triangulate(p, cut.f2, out);
 	}
 
 	void triangulate_nonconvex(
@@ -182,6 +130,9 @@ namespace {
 
 			face_cut_result cut = f.cut(vi1, i);
 
+			cut.f1.fix_colinear_edges(p);
+			cut.f2.fix_colinear_edges(p);
+
 			// The cut might create a polygon that lies entirely outside of the
 			// original polygon. If that happens, the new face's normal will be flipped
 			vec3 n1 = cut.f1.normal(p);
@@ -195,10 +146,16 @@ namespace {
 				continue;
 			}
 
-			vec3 v1s = p.vertices[f.vert(vi1)].v;
-			vec3 v2e = p.vertices[f.vert(i)].v;
+			size_t pvi1 = f.vert(vi1);
+			size_t pi = f.vert(i);
+			vec3 v1s = p.vertices[pvi1].v;
+			vec3 v2e = p.vertices[pi].v;
 
-			for (const edge &e : util::concat_views(cut.f1.edges(), cut.f2.edges())) {
+			for (const edge &e : f.edges()) {
+				if (e.v_is[0] == pvi1 || e.v_is[0] == pi || e.v_is[1] == pvi1 || e.v_is[1] == pi) {
+					continue;
+				}
+
 				vec3 ev = e.h(p).v - e.t(p).v;
 				std::optional<vec2> ts = phys::line_line_intersection(
 					e.t(p).v,
@@ -211,7 +168,7 @@ namespace {
 					continue;
 				}
 
-				if (ts->x > 0.0_r && ts->x < 1.0_r && ts->y > 0.0_r && ts->y < 1.0_r) {
+				if (ts->x >= 0.0_r && ts->x <= 1.0_r && ts->y >= 0.0_r && ts->y <= 1.0_r) {
 					// The new edge intersects an existing edge
 					goto next_cut;
 				}

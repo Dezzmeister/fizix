@@ -15,7 +15,7 @@ void edit_history_controller::add_command(const std::wstring &command) {
 		return;
 	}
 
-	if (curr_pos + 1 < commands.size()) {
+	if (curr_pos < commands.size()) {
 		commands.erase(std::begin(commands) + curr_pos, std::end(commands));
 	}
 

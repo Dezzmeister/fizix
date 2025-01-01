@@ -517,6 +517,14 @@ namespace phys {
 			return (1 - l) * t(p).v + l * h(p).v;
 		}
 
+		bool is_colinear(const polyhedron &p, const edge &e1, const edge &e2) {
+			vec3 e1v = e1.t(p).v - e1.h(p).v;
+			vec3 e2v = e2.t(p).v - e2.h(p).v;
+
+			// TODO: Profile & optimize
+			return cross(e1v, e2v) == vec3(0.0_r);
+		}
+
 		face::face(const std::vector<size_t> &_vs, convexity _convexity_hint) : 
 			vs(_vs), convexity_hint(_convexity_hint) {}
 
@@ -711,8 +719,7 @@ namespace phys {
 			vec3 dir = cross(e1.h(p).v - e1.t(p).v, e2.h(p).v - e2.t(p).v);
 
 			for (it; it != std::end(all_edges); it++) {
-				// TODO: epsilon?
-				if (dot(dir, it->h(p).v - it->t(p).v) != 0.0_r) {
+				if (std::abs(dot(dir, it->h(p).v - it->t(p).v)) > 1e-6f) {
 					return false;
 				}
 			}
@@ -791,6 +798,18 @@ namespace phys {
 				}
 			}
 
+			vi0 = vs.size() - 2;
+			vi1 = vs.size() - 1;
+			vi2 = 0;
+			e1 = p.vertices[vs[vi1]].v - p.vertices[vs[vi0]].v;
+			e2 = p.vertices[vs[vi2]].v - p.vertices[vs[vi1]].v;
+
+			vec3 curr_dir = cross(e1, e2);
+
+			if (dot(dir, curr_dir) <= 0) {
+				return false;
+			}
+
 			return true;
 		}
 
@@ -845,6 +864,41 @@ namespace phys {
 			}
 
 			return ! (start == 0 && end == vs.size() - 1);
+		}
+
+		void face::fix_colinear_edges(const polyhedron &p) {
+			assert(vs.size() >= 3);
+			bool had_colinear_edges = false;
+
+			for (size_t i = vs.size() - 2; i >= 1; i--) {
+				edge e1(vs[i - 1], vs[i]);
+				edge e2(vs[i], vs[i + 1]);
+
+				if (is_colinear(p, e1, e2)) {
+					had_colinear_edges = true;
+					vs.erase(std::begin(vs) + i);
+				}
+			}
+
+			edge e1(vs[vs.size() - 1], vs[0]);
+			edge e2(vs[0], vs[1]);
+
+			if (is_colinear(p, e1, e2)) {
+				had_colinear_edges = true;
+				vs.erase(std::begin(vs));
+			}
+
+			e1 = edge(vs[vs.size() - 2], vs[vs.size() - 1]);
+			e2 = edge(vs[vs.size() - 1], vs[0]);
+
+			if (is_colinear(p, e1, e2)) {
+				had_colinear_edges = true;
+				vs.erase(std::begin(vs) + vs.size() - 1);
+			}
+
+			if (had_colinear_edges) {
+				fix_colinear_edges(p);
+			}
 		}
 
 		face face::flipped() const {

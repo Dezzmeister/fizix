@@ -111,14 +111,15 @@ void file_controller::read_replay_file(const std::filesystem::path &path) {
 		return;
 	}
 
-	geom->reset();
-
 	std::wstring line = parse_line(state);
 
 	if (line != L"FCAD replay file") {
 		logger::error("Invalid replay file (missing magic string header)");
 		return;
 	}
+
+	geom->reset();
+	edit_history->clear();
 
 	line = parse_line(state);
 
