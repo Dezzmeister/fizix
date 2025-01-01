@@ -20,9 +20,7 @@ void delete_face_command_impl::on_submit(const std::wstring &args) {
 		return;
 	}
 
-	delete_face_event event(*face_opt);
-
-	if (! events.fire(event)) {
+	if (geom->delete_face(*face_opt)) {
 		history->add_command(L":df " + args);
 	}
 }

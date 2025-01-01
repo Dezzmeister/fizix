@@ -106,27 +106,38 @@ struct command_submit_event {
 		command(_command) {}
 };
 
-struct new_vertex_event {
+// Fired just before a vertex is created. At this point, the
+// vertex has been validated and is about to be added to the
+// geometry. If this event is cancelled, the vertex won't be added.
+struct create_vertex_event {
 	const vec3 vertex;
 
-	new_vertex_event(const vec3 &_vertex) :
+	create_vertex_event(const vec3 &_vertex) :
 		vertex(_vertex) {}
 };
 
-struct new_edge_event {
+// Fired just before an edge is created. At this point, the
+// edge has been validated and is about to be added to the
+// geometry. If this event is cancelled, the edge won't be added.
+struct create_edge_event {
 	const edge e;
 
-	new_edge_event(const edge &_e) :
+	create_edge_event(const edge &_e) :
 		e(_e) {}
 };
 
-struct new_face_event {
+// Fired just before a face is created. At this point, the
+// face has been validated and is about to be added to the
+// geometry. If this event is cancelled, the face won't be added.
+struct create_face_event {
 	const face f;
 
-	new_face_event(const face &_f) :
+	create_face_event(const face &_f) :
 		f(_f) {}
 };
 
+// Fired just before a vertex is deleted. If this event is cancelled,
+// the vertex won't be deleted.
 struct delete_vertex_event {
 	const size_t vertex_idx;
 
@@ -134,6 +145,8 @@ struct delete_vertex_event {
 		vertex_idx(_vertex_idx) {}
 };
 
+// Fired just before an edge is deleted. If this event is cancelled,
+// the edge won't be deleted.
 struct delete_edge_event {
 	const edge e;
 
@@ -141,6 +154,8 @@ struct delete_edge_event {
 		e(_e) {}
 };
 
+// Fired just before a face is deleted. If this event is cancelled,
+// the face won't be deleted.
 struct delete_face_event {
 	const face f;
 
@@ -219,9 +234,9 @@ using fcad_event_bus = event_bus<
 	command_cancel_event,
 	command_input_event,
 	command_submit_event,
-	new_vertex_event,
-	new_edge_event,
-	new_face_event,
+	create_vertex_event,
+	create_edge_event,
+	create_face_event,
 	delete_vertex_event,
 	delete_edge_event,
 	delete_face_event,

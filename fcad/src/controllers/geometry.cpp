@@ -299,14 +299,9 @@ geometry_controller::geometry_controller(
 ) :
 	event_listener<program_start_event>(&_buses.lifecycle),
 	event_listener<fcad_start_event>(&_events),
-	event_listener<new_vertex_event>(&_events),
-	event_listener<new_edge_event>(&_events),
-	event_listener<new_face_event>(&_events),
-	event_listener<delete_vertex_event>(&_events),
-	event_listener<delete_edge_event>(&_events),
-	event_listener<delete_face_event>(&_events),
 	event_listener<post_processing_event>(&_buses.render),
 	event_listener<camera_move_event>(&_events),
+	events(_events),
 	mesh_world(_mesh_world),
 	vert_geom(
 		std::vector<float>({}),
@@ -346,12 +341,6 @@ geometry_controller::geometry_controller(
 {
 	event_listener<program_start_event>::subscribe();
 	event_listener<fcad_start_event>::subscribe();
-	event_listener<new_vertex_event>::subscribe();
-	event_listener<new_edge_event>::subscribe();
-	event_listener<new_face_event>::subscribe();
-	event_listener<delete_vertex_event>::subscribe();
-	event_listener<delete_edge_event>::subscribe();
-	event_listener<delete_face_event>::subscribe();
 	event_listener<post_processing_event>::subscribe();
 	event_listener<camera_move_event>::subscribe();
 
@@ -562,123 +551,141 @@ int geometry_controller::handle(fcad_start_event &event) {
 	return 0;
 }
 
-int geometry_controller::handle(new_vertex_event &event) {
+bool geometry_controller::create_vertex(const vec3 &pos) {
 	for (const vertex &v : poly.vertices) {
-		if (event.vertex == v.v) {
+		if (pos == v.v) {
 			platform->set_cue_text(L"Vertex already exists");
 
-			return 1;
+			return false;
 		}
 	}
 
+	create_vertex_event event(pos);
+	if (events.fire(event)) {
+		return false;
+	}
+
 	vert_geom.add_vertex(
-		event.vertex,
+		pos,
 		glm::vec3(0.0f),
 		glm::vec2(0.0f)
 	);
-	poly.add_vertex(event.vertex);
+	poly.add_vertex(pos);
 
 	aabb bounds = calculate_aabb();
 	float max = std::max(bounds.max_diff(), 2.0f);
 
 	axes.set_max_axis(max / 2.0f);
 
-	return 0;
+	return true;
 }
 
-int geometry_controller::handle(new_edge_event &event) {
-	if (! poly.is_possible_edge(event.e)) {
-		logger::debug("Rejecting impossible edge: " + traits::to_string(event.e));
+bool geometry_controller::create_edge(const edge &e) {
+	if (! poly.is_possible_edge(e)) {
+		logger::debug("Rejecting impossible edge: " + traits::to_string(e));
 		platform->set_cue_text(L"Edge refers to a nonexistent vertex");
 
-		return 1;
+		return false;
 	}
 
-	if (event.e.v_is[0] == event.e.v_is[1]) {
-		logger::debug("Rejecting impossible edge: " + traits::to_string(event.e));
+	if (e.v_is[0] == e.v_is[1]) {
+		logger::debug("Rejecting impossible edge: " + traits::to_string(e));
 		platform->set_cue_text(L"Edge is degenerate");
 
-		return 1;
+		return false;
 	}
 
-	for (const edge &e : poly.edges) {
-		if (event.e == e) {
+	for (const edge &pe : poly.edges) {
+		if (pe == e) {
 			platform->set_cue_text(L"Edge already exists");
 
-			return 1;
+			return false;
 		}
 	}
 
-	edge_geom.add_vertex(
-		event.e.t(poly).v,
-		glm::vec3(0.0f),
-		glm::vec2(0.0f)
-	);
-	edge_geom.add_vertex(
-		event.e.h(poly).v,
-		glm::vec3(0.0f),
-		glm::vec2(0.0f)
-	);
-	poly.add_edge(event.e);
+	create_edge_event event(e);
 
-	return 0;
+	if (events.fire(event)) {
+		return false;
+	}
+
+	edge_geom.add_vertex(
+		e.t(poly).v,
+		glm::vec3(0.0f),
+		glm::vec2(0.0f)
+	);
+	edge_geom.add_vertex(
+		e.h(poly).v,
+		glm::vec3(0.0f),
+		glm::vec2(0.0f)
+	);
+	poly.add_edge(e);
+
+	return true;
 }
 
-int geometry_controller::handle(new_face_event &event) {
-	if (! poly.is_possible_face(event.f)) {
-		logger::debug("Rejecting impossible face: " + traits::to_string(event.f));
+bool geometry_controller::create_face(const face &f) {
+	if (! poly.is_possible_face(f)) {
+		logger::debug("Rejecting impossible face: " + traits::to_string(f));
 		platform->set_cue_text(L"Face refers to a nonexistent vertex");
 
-		return 1;
+		return false;
 	}
 
-	if (event.f.num_verts() < 3) {
-		logger::debug("Rejecting impossible face: " + traits::to_string(event.f));
+	if (f.num_verts() < 3) {
+		logger::debug("Rejecting impossible face: " + traits::to_string(f));
 		platform->set_cue_text(L"Face is degenerate");
 
-		return 1;
+		return false;
 	}
 
-	for (size_t i = 0; i < event.f.num_verts() - 1; i++) {
-		if (event.f.vert(i) == event.f.vert(i + 1)) {
-			logger::debug("Rejecting impossible face: " + traits::to_string(event.f));
+	for (size_t i = 0; i < f.num_verts() - 1; i++) {
+		if (f.vert(i) == f.vert(i + 1)) {
+			logger::debug("Rejecting impossible face: " + traits::to_string(f));
 			platform->set_cue_text(L"Face contains a degenerate edge");
 
-			return 1;
+			return false;
 		}
 	}
 
-	for (const face &f : poly.faces) {
-		if (event.f == f) {
+	for (const face &pf : poly.faces) {
+		if (pf == f) {
 			platform->set_cue_text(L"Face already exists");
 
-			return 1;
+			return false;
 		}
 	}
 
-	if (! event.f.is_coplanar(poly)) {
+	if (! f.is_coplanar(poly)) {
 		platform->set_cue_text(L"Face is not coplanar");
 
-		return 1;
+		return false;
 	}
 
-	poly.add_face_and_new_edges(event.f);
+	poly.add_face_and_new_edges(f);
 
 	std::vector<float> face_verts{};
 	try {
-		triangulate(poly, event.f, face_verts);
+		triangulate(poly, f, face_verts);
 	} catch (geometry_error &err) {
-		logger::error("Failed to triangulate " + traits::to_string(event.f) + std::string(err.what()));
+		logger::error("Failed to triangulate " + traits::to_string(f) + std::string(err.what()));
 		platform->set_cue_text(L"Face is invalid");
 
-		poly.remove_face_and_dead_edges(event.f);
+		poly.remove_face_and_dead_edges(f);
 
-		return 1;
+		return false;
+	}
+
+	create_face_event event(f);
+	if (events.fire(event)) {
+		poly.remove_face_and_dead_edges(f);
+
+		return false;
 	}
 
 	face_meshes.emplace_back(
 		std::make_unique<renderable_face>(
-			event.f,
+			f,
 			&face_mtl,
 			&face_inv_mtl,
 			geometry(
@@ -693,29 +700,34 @@ int geometry_controller::handle(new_face_event &event) {
 	// TODO: Be smarter about this
 	regenerate_edge_geom();
 
-	return 0;
+	return true;
 }
 
-int geometry_controller::handle(delete_vertex_event &event) {
-	if (event.vertex_idx >= poly.vertices.size()) {
-		logger::debug("Tried to delete impossible vertex: " + traits::to_string(event.vertex_idx));
+bool geometry_controller::delete_vertex(size_t vertex_idx) {
+	if (vertex_idx >= poly.vertices.size()) {
+		logger::debug("Tried to delete impossible vertex: " + traits::to_string(vertex_idx));
 		platform->set_cue_text(L"Vertex does not exist");
 
-		return 1;
+		return false;
 	}
 
-	std::vector<face> deleted_faces = poly.remove_vertex(event.vertex_idx);
+	delete_vertex_event event(vertex_idx);
+	if (events.fire(event)) {
+		return false;
+	}
+
+	std::vector<face> deleted_faces = poly.remove_vertex(vertex_idx);
 
 	remove_face_geoms(deleted_faces);
 
-	vert_geom.remove_vertex(event.vertex_idx);
+	vert_geom.remove_vertex(vertex_idx);
 	regenerate_edge_geom();
 
 	for (auto &fm : face_meshes) {
 		for (size_t i = 0; i < fm->f.num_verts(); i++) {
 			size_t v = fm->f.vert(i);
 
-			if (v > event.vertex_idx) {
+			if (v > vertex_idx) {
 				fm->f.set_vert(i, v - 1);
 			}
 		}
@@ -728,41 +740,68 @@ int geometry_controller::handle(delete_vertex_event &event) {
 		axes.set_max_axis(max / 2.0f);
 	}
 
-	return 0;
+	return true;
 }
 
-int geometry_controller::handle(delete_edge_event &event) {
-	if (! poly.is_possible_edge(event.e)) {
-		logger::debug("Tried to delete impossible edge: " + traits::to_string(event.e));
+bool geometry_controller::delete_edge(const edge &e) {
+	if (! poly.is_possible_edge(e)) {
+		logger::debug("Tried to delete impossible edge: " + traits::to_string(e));
 		platform->set_cue_text(L"Edge refers to nonexistent vertex");
 
-		return 1;
+		return false;
 	}
 
-	std::vector<face> deleted_faces = poly.remove_edge(event.e);
+	if (! poly.has_edge(e)) {
+		logger::debug("Tried to delete nonexistent edge: " + traits::to_string(e));
+		platform->set_cue_text(L"Edge does not exist");
+
+		return false;
+	}
+
+	delete_edge_event event(e);
+	if (events.fire(event)) {
+		return false;
+	}
+
+	std::vector<face> deleted_faces = poly.remove_edge(e);
 
 	remove_face_geoms(deleted_faces);
 	regenerate_edge_geom();
 
-	return 0;
+	return true;
 }
 
-int geometry_controller::handle(delete_face_event &event) {
-	if (! poly.is_possible_face(event.f)) {
-		logger::debug("Tried to delete impossible face: " + traits::to_string(event.f));
+bool geometry_controller::delete_face(const face &f) {
+	// TODO: Delete by subset of face vertices
+	if (! poly.is_possible_face(f)) {
+		logger::debug("Tried to delete impossible face: " + traits::to_string(f));
 		platform->set_cue_text(L"Face refers to nonexistent vertex");
 
-		return 1;
+		return false;
 	}
 
-	std::vector<face> deleted_faces = poly.remove_face(event.f);
-	std::vector<face> deleted_faces_rev = poly.remove_face(event.f.flipped());
+	face flipped_f = f.flipped();
+
+	if (! poly.has_face(f) && ! poly.has_face(flipped_f)) {
+		logger::debug("Tried to delete nonexistent face: " + traits::to_string(f));
+		platform->set_cue_text(L"Face does not exist");
+
+		return false;
+	}
+
+	delete_face_event event(f);
+	if (events.fire(event)) {
+		return false;
+	}
+
+	std::vector<face> deleted_faces = poly.remove_face(f);
+	std::vector<face> deleted_faces_rev = poly.remove_face(flipped_f);
 
 	remove_face_geoms(deleted_faces);
 	remove_face_geoms(deleted_faces_rev);
 	regenerate_edge_geom();
 
-	return 0;
+	return true;
 }
 
 int geometry_controller::handle(post_processing_event &event) {

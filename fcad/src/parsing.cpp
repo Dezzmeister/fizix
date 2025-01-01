@@ -110,3 +110,101 @@ std::wstring parse_line(parsing::parser_state &state) {
 
 	return out.str();
 }
+
+std::optional<size_t> parse_explicit_vertex(parsing::parser_state &state) {
+	if (state.peek() != L'v') {
+		return std::nullopt;
+	}
+
+	state.get();
+
+	return parse_size(state);
+}
+
+std::optional<edge> parse_explicit_edge(parsing::parser_state &state) {
+	if (state.peek() != L'e') {
+		return std::nullopt;
+	}
+
+	state.get();
+
+	// TODO: Shared null sink
+	std::wstringstream sink{};
+
+	if (! parsing::parse_one_char(state, L'(', sink)) {
+		return std::nullopt;
+	}
+
+	parsing::parse_whitespace(state);
+
+	std::optional<size_t> v1 = parse_size(state);
+
+	if (! v1) {
+		return std::nullopt;
+	}
+
+	parsing::parse_one_char(state, L',', sink);
+	parsing::parse_whitespace(state);
+
+	std::optional<size_t> v2 = parse_size(state);
+
+	if (! v2) {
+		return std::nullopt;
+	}
+
+	parsing::parse_whitespace(state);
+
+	if (! parsing::parse_one_char(state, L')', sink)) {
+		return std::nullopt;
+	}
+
+	return edge(*v1, *v2);
+}
+
+std::optional<face> parse_explicit_face(parsing::parser_state &state) {
+	if (state.peek() != L'f') {
+		return std::nullopt;
+	}
+
+	state.get();
+
+	// TODO: Shared null sink
+	std::wstringstream sink{};
+
+	if (! parsing::parse_one_char(state, L'(', sink)) {
+		return std::nullopt;
+	}
+
+	parsing::parse_whitespace(state);
+
+	std::vector<size_t> verts{};
+	std::optional<size_t> vi = parse_size(state);
+
+	while (vi) {
+		verts.push_back(*vi);
+
+		parsing::parse_whitespace(state);
+		vi = parse_size(state);
+	}
+
+	if (! parsing::parse_one_char(state, L')', sink)) {
+		return std::nullopt;
+	}
+
+	return face(verts, convexity::Unspecified);
+}
+
+std::optional<index_feature> parse_explicit_feature(parsing::parser_state &state) {
+	wchar_t c = state.peek();
+
+	switch (c) {
+		case L'v':
+			return parse_explicit_vertex(state);
+		case L'e':
+			return parse_explicit_edge(state);
+		case L'f':
+			return parse_explicit_face(state);
+		default:
+			return std::nullopt;
+	}
+}

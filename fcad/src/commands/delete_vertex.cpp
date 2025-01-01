@@ -22,9 +22,7 @@ void delete_vertex_command_impl::on_submit(const std::wstring &args) {
 		return;
 	}
 
-	delete_vertex_event event(*vert_idx_opt);
-
-	if (! events.fire(event)) {
+	if (geom->delete_vertex(*vert_idx_opt)) {
 		history->add_command(L":dv " + args);
 	}
 }

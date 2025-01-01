@@ -383,6 +383,26 @@ namespace phys {
 			return true;
 		}
 
+		bool polyhedron::has_edge(const edge &e) const {
+			for (const edge &pe : edges) {
+				if (pe == e) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		bool polyhedron::has_face(const face &f) const {
+			for (const face &pf : faces) {
+				if (pf == f) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+
 		void polyhedron::clear() {
 			faces.clear();
 			edges.clear();

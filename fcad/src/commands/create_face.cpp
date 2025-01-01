@@ -20,9 +20,7 @@ void create_face_command_impl::on_submit(const std::wstring &args) {
 		return;
 	}
 
-	new_face_event event(*face_opt);
-
-	if (! events.fire(event)) {
+	if (geom->create_face(*face_opt)) {
 		history->add_command(L":f " + args);
 	}
 }

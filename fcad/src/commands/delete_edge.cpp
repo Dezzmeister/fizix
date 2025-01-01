@@ -28,9 +28,8 @@ void delete_edge_command_impl::on_submit(const std::wstring &args) {
 	}
 
 	edge e(*v1_opt, *v2_opt);
-	delete_edge_event event(e);
 
-	if (! events.fire(event)) {
+	if (geom->delete_edge(e)) {
 		history->add_command(L":de " + args);
 	}
 }

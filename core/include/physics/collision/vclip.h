@@ -58,6 +58,9 @@ namespace phys {
 			bool is_possible_edge(const edge &e) const;
 			bool is_possible_face(const face &f) const;
 
+			bool has_edge(const edge &e) const;
+			bool has_face(const face &f) const;
+
 			std::ranges::range auto features() const &;
 			std::ranges::range auto features() const && = delete;
 
@@ -128,6 +131,8 @@ namespace phys {
 		struct face_cut_result;
 
 		struct face {
+			// TODO: Make Unspecified the default and make Convex explicit
+			// in the VClip code
 			face(const std::vector<size_t> &_vs, convexity _convexity_hint = convexity::Convex);
 
 			// Returns a view that will yield neighboring vertices

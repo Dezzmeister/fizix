@@ -138,9 +138,7 @@ void create_vertex_command_impl::on_submit(const std::wstring &args) {
 		return;
 	}
 
-	new_vertex_event event(*vertex_opt);
-
-	if (! events.fire(event)) {
+	if (geom->create_vertex(*vertex_opt)) {
 		history->add_command(L":v " + args);
 	}
 }

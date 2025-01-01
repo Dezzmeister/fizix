@@ -35,9 +35,8 @@ void create_edge_command_impl::on_submit(const std::wstring &args) {
 	}
 
 	edge e(*edge_opt.start, *edge_opt.end);
-	new_edge_event event(e);
 
-	if (! events.fire(event)) {
+	if (geom->create_edge(e)) {
 		history->add_command(L":e " + args);
 	}
 }
