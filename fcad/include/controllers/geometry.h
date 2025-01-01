@@ -81,11 +81,17 @@ public:
 	void add_triangle(const triangle &tri);
 	void regenerate_edge_geom();
 
+	void flip(const face &f);
+
 	void set_vert_label_type(vert_label_type _label_type);
 	void set_vert_labels_visible(bool _visible);
 	bool are_vert_labels_visible() const;
 
-	void flip(const face &f);
+	std::optional<vec3> vertex_pos(size_t vertex_idx) const;
+	std::optional<vec3> centroid(const edge &e) const;
+	std::optional<vec3> centroid(const face &f) const;
+
+	std::optional<face> superset_face(const face &f) const;
 
 	std::experimental::generator<triangle> faces() const;
 

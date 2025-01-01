@@ -111,6 +111,32 @@ std::wstring parse_line(parsing::parser_state &state) {
 	return out.str();
 }
 
+std::optional<vec3> parse_explicit_vec3(parsing::parser_state &state) {
+	if (state.peek() != L'(') {
+		return std::nullopt;
+	}
+
+	state.get();
+
+	parsing::parse_whitespace(state);
+
+	std::optional<vec3> vec3_opt = parse_vec3(state).try_as_vec3();
+
+	if (! vec3_opt) {
+		return std::nullopt;
+	}
+
+	parsing::parse_whitespace(state);
+
+	if (state.peek() != ')') {
+		return std::nullopt;
+	}
+
+	state.get();
+
+	return vec3_opt;
+}
+
 std::optional<size_t> parse_explicit_vertex(parsing::parser_state &state) {
 	if (state.peek() != L'v') {
 		return std::nullopt;

@@ -585,6 +585,10 @@ namespace phys {
 			return (1 - l) * t(p).v + l * h(p).v;
 		}
 
+		vec3 edge::centroid(const polyhedron &p) const {
+			return (t(p).v + h(p).v) / 2.0_r;
+		}
+
 		bool is_colinear(const polyhedron &p, const edge &e1, const edge &e2) {
 			vec3 e1v = e1.t(p).v - e1.h(p).v;
 			vec3 e2v = e2.t(p).v - e2.h(p).v;
@@ -974,6 +978,16 @@ namespace phys {
 				std::ranges::views::reverse(vs) | std::ranges::to<std::vector<size_t>>(),
 				convexity_hint
 			);
+		}
+
+		vec3 face::centroid(const polyhedron &p) const {
+			vec3 out{};
+
+			for (const vertex &v : vertices(p)) {
+				out += v.v;
+			}
+
+			return out / (real)vs.size();
 		}
 
 		vplane::vplane(

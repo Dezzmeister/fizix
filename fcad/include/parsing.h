@@ -23,8 +23,9 @@ std::optional<face> parse_implicit_face(parsing::parser_state &state);
 std::wstring parse_line(parsing::parser_state &state);
 
 // Each of these "explicit" functions expects the lookahead to match a distinct
-// character (either 'v', 'e', or 'f'). The input stream will only be mutated
+// character (either '(', 'v', 'e', or 'f'). The input stream will only be mutated
 // if the lookahead matches the marker character.
+std::optional<vec3> parse_explicit_vec3(parsing::parser_state &state);
 std::optional<size_t> parse_explicit_vertex(parsing::parser_state &state);
 std::optional<edge> parse_explicit_edge(parsing::parser_state &state);
 std::optional<face> parse_explicit_face(parsing::parser_state &state);

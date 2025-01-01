@@ -477,6 +477,60 @@ bool geometry_controller::are_vert_labels_visible() const {
 	return show_vert_labels;
 }
 
+std::optional<vec3> geometry_controller::vertex_pos(size_t vertex_idx) const {
+	if (vertex_idx >= poly.vertices.size()) {
+		logger::debug("Tried to query impossible vertex: " + traits::to_string(vertex_idx));
+		platform->set_cue_text(L"Vertex does not exist");
+
+		return std::nullopt;
+	}
+
+	return poly.vertices[vertex_idx].v;
+}
+
+std::optional<vec3> geometry_controller::centroid(const edge &e) const {
+	if (! poly.is_possible_edge(e)) {
+		logger::debug("Tried to query impossible edge: " + traits::to_string(e));
+		platform->set_cue_text(L"Edge refers to nonexistent vertex");
+
+		return std::nullopt;
+	}
+
+	return e.centroid(poly);
+}
+
+std::optional<vec3> geometry_controller::centroid(const face &f) const {
+	// TODO: Clean up validation
+	if (! poly.is_possible_face(f)) {
+		logger::debug("Tried to query impossible face: " + traits::to_string(f));
+		platform->set_cue_text(L"Face refers to nonexistent vertex");
+
+		return std::nullopt;
+	}
+
+	if (f.num_verts() < 3) {
+		logger::debug("Tried to query face with < 3 vertices: " + traits::to_string(f));
+		platform->set_cue_text(L"Face cannot have less than 3 vertices");
+
+		return std::nullopt;
+	}
+
+	return f.centroid(poly);
+}
+
+std::optional<face> geometry_controller::superset_face(const face &f) const {
+	// TODO: Set cue text?
+	if (! poly.is_possible_face(f)) {
+		return std::nullopt;
+	}
+
+	if (f.num_verts() < 3) {
+		return std::nullopt;
+	}
+
+	return poly.superset_face(f);
+}
+
 void geometry_controller::flip(const face &f) {
 	if (! poly.is_possible_face(f)) {
 		logger::debug("Tried to flip impossible face: " + traits::to_string(f));

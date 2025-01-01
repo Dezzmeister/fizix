@@ -121,6 +121,7 @@ namespace phys {
 			bool has_vertex(size_t i) const;
 
 			vec3 at(const polyhedron &p, real l) const;
+			vec3 centroid(const polyhedron &p) const;
 
 			friend bool is_colinear(const polyhedron &p, const edge &e1, const edge &e2);
 
@@ -202,6 +203,8 @@ namespace phys {
 
 			// Returns a copy of this face with the vertices reversed
 			face flipped() const;
+
+			vec3 centroid(const polyhedron &p) const;
 
 			friend bool operator==(const face &f1, const face &f2);
 
