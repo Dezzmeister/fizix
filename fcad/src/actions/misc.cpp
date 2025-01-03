@@ -18,3 +18,11 @@ void redo_edit_impl::on_accept(char) {
 void toggle_labels_impl::on_accept(char) {
 	geom->set_vert_labels_visible(! geom->are_vert_labels_visible());
 }
+
+void yank_face_impl::on_accept(char) {
+	mode->set_mode(edit_mode::Command, L":yf ");
+}
+
+void paste_impl::on_accept(char) {
+	mode->set_mode(edit_mode::Command, L":p ");
+}

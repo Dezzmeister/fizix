@@ -3,6 +3,7 @@
 #include <mesh.h>
 #include <world.h>
 #include "fcad_events.h"
+#include "parsing.h"
 
 struct renderable_face : traits::pinned<renderable_face> {
 	face f;
@@ -91,9 +92,10 @@ public:
 
 	const polyhedron& get_poly() const;
 
-	std::optional<vec3> vertex_pos(size_t vertex_idx) const;
+	std::optional<vec3> centroid(size_t vertex_idx) const;
 	std::optional<vec3> centroid(const edge &e) const;
 	std::optional<vec3> centroid(const face &f) const;
+	std::optional<vec3> centroid(const vec3_or_index_feature &feat) const;
 
 	std::optional<face> superset_face(const face &f) const;
 

@@ -15,34 +15,29 @@ void yank_face_command_impl::on_submit(const std::wstring &args) {
 		return;
 	}
 
-	const face &f = *face_opt;
-	std::optional<face> superset_opt = geom->superset_face(f);
+	std::optional<face> match_opt = geom->get_matching_face(*face_opt);
 
-	if (! superset_opt) {
-		superset_opt = geom->superset_face(f.flipped());
-	}
-
-	if (! superset_opt) {
-		platform->set_cue_text(L"Face does not exist");
+	if (! match_opt) {
 		return;
 	}
 
-	std::optional<vec3> centroid_opt = geom->centroid(*superset_opt);
-
-	if (! centroid_opt) {
-		return;
-	}
-
-	polyhedron p = geom->get_poly().isolated(*superset_opt);
-	vec3 centroid = *centroid_opt;
-
-	for (vertex &v : p.vertices) {
-		v.v -= centroid;
-	}
+	polyhedron p = geom->get_poly().isolated(*match_opt);
 
 	parsing::parse_whitespace(state);
 
 	if (state.eof()) {
+		std::optional<vec3> centroid_opt = geom->centroid(*match_opt);
+
+		if (! centroid_opt) {
+			return;
+		}
+
+		vec3 centroid = *centroid_opt;
+
+		for (vertex &v : p.vertices) {
+			v.v -= centroid;
+		}
+
 		clipboard->add_poly(clipboard_controller::selection_name(), p);
 		history->add_command(L":yf " + args);
 		return;
@@ -55,28 +50,14 @@ void yank_face_command_impl::on_submit(const std::wstring &args) {
 		return;
 	}
 
-	vec3_or_index_feature vec3_or_index = *vec3_or_index_opt;
-	std::optional<vec3> pos_opt{};
+	parsing::parse_whitespace(state);
 
-	// TODO: DRY (:focus)
-	if (std::holds_alternative<vec3>(vec3_or_index)) {
-		pos_opt = std::get<vec3>(vec3_or_index);
-	} else if (std::holds_alternative<size_t>(vec3_or_index)) {
-		pos_opt = geom->vertex_pos(std::get<size_t>(vec3_or_index));
-	} else if (std::holds_alternative<edge>(vec3_or_index)) {
-		pos_opt = geom->centroid(std::get<edge>(vec3_or_index));
-	} else if (std::holds_alternative<face>(vec3_or_index)) {
-		std::optional<face> offset_superset_opt = geom->get_matching_face(
-			std::get<face>(vec3_or_index)
-		);
-
-		if (! offset_superset_opt) {
-			platform->set_cue_text(L"Face does not exist");
-			return;
-		}
-
-		pos_opt = geom->centroid(*offset_superset_opt);
+	if (! state.eof()) {
+		platform->set_cue_text(L"Unexpected trailing chairs");
+		return;
 	}
+
+	std::optional<vec3> pos_opt = geom->centroid(*vec3_or_index_opt);
 
 	if (! pos_opt) {
 		return;

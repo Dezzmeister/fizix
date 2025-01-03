@@ -20,7 +20,7 @@ void paste_command_impl::on_submit(const std::wstring &args) {
 		pos = std::get<vec3>(vec3_or_index);
 	} else if (std::holds_alternative<size_t>(vec3_or_index)) {
 		size_t vertex_idx = std::get<size_t>(vec3_or_index);
-		std::optional<vec3> pos_opt = geom->vertex_pos(vertex_idx);
+		std::optional<vec3> pos_opt = geom->centroid(vertex_idx);
 
 		if (! pos_opt) {
 			return;
@@ -44,7 +44,7 @@ void paste_command_impl::on_submit(const std::wstring &args) {
 }
 
 void paste_command_impl::write_help_text(std::ostream &os) const {
-	write_help_rtf_row(os, ":p (<x>\\~<y>\\~<z>)\\~|\\~<v>",
+	write_help_rtf_row(os, ":p (<x>\\~<y>\\~<z>)\\~|\\~<v1>",
 		"Pastes the selection at the given position or vertex."
 	);
 }

@@ -249,36 +249,18 @@ window_actions::window_actions(
 
 window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 	std::unique_ptr<action_impl> noop = std::make_unique<noop_action_impl>(events);
-	std::unique_ptr<action_impl> start_command = std::make_unique<start_command_impl>(
-		events
-	);
-	std::unique_ptr<action_impl> create_vertex = std::make_unique<create_vertex_impl>(
-		events
-	);
-	std::unique_ptr<action_impl> create_edge = std::make_unique<create_edge_impl>(
-		events
-	);
-	std::unique_ptr<action_impl> create_face = std::make_unique<create_face_impl>(
-		events
-	);
-	std::unique_ptr<action_impl> delete_vertex = std::make_unique<delete_vertex_impl>(
-		events
-	);
-	std::unique_ptr<action_impl> delete_edge = std::make_unique<delete_edge_impl>(
-		events
-	);
-	std::unique_ptr<action_impl> delete_face = std::make_unique<delete_face_impl>(
-		events
-	);
-	std::unique_ptr<action_impl> undo_edit = std::make_unique<undo_edit_impl>(
-		events
-	);
-	std::unique_ptr<action_impl> redo_edit = std::make_unique<redo_edit_impl>(
-		events
-	);
-	std::unique_ptr<action_impl> toggle_labels = std::make_unique<toggle_labels_impl>(
-		events
-	);
+	std::unique_ptr<action_impl> start_command = std::make_unique<start_command_impl>(events);
+	std::unique_ptr<action_impl> create_vertex = std::make_unique<create_vertex_impl>(events);
+	std::unique_ptr<action_impl> create_edge = std::make_unique<create_edge_impl>(events);
+	std::unique_ptr<action_impl> create_face = std::make_unique<create_face_impl>(events);
+	std::unique_ptr<action_impl> delete_vertex = std::make_unique<delete_vertex_impl>(events);
+	std::unique_ptr<action_impl> delete_edge = std::make_unique<delete_edge_impl>(events);
+	std::unique_ptr<action_impl> delete_face = std::make_unique<delete_face_impl>(events);
+	std::unique_ptr<action_impl> undo_edit = std::make_unique<undo_edit_impl>(events);
+	std::unique_ptr<action_impl> redo_edit = std::make_unique<redo_edit_impl>(events);
+	std::unique_ptr<action_impl> toggle_labels = std::make_unique<toggle_labels_impl>(events);
+	std::unique_ptr<yank_face_impl> yank_face = std::make_unique<yank_face_impl>(events);
+	std::unique_ptr<paste_impl> paste = std::make_unique<paste_impl>(events);
 
 	std::unique_ptr<action> delete_actions[] = {
 		std::make_unique<char_seq_action>("v", *delete_vertex),
@@ -289,16 +271,16 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 	std::unique_ptr<action> top_level_actions[] = {
 		std::make_unique<char_seq_action>(":", *start_command,
 			"Switches to command mode, fills the command bar with a "
-			"{\\b :} character, and focuses the command bar."
+			"{\\b\f1 :} character, and focuses the command bar."
 		),
 		std::make_unique<char_seq_action>("v", *create_vertex,
-			"Shortcut for the {\\b :v} command to create a vertex."
+			"Shortcut for the {\\b\f1 :v} command to create a vertex."
 		),
 		std::make_unique<char_seq_action>("e", *create_edge,
-			"Shortcut for the {\\b :e} command to create an edge."
+			"Shortcut for the {\\b\f1 :e} command to create an edge."
 		),
 		std::make_unique<char_seq_action>("f", *create_face,
-			"Shortcut for the {\\b :f} command to create a face."
+			"Shortcut for the {\\b\f1 :f} command to create a face."
 		),
 		std::make_unique<action_tree>(
 			char_seq_action("d", *noop),
@@ -318,6 +300,12 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 		),
 		std::make_unique<char_seq_action>("t", *toggle_labels,
 			"Toggles vertex labels."
+		),
+		std::make_unique<char_seq_action>("yf", *yank_face,
+			"Shortcut for the {\\b\f1 :yf} command to copy a face."
+		),
+		std::make_unique<char_seq_action>("p", *paste,
+			"Shortcut for the {\\b\f1 :p} command to paste the selection."
 		)
 	};
 
@@ -332,7 +320,9 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 		std::move(delete_face),
 		std::move(undo_edit),
 		std::move(redo_edit),
-		std::move(toggle_labels)
+		std::move(toggle_labels),
+		std::move(yank_face),
+		std::move(paste)
 	};
 
 	action_group actions(

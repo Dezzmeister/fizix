@@ -13,59 +13,27 @@ void focus_command_impl::on_submit(const std::wstring &args) {
 		return;
 	}
 
-	std::optional<vec3> target_opt = parse_explicit_vec3(state);
+	std::optional<vec3_or_index_feature> vec3_or_index_opt = parse_explicit_vec3_or_feature(state);
 
-	if (target_opt) {
-		parsing::parse_whitespace(state);
-
-		if (state.eof()) {
-			camera->set_target(*target_opt);
-			return;
-		} else {
-			platform->set_cue_text(L"Unexpected char(s) after vector");
-			return;
-		}
-	}
-
-	std::optional<index_feature> feat_opt = parse_explicit_feature(state);
-
-	if (! feat_opt) {
-		return;
-	}
-
-	const index_feature &feat = *feat_opt;
-
-	if (std::holds_alternative<size_t>(feat)) {
-		target_opt = geom->vertex_pos(std::get<size_t>(feat));
-	} else if (std::holds_alternative<edge>(feat)) {
-		target_opt = geom->centroid(std::get<edge>(feat));
-	} else if (std::holds_alternative<face>(feat)) {
-		face f = std::get<face>(feat);
-		std::optional<face> face_to_focus_opt = geom->superset_face(f);
-
-		if (! face_to_focus_opt) {
-			face_to_focus_opt = geom->superset_face(f.flipped());
-		}
-
-		if (face_to_focus_opt) {
-			f = *face_to_focus_opt;
-		}
-
-		target_opt = geom->centroid(f);
-	}
-
-	if (! target_opt) {
+	if (! vec3_or_index_opt) {
+		platform->set_cue_text(L"Expected an explicit vector or feature");
 		return;
 	}
 
 	parsing::parse_whitespace(state);
 
 	if (! state.eof()) {
-		platform->set_cue_text(L"Unexpected char(s) after explicit feature");
+		platform->set_cue_text(L"Unexpected trailing chars");
 		return;
 	}
 
-	camera->set_target(*target_opt);
+	std::optional<vec3> pos_opt = geom->centroid(*vec3_or_index_opt);
+
+	if (! pos_opt) {
+		return;
+	}
+
+	camera->set_target(*pos_opt);
 }
 
 void focus_command_impl::write_help_text(std::ostream &os) const {

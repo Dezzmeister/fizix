@@ -481,7 +481,7 @@ const polyhedron& geometry_controller::get_poly() const {
 	return poly;
 }
 
-std::optional<vec3> geometry_controller::vertex_pos(size_t vertex_idx) const {
+std::optional<vec3> geometry_controller::centroid(size_t vertex_idx) const {
 	if (vertex_idx >= poly.vertices.size()) {
 		logger::debug("Tried to query impossible vertex: " + traits::to_string(vertex_idx));
 		platform->set_cue_text(L"Vertex does not exist");
@@ -520,6 +520,30 @@ std::optional<vec3> geometry_controller::centroid(const face &f) const {
 	}
 
 	return f.centroid(poly);
+}
+
+std::optional<vec3> geometry_controller::centroid(const vec3_or_index_feature &feat) const {
+	if (std::holds_alternative<vec3>(feat)) {
+		return std::get<vec3>(feat);
+	} else if (std::holds_alternative<size_t>(feat)) {
+		return centroid(std::get<size_t>(feat));
+	} else if (std::holds_alternative<edge>(feat)) {
+		return centroid(std::get<edge>(feat));
+	} else {
+		assert(std::holds_alternative<face>(feat));
+
+		std::optional<face> f_opt = get_matching_face(
+			std::get<face>(feat), true
+		);
+
+		if (! f_opt) {
+			platform->set_cue_text(L"Face does not exist");
+
+			return std::nullopt;
+		}
+
+		return centroid(*f_opt);
+	}
 }
 
 std::optional<face> geometry_controller::superset_face(const face &f) const {
