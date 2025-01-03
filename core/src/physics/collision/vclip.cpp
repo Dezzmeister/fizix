@@ -451,6 +451,29 @@ namespace phys {
 			return std::nullopt;
 		}
 
+		polyhedron polyhedron::isolated(const face &f) const {
+			assert(is_possible_face(f));
+			assert(f.num_verts() >= 3);
+
+			polyhedron out{};
+			std::vector<size_t> verts{};
+
+			for (size_t i = 0; i < f.num_verts() - 1; i++) {
+				verts.push_back(i);
+				out.add_vertex(vertices[f.vert(i)].v);
+				out.add_edge(edge(i, i + 1));
+			}
+
+			verts.push_back(f.num_verts() - 1);
+			out.add_vertex(vertices[f.vert(f.num_verts() - 1)].v);
+			out.add_edge(edge(f.num_verts() - 1, 0));
+			out.add_face(
+				face(verts, f.is_convex(*this) ? convexity::Convex : convexity::Nonconvex)
+			);
+
+			return out;
+		}
+
 		void polyhedron::clear() {
 			faces.clear();
 			edges.clear();

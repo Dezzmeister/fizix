@@ -71,7 +71,9 @@ public:
 
 	bool create_vertex(const vec3 &pos);
 	bool create_edge(const edge &e);
-	bool create_face(const face &f);
+	bool create_face(const face &f, bool send_event = true);
+
+	void add_poly_at(const polyhedron &p, const vec3 &at);
 
 	bool delete_vertex(size_t vertex_idx);
 	bool delete_edge(const edge &e);
@@ -87,6 +89,8 @@ public:
 	void set_vert_labels_visible(bool _visible);
 	bool are_vert_labels_visible() const;
 
+	const polyhedron& get_poly() const;
+
 	std::optional<vec3> vertex_pos(size_t vertex_idx) const;
 	std::optional<vec3> centroid(const edge &e) const;
 	std::optional<vec3> centroid(const face &f) const;
@@ -94,6 +98,14 @@ public:
 	std::optional<face> superset_face(const face &f) const;
 
 	std::experimental::generator<triangle> faces() const;
+
+	bool can_create_vertex(const vec3 &v, bool show_feedback = true) const;
+	bool can_create_edge(const edge &e, bool show_feedback = true) const;
+	bool can_create_face(const face &f, bool show_feedback = true) const;
+	bool is_valid_vertex(size_t vertex_idx, bool show_feedback = true) const;
+	bool is_valid_edge(const edge &e, bool show_feedback = true) const;
+	bool is_well_formed_face(const face &f, bool show_feedback = true) const;
+	std::optional<face> get_matching_face(const face &f, bool show_feedback = true) const;
 
 	int handle(program_start_event &event) override;
 	int handle(fcad_start_event &event) override;

@@ -20,6 +20,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include "action.h"
 #include "controllers/action.h"
 #include "controllers/camera.h"
+#include "controllers/clipboard.h"
 #include "controllers/command.h"
 #include "controllers/edit_history.h"
 #include "fcad_events.h"
@@ -102,6 +103,7 @@ int main(int, const char * const * const) {
 	world mesh_world(buses);
 	geometry_controller geom(buses, events, mesh_world);
 	preferences_controller prefs(events);
+	clipboard_controller clipboard(events);
 	fcad_start_event fcad_start(
 		platform,
 		geom,
@@ -112,7 +114,8 @@ int main(int, const char * const * const) {
 		ac,
 		commands,
 		prefs,
-		mesh_world
+		mesh_world,
+		clipboard
 	);
 
 	platform.set_cue_text(L"Type :h and press ENTER for help");

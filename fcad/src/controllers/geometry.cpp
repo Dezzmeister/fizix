@@ -477,6 +477,10 @@ bool geometry_controller::are_vert_labels_visible() const {
 	return show_vert_labels;
 }
 
+const polyhedron& geometry_controller::get_poly() const {
+	return poly;
+}
+
 std::optional<vec3> geometry_controller::vertex_pos(size_t vertex_idx) const {
 	if (vertex_idx >= poly.vertices.size()) {
 		logger::debug("Tried to query impossible vertex: " + traits::to_string(vertex_idx));
@@ -620,6 +624,169 @@ std::experimental::generator<triangle> geometry_controller::faces() const {
 	}
 }
 
+bool geometry_controller::can_create_vertex(const vec3 &pos, bool show_feedback) const {
+	for (const vertex &v : poly.vertices) {
+		if (pos == v.v) {
+			if (show_feedback) {
+				platform->set_cue_text(L"Vertex already exists");
+			}
+
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool geometry_controller::can_create_edge(const edge &e, bool show_feedback) const {
+	if (! poly.is_possible_edge(e)) {
+		if (show_feedback) {
+			platform->set_cue_text(L"Edge refers to a nonexistent vertex");
+		}
+
+		return false;
+	}
+
+	if (e.v_is[0] == e.v_is[1]) {
+		if (show_feedback) {
+			platform->set_cue_text(L"Edge is degenerate");
+		}
+
+		return false;
+	}
+
+	for (const edge &pe : poly.edges) {
+		if (pe == e) {
+			if (show_feedback) {
+				platform->set_cue_text(L"Edge already exists");
+			}
+
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool geometry_controller::can_create_face(const face &f, bool show_feedback) const {
+	if (f.num_verts() < 3) {
+		if (show_feedback) {
+			platform->set_cue_text(L"Face is degenerate");
+		}
+
+		return false;
+	}
+
+	if (! poly.is_possible_face(f)) {
+		if (show_feedback) {
+			platform->set_cue_text(L"Face refers to a nonexistent vertex");
+		}
+
+		return false;
+	}
+
+	for (size_t i = 0; i < f.num_verts() - 1; i++) {
+		if (f.vert(i) == f.vert(i + 1)) {
+			if (show_feedback) {
+				platform->set_cue_text(L"Face contains a degenerate edge");
+			}
+
+			return false;
+		}
+	}
+
+	for (const face &pf : poly.faces) {
+		if (pf == f) {
+			if (show_feedback) {
+				platform->set_cue_text(L"Face already exists");
+			}
+
+			return false;
+		}
+	}
+
+	if (! f.is_coplanar(poly)) {
+		if (show_feedback) {
+			platform->set_cue_text(L"Face is not coplanar");
+		}
+
+		return false;
+	}
+
+	return true;
+}
+
+bool geometry_controller::is_valid_vertex(size_t vertex_idx, bool show_feedback) const {
+	if (vertex_idx >= poly.vertices.size()) {
+		if (show_feedback) {
+			platform->set_cue_text(L"Vertex does not exist");
+		}
+
+		return false;
+	}
+
+	return true;
+}
+
+bool geometry_controller::is_valid_edge(const edge &e, bool show_feedback) const {
+	if (! poly.is_possible_edge(e)) {
+		if (show_feedback) {
+			platform->set_cue_text(L"Edge refers to nonexistent vertex");
+		}
+
+		return false;
+	}
+
+	if (! poly.has_edge(e)) {
+		if (show_feedback) {
+			platform->set_cue_text(L"Edge does not exist");
+		}
+
+		return false;
+	}
+
+	return true;
+}
+
+bool geometry_controller::is_well_formed_face(const face &f, bool show_feedback) const {
+	if (f.num_verts() < 3) {
+		if (show_feedback) {
+			platform->set_cue_text(L"Face cannot have less than 3 vertices");
+		}
+
+		return false;
+	}
+
+	if (! poly.is_possible_face(f)) {
+		if (show_feedback) {
+			platform->set_cue_text(L"Face refers to nonexistent vertex");
+		}
+
+		return false;
+	}
+
+	return true;
+}
+
+std::optional<face> geometry_controller::get_matching_face(const face &f, bool show_feedback) const {
+	if (! is_well_formed_face(f, show_feedback)) {
+		return std::nullopt;
+	}
+
+	face flipped_f = f.flipped();
+	std::optional<face> match_opt = poly.superset_face(f);
+
+	if (! match_opt) {
+		match_opt = poly.superset_face(flipped_f);
+	}
+
+	if (! match_opt && show_feedback) {
+		platform->set_cue_text(L"Face does not exist");
+	}
+
+	return match_opt;
+}
+
 int geometry_controller::handle(program_start_event &event) {
 	vert_label_font = &event.draw2d->get_font("spleen_6x12");
 	axis_label_font = &event.draw2d->get_font("spleen_12x24");
@@ -634,12 +801,8 @@ int geometry_controller::handle(fcad_start_event &event) {
 }
 
 bool geometry_controller::create_vertex(const vec3 &pos) {
-	for (const vertex &v : poly.vertices) {
-		if (pos == v.v) {
-			platform->set_cue_text(L"Vertex already exists");
-
-			return false;
-		}
+	if (! can_create_vertex(pos)) {
+		return false;
 	}
 
 	create_vertex_event event(pos);
@@ -662,27 +825,48 @@ bool geometry_controller::create_vertex(const vec3 &pos) {
 	return true;
 }
 
-bool geometry_controller::create_edge(const edge &e) {
-	if (! poly.is_possible_edge(e)) {
-		logger::debug("Rejecting impossible edge: " + traits::to_string(e));
-		platform->set_cue_text(L"Edge refers to a nonexistent vertex");
+void geometry_controller::add_poly_at(const polyhedron &p, const vec3 &at) {
+	assert(p.faces.size() == 1);
 
-		return false;
-	}
+	const face &f = p.faces[0];
+	std::vector<size_t> verts{};
 
-	if (e.v_is[0] == e.v_is[1]) {
-		logger::debug("Rejecting impossible edge: " + traits::to_string(e));
-		platform->set_cue_text(L"Edge is degenerate");
+	for (size_t i = 0; i < f.num_verts(); i++) {
+		size_t vi = f.vert(i);
+		vec3 pos = p.vertices[vi].v + at;
+		size_t new_vi = poly.vertices.size();
 
-		return false;
-	}
-
-	for (const edge &pe : poly.edges) {
-		if (pe == e) {
-			platform->set_cue_text(L"Edge already exists");
-
-			return false;
+		for (const vertex &v : poly.vertices) {
+			if (v.v == pos) {
+				new_vi = v.i;
+				goto vertex_exists;
+			}
 		}
+
+		poly.add_vertex(pos);
+		vert_geom.add_vertex(
+			pos,
+			glm::vec3(0.0f),
+			glm::vec2(0.0f)
+		);
+
+		vertex_exists:
+		verts.push_back(new_vi);
+	}
+
+	face new_f(verts, f.is_convex(p) ? convexity::Convex : convexity::Nonconvex);
+
+	create_face(new_f, false);
+
+	aabb bounds = calculate_aabb();
+	float max = std::max(bounds.max_diff(), 2.0f);
+
+	axes.set_max_axis(max / 2.0f);
+}
+
+bool geometry_controller::create_edge(const edge &e) {
+	if (! can_create_edge(e)) {
+		return false;
 	}
 
 	create_edge_event event(e);
@@ -706,41 +890,8 @@ bool geometry_controller::create_edge(const edge &e) {
 	return true;
 }
 
-bool geometry_controller::create_face(const face &f) {
-	if (! poly.is_possible_face(f)) {
-		logger::debug("Rejecting impossible face: " + traits::to_string(f));
-		platform->set_cue_text(L"Face refers to a nonexistent vertex");
-
-		return false;
-	}
-
-	if (f.num_verts() < 3) {
-		logger::debug("Rejecting impossible face: " + traits::to_string(f));
-		platform->set_cue_text(L"Face is degenerate");
-
-		return false;
-	}
-
-	for (size_t i = 0; i < f.num_verts() - 1; i++) {
-		if (f.vert(i) == f.vert(i + 1)) {
-			logger::debug("Rejecting impossible face: " + traits::to_string(f));
-			platform->set_cue_text(L"Face contains a degenerate edge");
-
-			return false;
-		}
-	}
-
-	for (const face &pf : poly.faces) {
-		if (pf == f) {
-			platform->set_cue_text(L"Face already exists");
-
-			return false;
-		}
-	}
-
-	if (! f.is_coplanar(poly)) {
-		platform->set_cue_text(L"Face is not coplanar");
-
+bool geometry_controller::create_face(const face &f, bool send_event) {
+	if (! can_create_face(f)) {
 		return false;
 	}
 
@@ -758,11 +909,13 @@ bool geometry_controller::create_face(const face &f) {
 		return false;
 	}
 
-	create_face_event event(f);
-	if (events.fire(event)) {
-		poly.remove_face_and_dead_edges(f);
+	if (send_event) {
+		create_face_event event(f);
+		if (events.fire(event)) {
+			poly.remove_face_and_dead_edges(f);
 
-		return false;
+			return false;
+		}
 	}
 
 	face_meshes.emplace_back(
@@ -786,10 +939,7 @@ bool geometry_controller::create_face(const face &f) {
 }
 
 bool geometry_controller::delete_vertex(size_t vertex_idx) {
-	if (vertex_idx >= poly.vertices.size()) {
-		logger::debug("Tried to delete impossible vertex: " + traits::to_string(vertex_idx));
-		platform->set_cue_text(L"Vertex does not exist");
-
+	if (! is_valid_vertex(vertex_idx)) {
 		return false;
 	}
 
@@ -826,17 +976,7 @@ bool geometry_controller::delete_vertex(size_t vertex_idx) {
 }
 
 bool geometry_controller::delete_edge(const edge &e) {
-	if (! poly.is_possible_edge(e)) {
-		logger::debug("Tried to delete impossible edge: " + traits::to_string(e));
-		platform->set_cue_text(L"Edge refers to nonexistent vertex");
-
-		return false;
-	}
-
-	if (! poly.has_edge(e)) {
-		logger::debug("Tried to delete nonexistent edge: " + traits::to_string(e));
-		platform->set_cue_text(L"Edge does not exist");
-
+	if (! is_valid_edge(e)) {
 		return false;
 	}
 
@@ -854,35 +994,13 @@ bool geometry_controller::delete_edge(const edge &e) {
 }
 
 bool geometry_controller::delete_face(const face &f) {
-	if (! poly.is_possible_face(f)) {
-		logger::debug("Tried to delete impossible face: " + traits::to_string(f));
-		platform->set_cue_text(L"Face refers to nonexistent vertex");
+	std::optional<face> match_opt = get_matching_face(f);
 
+	if (! match_opt) {
 		return false;
 	}
 
-	if (f.num_verts() < 3) {
-		logger::debug("Tried to delete face with < 3 vertices: " + traits::to_string(f));
-		platform->set_cue_text(L"Face cannot have less than 3 vertices");
-
-		return false;
-	}
-
-	face flipped_f = f.flipped();
-	std::optional<face> face_to_delete_opt = poly.superset_face(f);
-
-	if (! face_to_delete_opt) {
-		face_to_delete_opt = poly.superset_face(flipped_f);
-	}
-
-	if (! face_to_delete_opt) {
-		logger::debug("Tried to delete nonexistent face: " + traits::to_string(f));
-		platform->set_cue_text(L"Face does not exist");
-
-		return false;
-	}
-
-	const face &face_to_delete = *face_to_delete_opt;
+	const face &face_to_delete = *match_opt;
 
 	delete_face_event event(face_to_delete);
 	if (events.fire(event)) {

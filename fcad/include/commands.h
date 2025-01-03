@@ -1,6 +1,7 @@
 #pragma once
 #include "command.h"
 #include "controllers/camera.h"
+#include "controllers/clipboard.h"
 #include "controllers/edit_history.h"
 #include "controllers/file.h"
 #include "controllers/geometry.h"
@@ -28,6 +29,7 @@ protected:
 	geometry_controller * geom{};
 	camera_controller * camera{};
 	platform_bridge * platform{};
+	clipboard_controller * clipboard{};
 };
 
 struct create_vertex_preview :
@@ -172,6 +174,22 @@ private:
 };
 
 class flip_command_impl : public noop_command_impl {
+public:
+	using noop_command_impl::noop_command_impl;
+
+	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
+};
+
+class yank_face_command_impl : public noop_command_impl {
+public:
+	using noop_command_impl::noop_command_impl;
+
+	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
+};
+
+class paste_command_impl : public noop_command_impl {
 public:
 	using noop_command_impl::noop_command_impl;
 

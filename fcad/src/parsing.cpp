@@ -234,3 +234,21 @@ std::optional<index_feature> parse_explicit_feature(parsing::parser_state &state
 			return std::nullopt;
 	}
 }
+
+std::optional<vec3_or_index_feature> parse_explicit_vec3_or_feature(parsing::parser_state &state) {
+	wchar_t c = state.peek();
+
+	switch (c) {
+		case L'(':
+			return parse_explicit_vec3(state);
+		// TODO: Dedup this and parse_explicit_feature
+		case L'v':
+			return parse_explicit_vertex(state);
+		case L'e':
+			return parse_explicit_edge(state);
+		case L'f':
+			return parse_explicit_face(state);
+		default:
+			return std::nullopt;
+	}
+}

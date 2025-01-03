@@ -66,6 +66,8 @@ namespace phys {
 			// to have at most one face with the vertices of `f` in the proper order.
 			std::optional<face> superset_face(const face &f) const;
 
+			polyhedron isolated(const face &f) const;
+
 			std::ranges::range auto features() const &;
 			std::ranges::range auto features() const && = delete;
 

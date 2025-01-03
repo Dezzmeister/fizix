@@ -18,6 +18,7 @@ int noop_command_impl::handle(fcad_start_event &event) {
 	geom = &event.gc;
 	camera = &event.camera;
 	platform = &event.platform;
+	clipboard = &event.clipboard;
 
 	return 0;
 }

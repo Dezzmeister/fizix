@@ -24,6 +24,7 @@ class camera_controller;
 class action_controller;
 class command_controller;
 class preferences_controller;
+class clipboard_controller;
 
 struct fcad_start_event {
 	platform_bridge &platform;
@@ -36,6 +37,7 @@ struct fcad_start_event {
 	command_controller &commands;
 	preferences_controller &prefs;
 	world &mesh_world;
+	clipboard_controller &clipboard;
 
 	fcad_start_event(
 		platform_bridge &_platform,
@@ -47,7 +49,8 @@ struct fcad_start_event {
 		action_controller &_actions,
 		command_controller &_commands,
 		preferences_controller &_prefs,
-		world &_mesh_world
+		world &_mesh_world,
+		clipboard_controller &_clipboard
 	) :
 		platform(_platform),
 		gc(_gc),
@@ -58,7 +61,8 @@ struct fcad_start_event {
 		actions(_actions),
 		commands(_commands),
 		prefs(_prefs),
-		mesh_world(_mesh_world)
+		mesh_world(_mesh_world),
+		clipboard(_clipboard)
 	{}
 };
 

@@ -15,6 +15,7 @@ struct partial_vec3 {
 };
 
 using index_feature = std::variant<size_t, edge, face>;
+using vec3_or_index_feature = std::variant<vec3, size_t, edge, face>;
 
 std::optional<real> parse_real(parsing::parser_state &state);
 std::optional<size_t> parse_size(parsing::parser_state &state);
@@ -31,3 +32,4 @@ std::optional<edge> parse_explicit_edge(parsing::parser_state &state);
 std::optional<face> parse_explicit_face(parsing::parser_state &state);
 
 std::optional<index_feature> parse_explicit_feature(parsing::parser_state &state);
+std::optional<vec3_or_index_feature> parse_explicit_vec3_or_feature(parsing::parser_state &state);
