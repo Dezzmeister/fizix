@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <stack>
 #include "logging.h"
 #include "physics/collision/vclip.h"
 #include "util.h"
@@ -383,6 +384,10 @@ namespace phys {
 			return true;
 		}
 
+		bool polyhedron::has_vertex(size_t vertex_idx) const {
+			return vertex_idx < vertices.size();
+		}
+
 		bool polyhedron::has_edge(const edge &e) const {
 			for (const edge &pe : edges) {
 				if (pe == e) {
@@ -401,6 +406,20 @@ namespace phys {
 			}
 
 			return false;
+		}
+
+		bool polyhedron::has_feature(const feature &f) const {
+			if (std::holds_alternative<vertex>(f)) {
+				const vertex &v = std::get<vertex>(f);
+
+				return has_vertex(v.i) && vertices[v.i] == v;
+			} else if (std::holds_alternative<edge>(f)) {
+				return has_edge(std::get<edge>(f));
+			} else {
+				assert(std::holds_alternative<face>(f));
+
+				return has_face(std::get<face>(f));
+			}
 		}
 
 		std::optional<face> polyhedron::superset_face(const face &f) const {
@@ -474,10 +493,118 @@ namespace phys {
 			return out;
 		}
 
+		polyhedron polyhedron::group(const feature &feat) const {
+			polyhedron out{};
+
+			for (size_t i = 0; i < vertices.size(); i++) {
+				out.vertices.push_back(vertices[i]);
+				// -1 means the vertex is unused. The last step in the algorithm is
+				// to go through and remove all unused vertices. As we add features
+				// to the polyhedron, we'll mark vertices that are used.
+				out.vertices[i].i = (size_t) - 1;
+			}
+
+			std::stack<feature> feats{};
+
+			feats.push(feat);
+
+			while (! feats.empty()) {
+				feature curr_feat = feats.top();
+				feats.pop();
+
+				if (std::holds_alternative<vertex>(curr_feat)) {
+					const vertex &v = std::get<vertex>(curr_feat);
+
+					if (out.vertices[v.i].i != -1) {
+						continue;
+					}
+
+					out.vertices[v.i] = v;
+
+					for (const edge &e : v.edges(*this)) {
+						feats.push(e);
+					}
+				} else if (std::holds_alternative<edge>(curr_feat)) {
+					const edge &e = std::get<edge>(curr_feat);
+
+					if (out.has_edge(e)) {
+						continue;
+					}
+
+					out.add_edge(e);
+
+					feats.push(e.h(*this));
+					feats.push(e.t(*this));
+
+					for (const face &f : e.faces(*this)) {
+						feats.push(f);
+					}
+				} else {
+					assert(std::holds_alternative<face>(curr_feat));
+
+					const face &f = std::get<face>(curr_feat);
+
+					if (out.has_face(f)) {
+						continue;
+					}
+
+					out.add_face(f);
+
+					for (const edge &e : f.edges()) {
+						feats.push(e);
+					}
+				}
+			}
+
+			if (out.vertices.empty()) {
+				return out;
+			}
+
+			size_t next_available = 0;
+			size_t next_to_move = out.vertices.size() - 1;
+
+			while (next_to_move > next_available) {
+				while (out.vertices[next_available].i != -1) {
+					next_available++;
+
+					if (next_available >= out.vertices.size()) {
+						goto done;
+					}
+				}
+
+				while (out.vertices[next_to_move].i == -1) {
+					if (next_to_move == 0) {
+						break;
+					}
+
+					next_to_move--;
+				}
+
+				out.move_vertex(next_to_move, next_available);
+			}
+			done:;
+
+			if (next_available < out.vertices.size()) {
+				out.vertices.erase(std::begin(out.vertices) + next_available, std::end(out.vertices));
+			}
+
+			return out;
+		}
+
 		void polyhedron::clear() {
 			faces.clear();
 			edges.clear();
 			vertices.clear();
+		}
+
+		vec3 polyhedron::centroid() const {
+			vec3 out{};
+
+			for (const vertex &v : vertices) {
+				out += v.v;
+			}
+
+			return out / (real)vertices.size();
 		}
 
 		void polyhedron::move_vertex(size_t from, size_t to) {

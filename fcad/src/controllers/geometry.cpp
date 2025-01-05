@@ -811,6 +811,30 @@ std::optional<face> geometry_controller::get_matching_face(const face &f, bool s
 	return match_opt;
 }
 
+std::optional<feature> geometry_controller::get_feature(const index_feature &idx, bool show_feedback) const {
+	if (std::holds_alternative<size_t>(idx)) {
+		size_t vertex_idx = std::get<size_t>(idx);
+
+		if (! is_valid_vertex(vertex_idx, show_feedback)) {
+			return std::nullopt;
+		}
+
+		return poly.vertices[vertex_idx];
+	} else if (std::holds_alternative<edge>(idx)) {
+		const edge &e = std::get<edge>(idx);
+
+		if (! is_valid_edge(e, show_feedback)) {
+			return std::nullopt;
+		}
+
+		return e;
+	} else {
+		assert(std::holds_alternative<face>(idx));
+
+		return get_matching_face(std::get<face>(idx), show_feedback);
+	}
+}
+
 int geometry_controller::handle(program_start_event &event) {
 	vert_label_font = &event.draw2d->get_font("spleen_6x12");
 	axis_label_font = &event.draw2d->get_font("spleen_12x24");

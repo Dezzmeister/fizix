@@ -15,67 +15,11 @@ namespace phys {
 	// Mitsubishi's patent on this algorithm expired in 2012:
 	// https://patentcenter.uspto.gov/applications/08921162
 	namespace vclip {
+		struct polyhedron;
 		struct vertex;
 		struct edge;
 		struct face;
 		struct vplane;
-
-		// A collection of features, defined with reference to a set of vertices.
-		// A polyhedron must be convex. `validate()` will verify that the polyhedron
-		// is convex and closed.
-		struct polyhedron {
-			std::vector<vertex> vertices{};
-			std::vector<edge> edges{};
-			std::vector<face> faces{};
-
-			int euler_characteristic() const;
-
-			void validate() const;
-			void validate_references() const;
-			void validate_geometry() const;
-
-			// Adds a vertex and returns its index.
-			size_t add_vertex(const vec3 &v);
-			void add_edge(const edge &e);
-			// Adds a face, but not its constituent edges. The edges must be added
-			// separately with `add_edge` or the face must be added with
-			// `add_face_and_new_edges`.
-			void add_face(const face &f);
-			// Adds a face. If any of the face's constituent edges are new, those
-			// will be added as well.
-			void add_face_and_new_edges(const face &f);
-			std::vector<face> remove_vertex(size_t vertex_idx);
-			std::vector<face> remove_edge(const edge &e);
-			// Removes a face, but not its constituent edges. The edges must be removed
-			// separately with `remove_edge` or the face must be removed with
-			// `remove_face_and_dead_edges`.
-			std::vector<face> remove_face(const face &f);
-			// Removes a face. If any of the face's constituent edges would be unused after
-			// removing the face, those will be removed as well.
-			void remove_face_and_dead_edges(const face &f);
-
-			bool is_possible_vertex(size_t vertex_idx) const;
-			bool is_possible_edge(const edge &e) const;
-			bool is_possible_face(const face &f) const;
-
-			bool has_edge(const edge &e) const;
-			bool has_face(const face &f) const;
-
-			// Returns a face whose vertices include those given in `f`, in the order given
-			// in `f`. `f` is expected to have at least 3 vertices, and the polyhedron is expected
-			// to have at most one face with the vertices of `f` in the proper order.
-			std::optional<face> superset_face(const face &f) const;
-
-			polyhedron isolated(const face &f) const;
-
-			std::ranges::range auto features() const &;
-			std::ranges::range auto features() const && = delete;
-
-			void clear();
-
-		private:
-			void move_vertex(size_t from, size_t to);
-		};
 
 		template <typename T>
 		concept feature_t =
@@ -223,6 +167,68 @@ namespace phys {
 		};
 
 		using feature = std::variant<vertex, edge, face>;
+
+		// A collection of features, defined with reference to a set of vertices.
+		// A polyhedron must be convex. `validate()` will verify that the polyhedron
+		// is convex and closed.
+		struct polyhedron {
+			std::vector<vertex> vertices{};
+			std::vector<edge> edges{};
+			std::vector<face> faces{};
+
+			int euler_characteristic() const;
+
+			void validate() const;
+			void validate_references() const;
+			void validate_geometry() const;
+
+			// Adds a vertex and returns its index.
+			size_t add_vertex(const vec3 &v);
+			void add_edge(const edge &e);
+			// Adds a face, but not its constituent edges. The edges must be added
+			// separately with `add_edge` or the face must be added with
+			// `add_face_and_new_edges`.
+			void add_face(const face &f);
+			// Adds a face. If any of the face's constituent edges are new, those
+			// will be added as well.
+			void add_face_and_new_edges(const face &f);
+			std::vector<face> remove_vertex(size_t vertex_idx);
+			std::vector<face> remove_edge(const edge &e);
+			// Removes a face, but not its constituent edges. The edges must be removed
+			// separately with `remove_edge` or the face must be removed with
+			// `remove_face_and_dead_edges`.
+			std::vector<face> remove_face(const face &f);
+			// Removes a face. If any of the face's constituent edges would be unused after
+			// removing the face, those will be removed as well.
+			void remove_face_and_dead_edges(const face &f);
+
+			bool is_possible_vertex(size_t vertex_idx) const;
+			bool is_possible_edge(const edge &e) const;
+			bool is_possible_face(const face &f) const;
+
+			bool has_vertex(size_t vertex_idx) const;
+			bool has_edge(const edge &e) const;
+			bool has_face(const face &f) const;
+			bool has_feature(const feature &feat) const;
+
+			// Returns a face whose vertices include those given in `f`, in the order given
+			// in `f`. `f` is expected to have at least 3 vertices, and the polyhedron is expected
+			// to have at most one face with the vertices of `f` in the proper order.
+			std::optional<face> superset_face(const face &f) const;
+
+			polyhedron isolated(const face &f) const;
+			polyhedron group(const feature &feat) const;
+
+			std::ranges::range auto features() const &;
+			std::ranges::range auto features() const && = delete;
+
+			void clear();
+
+			vec3 centroid() const;
+
+		private:
+			void move_vertex(size_t from, size_t to);
+		};
 
 		// This can either be a V-E plane or an F-E plane. The convention here
 		// is that a Voronoi plane points away from the Voronoi region it borders.

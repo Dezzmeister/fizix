@@ -189,6 +189,13 @@ public:
 	void write_help_text(std::ostream &os) const override;
 };
 
+class yank_group_command_impl : public noop_command_impl {
+	using noop_command_impl::noop_command_impl;
+
+	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
+};
+
 class paste_command_impl : public noop_command_impl {
 public:
 	using noop_command_impl::noop_command_impl;

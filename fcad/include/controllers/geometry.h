@@ -108,6 +108,7 @@ public:
 	bool is_valid_edge(const edge &e, bool show_feedback = true) const;
 	bool is_well_formed_face(const face &f, bool show_feedback = true) const;
 	std::optional<face> get_matching_face(const face &f, bool show_feedback = true) const;
+	std::optional<feature> get_feature(const index_feature &idx, bool show_feedback = true) const;
 
 	int handle(program_start_event &event) override;
 	int handle(fcad_start_event &event) override;

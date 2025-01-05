@@ -122,6 +122,7 @@ command_controller make_commands(event_buses&, fcad_event_bus &events) {
 	impls.emplace(std::make_pair(L"h", std::make_unique<help_command_impl>(events)));
 	impls.emplace(std::make_pair(L"flip", std::make_unique<flip_command_impl>(events)));
 	impls.emplace(std::make_pair(L"yf", std::make_unique<yank_face_command_impl>(events)));
+	impls.emplace(std::make_pair(L"yg", std::make_unique<yank_group_command_impl>(events)));
 	impls.emplace(std::make_pair(L"p", std::make_unique<paste_command_impl>(events)));
 
 	return command_controller(events, std::move(impls));
