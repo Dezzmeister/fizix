@@ -21,11 +21,10 @@ void yank_face_command_impl::on_submit(const std::wstring &args) {
 		return;
 	}
 
-	polyhedron p = geom->get_poly().isolated(*match_opt);
-
 	parsing::parse_whitespace(state);
 
 	if (state.eof()) {
+		polyhedron p = geom->get_poly().isolated(*match_opt);
 		std::optional<vec3> centroid_opt = geom->centroid(*match_opt);
 
 		if (! centroid_opt) {
@@ -34,11 +33,7 @@ void yank_face_command_impl::on_submit(const std::wstring &args) {
 
 		vec3 centroid = *centroid_opt;
 
-		for (vertex &v : p.vertices) {
-			v.v -= centroid;
-		}
-
-		clipboard->add_poly(clipboard_controller::selection_name(), p);
+		clipboard->add_poly(clipboard_controller::selection_name(), p.translated(-centroid));
 		history->add_command(L":yf " + args);
 		return;
 	}
@@ -63,13 +58,10 @@ void yank_face_command_impl::on_submit(const std::wstring &args) {
 		return;
 	}
 
+	polyhedron p = geom->get_poly().isolated(*match_opt);
 	vec3 pos = *pos_opt;
 
-	for (vertex &v : p.vertices) {
-		v.v -= pos;
-	}
-
-	clipboard->add_poly(clipboard_controller::selection_name(), p);
+	clipboard->add_poly(clipboard_controller::selection_name(), p.translated(-pos));
 	history->add_command(L":yf " + args);
 }
 

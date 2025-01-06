@@ -70,8 +70,8 @@ public:
 		world &_mesh_world
 	);
 
-	bool create_vertex(const vec3 &pos);
-	bool create_edge(const edge &e);
+	bool create_vertex(const vec3 &pos, bool send_event = true);
+	bool create_edge(const edge &e, bool send_event = true);
 	bool create_face(const face &f, bool send_event = true);
 
 	void add_poly_at(const polyhedron &p, const vec3 &at);

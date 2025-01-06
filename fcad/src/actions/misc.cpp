@@ -23,6 +23,10 @@ void yank_face_impl::on_accept(char) {
 	mode->set_mode(edit_mode::Command, L":yf ");
 }
 
+void yank_group_impl::on_accept(char) {
+	mode->set_mode(edit_mode::Command, L":yg ");
+}
+
 void paste_impl::on_accept(char) {
 	mode->set_mode(edit_mode::Command, L":p ");
 }

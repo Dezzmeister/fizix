@@ -848,14 +848,17 @@ int geometry_controller::handle(fcad_start_event &event) {
 	return 0;
 }
 
-bool geometry_controller::create_vertex(const vec3 &pos) {
+bool geometry_controller::create_vertex(const vec3 &pos, bool send_event) {
 	if (! can_create_vertex(pos)) {
 		return false;
 	}
 
-	create_vertex_event event(pos);
-	if (events.fire(event)) {
-		return false;
+	if (send_event) {
+		create_vertex_event event(pos);
+
+		if (events.fire(event)) {
+			return false;
+		}
 	}
 
 	vert_geom.add_vertex(
@@ -874,37 +877,23 @@ bool geometry_controller::create_vertex(const vec3 &pos) {
 }
 
 void geometry_controller::add_poly_at(const polyhedron &p, const vec3 &at) {
-	assert(p.faces.size() == 1);
+	size_t old_num_vertices = poly.vertices.size();
+	size_t old_num_edges = poly.edges.size();
+	size_t old_num_faces = poly.faces.size();
 
-	const face &f = p.faces[0];
-	std::vector<size_t> verts{};
+	polyhedron new_poly = add(poly, p.translated(at));
 
-	for (size_t i = 0; i < f.num_verts(); i++) {
-		size_t vi = f.vert(i);
-		vec3 pos = p.vertices[vi].v + at;
-		size_t new_vi = poly.vertices.size();
-
-		for (const vertex &v : poly.vertices) {
-			if (v.v == pos) {
-				new_vi = v.i;
-				goto vertex_exists;
-			}
-		}
-
-		poly.add_vertex(pos);
-		vert_geom.add_vertex(
-			pos,
-			glm::vec3(0.0f),
-			glm::vec2(0.0f)
-		);
-
-		vertex_exists:
-		verts.push_back(new_vi);
+	for (size_t i = old_num_vertices; i < new_poly.vertices.size(); i++) {
+		create_vertex(new_poly.vertices[i].v, false);
 	}
 
-	face new_f(verts, f.is_convex(p) ? convexity::Convex : convexity::Nonconvex);
+	for (size_t i = old_num_edges; i < new_poly.edges.size(); i++) {
+		create_edge(new_poly.edges[i], false);
+	}
 
-	create_face(new_f, false);
+	for (size_t i = old_num_faces; i < new_poly.faces.size(); i++) {
+		create_face(new_poly.faces[i], false);
+	}
 
 	aabb bounds = calculate_aabb();
 	float max = std::max(bounds.max_diff(), 2.0f);
@@ -912,15 +901,17 @@ void geometry_controller::add_poly_at(const polyhedron &p, const vec3 &at) {
 	axes.set_max_axis(max / 2.0f);
 }
 
-bool geometry_controller::create_edge(const edge &e) {
+bool geometry_controller::create_edge(const edge &e, bool send_event) {
 	if (! can_create_edge(e)) {
 		return false;
 	}
 
-	create_edge_event event(e);
+	if (send_event) {
+		create_edge_event event(e);
 
-	if (events.fire(event)) {
-		return false;
+		if (events.fire(event)) {
+			return false;
+		}
 	}
 
 	edge_geom.add_vertex(

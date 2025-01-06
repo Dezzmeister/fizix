@@ -580,12 +580,27 @@ namespace phys {
 					next_to_move--;
 				}
 
-				out.move_vertex(next_to_move, next_available);
+				if (next_to_move > next_available) {
+					out.move_vertex(next_to_move, next_available);
+					out.vertices[next_to_move].i = (size_t) -1;
+					out.vertices[next_available].v = out.vertices[next_to_move].v;
+					out.vertices[next_available].i = next_available;
+				}
 			}
 			done:;
 
 			if (next_available < out.vertices.size()) {
 				out.vertices.erase(std::begin(out.vertices) + next_available, std::end(out.vertices));
+			}
+
+			return out;
+		}
+
+		polyhedron polyhedron::translated(const vec3 &v) const {
+			polyhedron out = *this;
+
+			for (vertex &vert : out.vertices) {
+				vert.v += v;
 			}
 
 			return out;
@@ -628,6 +643,88 @@ namespace phys {
 
 		int polyhedron::euler_characteristic() const {
 			return (int)(vertices.size() + faces.size()) - (int)edges.size();
+		}
+
+		polyhedron add(const polyhedron &p1, const polyhedron &p2) {
+			polyhedron out{};
+
+			for (size_t i = 0; i < p1.vertices.size(); i++) {
+				out.vertices.push_back(p1.vertices[i]);
+			}
+
+			for (size_t i = 0; i < p1.edges.size(); i++) {
+				out.edges.push_back(p1.edges[i]);
+			}
+
+			for (size_t i = 0; i < p1.faces.size(); i++) {
+				out.faces.push_back(p1.faces[i]);
+			}
+
+			size_t offset = p1.vertices.size();
+
+			for (size_t i = 0; i < p2.vertices.size(); i++) {
+				vertex v = p2.vertices[i];
+				v.i = i + offset;
+
+				out.vertices.push_back(v);
+			}
+
+			for (size_t i = 0; i < p2.edges.size(); i++) {
+				edge e = p2.edges[i];
+				e.v_is[0] += offset;
+				e.v_is[1] += offset;
+
+				out.edges.push_back(e);
+			}
+
+			for (size_t i = 0; i < p2.faces.size(); i++) {
+				const face &f = p2.faces[i];
+				std::vector<size_t> vs{};
+
+				for (size_t j = 0; j < f.num_verts(); j++) {
+					vs.push_back(f.vert(j) + offset);
+				}
+
+				out.faces.emplace_back(vs, f.get_convexity_hint());
+			}
+
+			// Dedup vertices
+			// TODO: Profile and optimize
+			for (size_t i = 0; i < offset; i++) {
+				for (size_t j = offset; j < out.vertices.size(); j++) {
+					if (out.vertices[i].v == out.vertices[j].v) {
+						for (size_t k = 0; k < out.edges.size(); k++) {
+							edge &e = out.edges[k];
+
+							if (e.v_is[0] == j) {
+								e.v_is[0] = i;
+							}
+
+							if (e.v_is[1] == j) {
+								e.v_is[1] = i;
+							}
+						}
+
+						for (size_t k = 0; k < out.faces.size(); k++) {
+							face &f = out.faces[k];
+
+							for (size_t l = 0; l < f.vs.size(); l++) {
+								if (f.vs[l] == j) {
+									f.vs[l] = i;
+								}
+							}
+						}
+
+						out.remove_vertex(j);
+
+						goto next_vert;
+					}
+				}
+
+				next_vert:;
+			}
+
+			return out;
 		}
 
 		vertex::vertex(const vec3 &_v, size_t _i) :
@@ -1138,6 +1235,10 @@ namespace phys {
 			}
 
 			return out / (real)vs.size();
+		}
+
+		convexity face::get_convexity_hint() const {
+			return convexity_hint;
 		}
 
 		vplane::vplane(

@@ -260,12 +260,18 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 	std::unique_ptr<action_impl> redo_edit = std::make_unique<redo_edit_impl>(events);
 	std::unique_ptr<action_impl> toggle_labels = std::make_unique<toggle_labels_impl>(events);
 	std::unique_ptr<yank_face_impl> yank_face = std::make_unique<yank_face_impl>(events);
+	std::unique_ptr<yank_group_impl> yank_group = std::make_unique<yank_group_impl>(events);
 	std::unique_ptr<paste_impl> paste = std::make_unique<paste_impl>(events);
 
 	std::unique_ptr<action> delete_actions[] = {
 		std::make_unique<char_seq_action>("v", *delete_vertex),
 		std::make_unique<char_seq_action>("e", *delete_edge),
 		std::make_unique<char_seq_action>("f", *delete_face)
+	};
+
+	std::unique_ptr<action> yank_actions[] = {
+		std::make_unique<char_seq_action>("f", *yank_face),
+		std::make_unique<char_seq_action>("g", *yank_group)
 	};
 
 	std::unique_ptr<action> top_level_actions[] = {
@@ -301,8 +307,14 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 		std::make_unique<char_seq_action>("t", *toggle_labels,
 			"Toggles vertex labels."
 		),
-		std::make_unique<char_seq_action>("yf", *yank_face,
-			"Shortcut for the {\\b\f1 :yf} command to copy a face."
+		std::make_unique<action_tree>(
+			char_seq_action("y", *noop),
+			action_group(std::vector<std::unique_ptr<action>>(
+				std::make_move_iterator(std::begin(yank_actions)),
+				std::make_move_iterator(std::end(yank_actions))
+			)),
+			"y(f|g)",
+			"Shortcuts for the yank (copy) commands."
 		),
 		std::make_unique<char_seq_action>("p", *paste,
 			"Shortcut for the {\\b\f1 :p} command to paste the selection."
@@ -322,6 +334,7 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 		std::move(redo_edit),
 		std::move(toggle_labels),
 		std::move(yank_face),
+		std::move(yank_group),
 		std::move(paste)
 	};
 

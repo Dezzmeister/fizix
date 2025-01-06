@@ -151,8 +151,10 @@ namespace phys {
 			face flipped() const;
 
 			vec3 centroid(const polyhedron &p) const;
+			convexity get_convexity_hint() const;
 
 			friend bool operator==(const face &f1, const face &f2);
+			friend polyhedron add(const polyhedron &p1, const polyhedron &p2);
 
 		private:
 			std::vector<size_t> vs;
@@ -218,6 +220,7 @@ namespace phys {
 
 			polyhedron isolated(const face &f) const;
 			polyhedron group(const feature &feat) const;
+			polyhedron translated(const vec3 &v) const;
 
 			std::ranges::range auto features() const &;
 			std::ranges::range auto features() const && = delete;
@@ -229,6 +232,8 @@ namespace phys {
 		private:
 			void move_vertex(size_t from, size_t to);
 		};
+
+		polyhedron add(const polyhedron &p1, const polyhedron &p2);
 
 		// This can either be a V-E plane or an F-E plane. The convention here
 		// is that a Voronoi plane points away from the Voronoi region it borders.
