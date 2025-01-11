@@ -277,16 +277,16 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 	std::unique_ptr<action> top_level_actions[] = {
 		std::make_unique<char_seq_action>(":", *start_command,
 			"Switches to command mode, fills the command bar with a "
-			"{\\b\f1 :} character, and focuses the command bar."
+			"{\\b\\f1 :} character, and focuses the command bar."
 		),
 		std::make_unique<char_seq_action>("v", *create_vertex,
-			"Shortcut for the {\\b\f1 :v} command to create a vertex."
+			"Shortcut for the {\\b\\f1 :v} command to create a vertex."
 		),
 		std::make_unique<char_seq_action>("e", *create_edge,
-			"Shortcut for the {\\b\f1 :e} command to create an edge."
+			"Shortcut for the {\\b\\f1 :e} command to create an edge."
 		),
 		std::make_unique<char_seq_action>("f", *create_face,
-			"Shortcut for the {\\b\f1 :f} command to create a face."
+			"Shortcut for the {\\b\\f1 :f} command to create a face."
 		),
 		std::make_unique<action_tree>(
 			char_seq_action("d", *noop),
@@ -317,7 +317,7 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 			"Shortcuts for the yank (copy) commands."
 		),
 		std::make_unique<char_seq_action>("p", *paste,
-			"Shortcut for the {\\b\f1 :p} command to paste the selection."
+			"Shortcut for the {\\b\\f1 :p} command to paste the selection."
 		)
 	};
 
