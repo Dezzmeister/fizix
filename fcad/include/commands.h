@@ -72,7 +72,6 @@ private:
 };
 
 class create_edge_command_impl : public noop_command_impl {
-public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
@@ -80,7 +79,6 @@ public:
 };
 
 class create_face_command_impl : public noop_command_impl {
-public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
@@ -88,7 +86,6 @@ public:
 };
 
 class delete_vertex_command_impl : public noop_command_impl {
-public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
@@ -96,7 +93,6 @@ public:
 };
 
 class delete_edge_command_impl : public noop_command_impl {
-public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
@@ -104,7 +100,6 @@ public:
 };
 
 class delete_face_command_impl : public noop_command_impl {
-public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
@@ -112,7 +107,6 @@ public:
 };
 
 class write_file_command_impl : public noop_command_impl {
-public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
@@ -120,7 +114,6 @@ public:
 };
 
 class read_file_command_impl : public noop_command_impl {
-public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
@@ -128,7 +121,6 @@ public:
 };
 
 class focus_command_impl : public noop_command_impl {
-public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
@@ -136,7 +128,6 @@ public:
 };
 
 class quit_command_impl : public noop_command_impl {
-public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
@@ -144,7 +135,6 @@ public:
 };
 
 class labels_command_impl : public noop_command_impl {
-public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
@@ -152,7 +142,6 @@ public:
 };
 
 class labeltype_command_impl : public noop_command_impl {
-public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
@@ -160,7 +149,6 @@ public:
 };
 
 class help_command_impl : public noop_command_impl {
-public:
 	using noop_command_impl::noop_command_impl;
 
 	int handle(fcad_start_event &event) override;
@@ -174,7 +162,6 @@ private:
 };
 
 class flip_command_impl : public noop_command_impl {
-public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
@@ -182,7 +169,6 @@ public:
 };
 
 class yank_face_command_impl : public noop_command_impl {
-public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
@@ -197,7 +183,6 @@ class yank_group_command_impl : public noop_command_impl {
 };
 
 class paste_command_impl : public noop_command_impl {
-public:
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;
@@ -205,7 +190,13 @@ public:
 };
 
 class move_group_command_impl : public noop_command_impl {
-public:
+	using noop_command_impl::noop_command_impl;
+
+	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
+};
+
+class delete_group_command_impl : public noop_command_impl {
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;

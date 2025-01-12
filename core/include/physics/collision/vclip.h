@@ -208,6 +208,7 @@ namespace phys {
 			bool is_possible_edge(const edge &e) const;
 			bool is_possible_face(const face &f) const;
 
+			bool has_vertex(const vec3 &v) const;
 			bool has_vertex(size_t vertex_idx) const;
 			bool has_edge(const edge &e) const;
 			bool has_face(const face &f) const;
@@ -230,8 +231,7 @@ namespace phys {
 			vec3 centroid() const;
 
 			void remove_features(const polyhedron &p);
-
-		private:
+			// Renumbers a vertex
 			void move_vertex(size_t from, size_t to);
 		};
 

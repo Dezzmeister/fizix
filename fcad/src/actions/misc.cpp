@@ -34,3 +34,7 @@ void paste_impl::on_accept(char) {
 void move_group_impl::on_accept(char) {
 	mode->set_mode(edit_mode::Command, L":mg ");
 }
+
+void delete_group_impl::on_accept(char) {
+	mode->set_mode(edit_mode::Command, L":dg ");
+}

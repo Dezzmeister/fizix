@@ -111,6 +111,7 @@ public:
 	std::optional<feature> get_feature(const index_feature &idx, bool show_feedback = true) const;
 
 	void move_features(const polyhedron &p, const vec3 &offset);
+	void delete_features(const polyhedron &p);
 
 	int handle(program_start_event &event) override;
 	int handle(fcad_start_event &event) override;

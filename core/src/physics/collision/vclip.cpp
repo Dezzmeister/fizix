@@ -384,6 +384,16 @@ namespace phys {
 			return true;
 		}
 
+		bool polyhedron::has_vertex(const vec3 &v) const {
+			for (const vertex &pv : vertices) {
+				if (pv.v == v) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+
 		bool polyhedron::has_vertex(size_t vertex_idx) const {
 			return vertex_idx < vertices.size();
 		}

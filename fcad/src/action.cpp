@@ -263,11 +263,13 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 	std::unique_ptr<yank_group_impl> yank_group = std::make_unique<yank_group_impl>(events);
 	std::unique_ptr<paste_impl> paste = std::make_unique<paste_impl>(events);
 	std::unique_ptr<move_group_impl> move_group = std::make_unique<move_group_impl>(events);
+	std::unique_ptr<delete_group_impl> delete_group = std::make_unique<delete_group_impl>(events);
 
 	std::unique_ptr<action> delete_actions[] = {
 		std::make_unique<char_seq_action>("v", *delete_vertex),
 		std::make_unique<char_seq_action>("e", *delete_edge),
-		std::make_unique<char_seq_action>("f", *delete_face)
+		std::make_unique<char_seq_action>("f", *delete_face),
+		std::make_unique<char_seq_action>("g", *delete_group)
 	};
 
 	std::unique_ptr<action> yank_actions[] = {
@@ -340,7 +342,8 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 		std::move(yank_face),
 		std::move(yank_group),
 		std::move(paste),
-		std::move(move_group)
+		std::move(move_group),
+		std::move(delete_group)
 	};
 
 	action_group actions(

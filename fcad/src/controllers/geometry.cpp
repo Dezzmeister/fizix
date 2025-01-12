@@ -836,35 +836,76 @@ std::optional<feature> geometry_controller::get_feature(const index_feature &idx
 }
 
 void geometry_controller::move_features(const polyhedron &p, const vec3 &offset) {
-	for (size_t i = 0; i < poly.faces.size(); i++) {
-		auto &rf = face_meshes[i];
-
-		for (const face &f : p.faces) {
-			if (f == rf->f) {
-				for (size_t j = 0; j < rf->geom.get_num_vertices(); j++) {
-					const vbo_entry * entry = rf->geom.get_vertex(j);
-					vec3 v(entry->vertex[0], entry->vertex[1], entry->vertex[2]);
-					vec3 norm(entry->normal[0], entry->normal[1], entry->normal[2]);
-
-					rf->geom.set_vertex(j, v + offset, norm, vec2(0.0_r));
-				}
-
-				goto next_face;
+	for (auto &rf : face_meshes) {
+		for (size_t j = 0; j < rf->f.num_verts(); j++) {
+			if (! p.has_vertex(poly.vertices[rf->f.vert(j)].v)) {
+				continue;
 			}
-		}
 
-		next_face:;
+			for (size_t k = 0; k < rf->geom.get_num_vertices(); k++) {
+				const vbo_entry * entry = rf->geom.get_vertex(k);
+				vec3 fv(entry->vertex[0], entry->vertex[1], entry->vertex[2]);
+				vec3 norm(entry->normal[0], entry->normal[1], entry->normal[2]);
+
+				rf->geom.set_vertex(k, fv + offset, norm, vec2(0.0_r));
+			}
+			break;
+		}
 	}
+
+	vert_geom.clear_vertices();
 
 	for (size_t i = 0; i < poly.vertices.size(); i++) {
 		for (const vertex &v : p.vertices) {
-			if (poly.vertices[i].v == v.v) {
+			if (util::eq_within_epsilon(poly.vertices[i].v, v.v)) {
 				poly.vertices[i].v += offset;
-				vert_geom.set_vertex(i, poly.vertices[i].v, vec3(0.0_r), vec2(0.0_r));
+				break;
+			}
+		}
+
+		vert_geom.add_vertex(poly.vertices[i].v, vec3(0.0_r), vec2(0.0_r));
+	}
+
+	for (int i = (int)poly.vertices.size() - 1; i >= 0; i--) {
+		for (int j = i - 1; j >= 0; j--) {
+			if (i == j) {
+				continue;
+			}
+
+			if (util::eq_within_epsilon(poly.vertices[i].v, poly.vertices[j].v)) {
+				poly.move_vertex(i, j);
+				poly.remove_vertex(i);
 			}
 		}
 	}
 
+	regenerate_edge_geom();
+}
+
+void geometry_controller::delete_features(const polyhedron &p) {
+	for (int i = (int)face_meshes.size() - 1; i >= 0; i--) {
+		auto &rf = face_meshes[i];
+
+		for (size_t j = 0; j < rf->f.num_verts(); j++) {
+			if (! p.has_vertex(poly.vertices[rf->f.vert(j)].v)) {
+				continue;
+			}
+
+			rf->remove_from_world(mesh_world);
+			face_meshes.erase(std::begin(face_meshes) + i);
+			break;
+		}
+	}
+
+	for (int i = (int)poly.vertices.size() - 1; i >= 0; i--) {
+		for (const vertex &v : p.vertices) {
+			if (util::eq_within_epsilon(poly.vertices[i].v, v.v)) {
+				vert_geom.remove_vertex(i);
+			}
+		}
+	}
+
+	poly.remove_features(p);
 	regenerate_edge_geom();
 }
 
