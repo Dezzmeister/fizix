@@ -835,6 +835,39 @@ std::optional<feature> geometry_controller::get_feature(const index_feature &idx
 	}
 }
 
+void geometry_controller::move_features(const polyhedron &p, const vec3 &offset) {
+	for (size_t i = 0; i < poly.faces.size(); i++) {
+		auto &rf = face_meshes[i];
+
+		for (const face &f : p.faces) {
+			if (f == rf->f) {
+				for (size_t j = 0; j < rf->geom.get_num_vertices(); j++) {
+					const vbo_entry * entry = rf->geom.get_vertex(j);
+					vec3 v(entry->vertex[0], entry->vertex[1], entry->vertex[2]);
+					vec3 norm(entry->normal[0], entry->normal[1], entry->normal[2]);
+
+					rf->geom.set_vertex(j, v + offset, norm, vec2(0.0_r));
+				}
+
+				goto next_face;
+			}
+		}
+
+		next_face:;
+	}
+
+	for (size_t i = 0; i < poly.vertices.size(); i++) {
+		for (const vertex &v : p.vertices) {
+			if (poly.vertices[i].v == v.v) {
+				poly.vertices[i].v += offset;
+				vert_geom.set_vertex(i, poly.vertices[i].v, vec3(0.0_r), vec2(0.0_r));
+			}
+		}
+	}
+
+	regenerate_edge_geom();
+}
+
 int geometry_controller::handle(program_start_event &event) {
 	vert_label_font = &event.draw2d->get_font("spleen_6x12");
 	axis_label_font = &event.draw2d->get_font("spleen_12x24");

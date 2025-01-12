@@ -46,6 +46,14 @@ public:
 		const glm::vec3 &tangent = glm::vec3(0.0f),
 		const glm::vec3 &bitangent = glm::vec3(0.0f)
 	);
+	void set_vertex(
+		size_t i,
+		const glm::vec3 &pos,
+		const glm::vec3 &norm,
+		const glm::vec2 &uv,
+		const glm::vec3 &tangent = glm::vec3(0.0f),
+		const glm::vec3 &bitangent = glm::vec3(0.0f)
+	);
 	void remove_vertex(size_t vertex_idx);
 	vbo_entry * get_vertex(size_t vertex_idx);
 	const vbo_entry * get_vertex(size_t vertex_idx) const;

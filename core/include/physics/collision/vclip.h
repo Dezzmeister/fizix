@@ -229,6 +229,8 @@ namespace phys {
 
 			vec3 centroid() const;
 
+			void remove_features(const polyhedron &p);
+
 		private:
 			void move_vertex(size_t from, size_t to);
 		};

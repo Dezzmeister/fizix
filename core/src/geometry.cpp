@@ -14,6 +14,17 @@ namespace {
 		out.push_back(v.y);
 	}
 
+	void write(size_t i, const glm::vec3 &v, std::vector<float> &out) {
+		out[i] = v.x;
+		out[i + 1] = v.y;
+		out[i + 2] = v.z;
+	}
+
+	void write(size_t i, const glm::vec2 &v, std::vector<float> &out) {
+		out[i] = v.x;
+		out[i + 1] = v.y;
+	}
+
 	std::vector<float> compute_tangent_basis_for_triangles(
 		const std::vector<float> &attrs
 	) {
@@ -188,6 +199,25 @@ size_t geometry::add_vertex(
 	vbo_needs_update = true;
 
 	return out;
+}
+void geometry::set_vertex(
+	size_t i,
+	const glm::vec3 &pos,
+	const glm::vec3 &norm,
+	const glm::vec2 &uv,
+	const glm::vec3 &tangent,
+	const glm::vec3 &bitangent
+) {
+	// TODO: Consolidate strides
+	constexpr size_t stride = (3 + 3 + 2 + 3 + 3);
+	size_t offset = i * stride;
+	write(offset, pos, vbo_data);
+	write(offset + 3, norm, vbo_data);
+	write(offset + 3 + 3, uv, vbo_data);
+	write(offset + 3 + 3 + 2, tangent, vbo_data);
+	write(offset + 3 + 3 + 2 + 3, bitangent, vbo_data);
+
+	vbo_needs_update = true;
 }
 
 void geometry::remove_vertex(size_t vertex_idx) {

@@ -110,6 +110,8 @@ public:
 	std::optional<face> get_matching_face(const face &f, bool show_feedback = true) const;
 	std::optional<feature> get_feature(const index_feature &idx, bool show_feedback = true) const;
 
+	void move_features(const polyhedron &p, const vec3 &offset);
+
 	int handle(program_start_event &event) override;
 	int handle(fcad_start_event &event) override;
 	int handle(post_processing_event &event) override;

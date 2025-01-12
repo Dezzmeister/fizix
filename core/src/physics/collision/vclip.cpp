@@ -622,6 +622,19 @@ namespace phys {
 			return out / (real)vertices.size();
 		}
 
+		// TODO: Profile and optimize
+		void polyhedron::remove_features(const polyhedron &p) {
+			for (int i = (int)vertices.size() - 1; i >= 0; i--) {
+				for (const vertex &other_v : p.vertices) {
+					if (vertices[i].v == other_v.v) {
+						remove_vertex(i);
+						goto next_vertex;
+					}
+				}
+				next_vertex:;
+			}
+		}
+
 		void polyhedron::move_vertex(size_t from, size_t to) {
 			for (edge &e : edges) {
 				if (e.v_is[0] == from) {

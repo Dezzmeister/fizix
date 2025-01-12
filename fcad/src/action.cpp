@@ -262,6 +262,7 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 	std::unique_ptr<yank_face_impl> yank_face = std::make_unique<yank_face_impl>(events);
 	std::unique_ptr<yank_group_impl> yank_group = std::make_unique<yank_group_impl>(events);
 	std::unique_ptr<paste_impl> paste = std::make_unique<paste_impl>(events);
+	std::unique_ptr<move_group_impl> move_group = std::make_unique<move_group_impl>(events);
 
 	std::unique_ptr<action> delete_actions[] = {
 		std::make_unique<char_seq_action>("v", *delete_vertex),
@@ -318,6 +319,9 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 		),
 		std::make_unique<char_seq_action>("p", *paste,
 			"Shortcut for the {\\b\\f1 :p} command to paste the selection."
+		),
+		std::make_unique<char_seq_action>("mg", *move_group,
+			"Shortcut for the {\\b\\f1 :mg} command to move a group of features."
 		)
 	};
 
@@ -335,7 +339,8 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 		std::move(toggle_labels),
 		std::move(yank_face),
 		std::move(yank_group),
-		std::move(paste)
+		std::move(paste),
+		std::move(move_group)
 	};
 
 	action_group actions(
