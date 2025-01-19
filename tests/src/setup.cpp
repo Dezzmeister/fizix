@@ -7,6 +7,8 @@
 #include "setup.h"
 
 namespace {
+	bool isolated_test_flag{};
+
 	template <typename T>
 	auto to_ref_view(std::vector<std::unique_ptr<T>> &vec) {
 		return std::ranges::views::transform(vec, [](auto &p) -> T& { return *p; });
@@ -15,6 +17,35 @@ namespace {
 	template <typename T>
 	auto to_ref_view(const std::vector<std::unique_ptr<T>> &vec) {
 		return std::ranges::views::transform(vec, [](const auto &p) -> const T& { return *p; });
+	}
+
+	void trim_curr_suite() {
+		std::stack<test::test_tree *> pruned_suite{};
+		test::test_tree * child = nullptr;
+
+		while (! test::curr_suite.empty()) {
+			test::test_tree * curr_tree = test::curr_suite.top();
+			test::curr_suite.pop();
+
+			if (! child) {
+				auto &children = curr_tree->children;
+				children.erase(std::begin(children), std::begin(children) + children.size() - 1);
+			} else {
+				std::erase_if(curr_tree->children, [=](const auto &item) {
+					return item.get() != child;
+				});
+			}
+
+			child = curr_tree;
+			pruned_suite.push(curr_tree);
+		}
+
+		while (! pruned_suite.empty()) {
+			test::test_tree * curr_tree = pruned_suite.top();
+			pruned_suite.pop();
+
+			test::curr_suite.push(curr_tree);
+		}
 	}
 }
 
@@ -121,6 +152,10 @@ test::test_count test::test_tree::run(int tabs) {
 }
 
 void test::describe(const std::string &title, const callback &cb) {
+	if (isolated_test_flag) {
+		return;
+	}
+
 	std::unique_ptr<test_tree> curr_tree = std::make_unique<test_tree>();
 
 	curr_tree->title = title;
@@ -140,7 +175,25 @@ void test::describe(const std::string &title, const callback &cb) {
 	curr_suite.top()->children.push_back(std::move(curr_tree));
 }
 
+void test::describe_only(const std::string &title, const callback &cb) {
+	describe(title, cb);
+
+	isolated_test_flag = true;
+
+	if (curr_suite.empty()) {
+		suites.erase(std::begin(suites), std::begin(suites) + suites.size() - 1);
+		return;
+	}
+
+	trim_curr_suite();
+	suites.clear();
+}
+
 void test::it(const std::string &title, const callback &cb) {
+	if (isolated_test_flag) {
+		return;
+	}
+
 	if (curr_suite.empty()) {
 		throw test_setup_error("it() must be called within a describe() block");
 	}
@@ -150,6 +203,15 @@ void test::it(const std::string &title, const callback &cb) {
 	tree->test = cb;
 
 	curr_suite.top()->children.push_back(std::move(tree));
+}
+
+void test::it_only(const std::string &title, const callback &cb) {
+	it(title, cb);
+
+	isolated_test_flag = true;
+
+	trim_curr_suite();
+	suites.clear();
 }
 
 void test::before_all(const callback &cb) {

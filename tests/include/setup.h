@@ -68,7 +68,9 @@ namespace test {
 	extern std::stack<test_tree *> curr_suite;
 
 	void describe(const std::string &title, const callback &cb);
+	void describe_only(const std::string &title, const callback &cb);
 	void it(const std::string &title, const callback &cb);
+	void it_only(const std::string &title, const callback &cb);
 	void before_all(const callback &cb);
 	void before_each(const callback &cb);
 	void after_each(const callback &cb);
