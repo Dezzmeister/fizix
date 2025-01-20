@@ -984,7 +984,7 @@ void setup_collision_tests() {
 					try {
 						// TODO: Callable matcher with `to_throw`
 						p.validate();
-						fail_msg("Expected polyhedron validation to fail");
+						fail("Expected polyhedron validation to fail");
 					} catch (const phys::vclip::geometry_error &err) {
 						expect(err.offending_feature)
 							.to_be(phys::vclip::edge(0, 1)).orr()
@@ -1027,7 +1027,7 @@ void setup_collision_tests() {
 					try {
 						// TODO: Callable matcher with `to_throw`
 						p.validate();
-						fail_msg("Expected polyhedron validation to fail");
+						fail("Expected polyhedron validation to fail");
 					} catch (const phys::vclip::geometry_error &err) {
 						expect(err.offending_feature)
 							.to_be(phys::vclip::edge(0, 4)).orr()

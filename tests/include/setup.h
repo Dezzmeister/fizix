@@ -8,10 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
-#define expect_cond(cond) do { if (! (cond)) { throw test::assertion_failure(std::nullopt, __FILE__, __LINE__); } } while (0)
-#define expect_msg(msg, cond) do { if (! (cond)) { throw test::assertion_failure((msg), __FILE__, __LINE__); } } while (0)
-#define fail() throw test::forced_failure(std::nullopt, __FILE__, __LINE__)
-#define fail_msg(msg) throw test::forced_failure((msg), __FILE__, __LINE__)
+#define fail(msg) throw test::forced_failure((msg), __FILE__, __LINE__)
 
 namespace test {
 	using callback = std::function<void(void)>;

@@ -94,7 +94,7 @@ void setup_base64_tests() {
 			try {
 				std::vector<uint8_t> _ = decode_base64(in);
 
-				fail_msg("Expected base64 decoder to throw");
+				fail("Expected base64 decoder to throw");
 			} catch (base64_error err) {
 				expect(err.char_pos).to_be(0);
 			}
@@ -106,7 +106,7 @@ void setup_base64_tests() {
 			try {
 				std::vector<uint8_t> _ = decode_base64(in);
 
-				fail_msg("Expected base64 decoder to throw");
+				fail("Expected base64 decoder to throw");
 			} catch (base64_error err) {
 				expect(err.char_pos).to_be(36);
 			}
@@ -189,7 +189,7 @@ void setup_base64_tests() {
 				try {
 					std::vector<uint8_t> _ = decode_base64(in);
 
-					fail_msg("Expected base64 decoder to throw");
+					fail("Expected base64 decoder to throw");
 				} catch (base64_error err) {
 					expect(err.char_pos).to_be(0);
 				}

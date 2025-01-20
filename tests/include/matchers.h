@@ -26,6 +26,7 @@ namespace test {
 	public:
 		T& orr();
 		T& annd();
+		void assert_now();
 
 		conditional();
 		~conditional();
@@ -198,6 +199,26 @@ namespace test {
 		int line;
 	};
 
+	template <typename ... Ts>
+	class matchers<std::variant<Ts...>> :
+		public invertible<matchers<std::variant<Ts...>>>,
+		public conditional<matchers<std::variant<Ts...>>>
+	{
+	public:
+		matchers(const std::variant<Ts...> &_actual, const char * const _file, int _line);
+
+		template <typename T>
+		auto to_have_type() -> decltype(*this)&;
+
+		template <typename T>
+		auto to_be(const T &expected) -> decltype(*this)&;
+
+	private:
+		const std::variant<Ts...> &actual;
+		const char * const file;
+		int line;
+	};
+
 	template <typename Input>
 	using expect_impl = matchers<Input>;
 
@@ -229,6 +250,13 @@ T& test::conditional<T>::annd() {
 	}
 
 	return *static_cast<T*>(this);
+}
+
+template <typename T>
+void test::conditional<T>::assert_now() {
+	if (err) {
+		throw err.value();
+	}
 }
 
 template <typename T>
@@ -472,6 +500,89 @@ auto test::matchers<std::optional<T>>::to_be_empty() -> decltype(*this)& {
 
 		this->err = assertion_failure(
 			message,
+			file,
+			line
+		);
+	}
+
+	return *this;
+}
+
+template <typename ... Ts>
+test::matchers<std::variant<Ts...>>::matchers(
+	const std::variant<Ts...> &_actual,
+	const char * const _file,
+	int _line
+) :
+	actual(_actual),
+	file(_file),
+	line(_line)
+{}
+
+template <typename ... Ts>
+template <typename T>
+auto test::matchers<std::variant<Ts...>>::to_have_type() -> decltype(*this)& {
+	using traits::to_string;
+
+	if (this->is_done()) {
+		return *this;
+	}
+
+	bool is_match = std::holds_alternative<T>(actual);
+	std::string actual_type{};
+
+	const auto stringify_actual = [&]<typename U>() {
+		if (std::holds_alternative<U>(actual)) {
+			actual_type = typeid(U).name();
+		}
+	};
+
+	(stringify_actual.template operator()<Ts>(), ...);
+
+	if (this->is_inverted && is_match) {
+		this->err = assertion_failure(
+			"Expected variant not to have a specific type\nType: " +
+			to_string(typeid(T).name()) +
+			"\nValue: " + to_string(actual),
+			file,
+			line
+		);
+	} else if (! this->is_inverted && ! is_match) {
+		this->err = assertion_failure(
+			"Expected variant to have a specific type\nExpected: " +
+			to_string(typeid(T).name()) +
+			"\nActual: " + actual_type + ", value: " + to_string(actual),
+			file,
+			line
+		);
+	}
+
+	return *this;
+}
+
+template <typename ... Ts>
+template <typename T>
+auto test::matchers<std::variant<Ts...>>::to_be(const T &expected) -> decltype(*this)& {
+	using traits::to_string;
+
+	if (this->is_done()) {
+		return *this;
+	}
+
+	bool is_match = actual == std::variant<Ts...>(expected);
+
+	if (this->is_inverted && is_match) {
+		this->err = assertion_failure(
+			"Expected variant not to have a specific value\nValue: " +
+			to_string(actual),
+			file,
+			line
+		);
+	} else if (! this->is_inverted && ! is_match) {
+		this->err = assertion_failure(
+			"Expected variant to have a specific value\nExpected: " +
+			to_string(expected) +
+			"\nActual: " + to_string(actual),
 			file,
 			line
 		);

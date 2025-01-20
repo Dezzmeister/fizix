@@ -37,40 +37,40 @@ namespace {
 			node_t * right = n->right.get();
 
 			if (!! left != !! right) {
-				fail_msg("expected node with id " + std::to_string(n->id) + " to have two children or none at all");
+				fail("expected node with id " + std::to_string(n->id) + " to have two children or none at all");
 			}
 
 			if (left) {
 				if (n->id) {
-					fail_msg("expected internal node with id " + std::to_string(n->id) + " to have id 0");
+					fail("expected internal node with id " + std::to_string(n->id) + " to have id 0");
 				}
 
 				nodes.push(left);
 				nodes.push(right);
 			} else {
 				if (! n->id) {
-					fail_msg("expected leaf node to have nonzero id");
+					fail("expected leaf node to have nonzero id");
 				}
 
 				obj_count++;
 			}
 
 			if (n == objects.root.get()) {
-				expect_msg("root node has null parent", ! n->parent);
+				expect(n->parent).to_be(nullptr);
 			} else {
 				if (! n->parent) {
-					fail_msg("expected non-root node with id " + std::to_string(n->id) + " to have a parent");
+					fail("expected non-root node with id " + std::to_string(n->id) + " to have a parent");
 				}
 
 				node_t * p = n->parent;
 
 				if (p->left.get() != n && p->right.get() != n) {
-					fail_msg("expected n->parent with id " + std::to_string(p->id) + " to have child n with id " + std::to_string(n->id));
+					fail("expected n->parent with id " + std::to_string(p->id) + " to have child n with id " + std::to_string(n->id));
 				}
 			}
 		}
 
-		expect_msg("object count matches size()", obj_count == objects.size());
+		expect(obj_count).to_be(objects.size());
 
 		if (objects.ids.size() <= 1) {
 			return;
@@ -81,7 +81,7 @@ namespace {
 			auto prev_id = objects.ids[i - 1].id;
 
 			if (curr_id < prev_id) {
-				fail_msg("expected ids " + std::to_string(prev_id) + " and " + std::to_string(curr_id) + " to be sorted in ascending order");
+				fail("expected ids " + std::to_string(prev_id) + " and " + std::to_string(curr_id) + " to be sorted in ascending order");
 			}
 		}
 	}
@@ -109,7 +109,7 @@ namespace {
 			}
 
 			if (n->vol != Volume(left->vol, right->vol)) {
-				fail_msg("expected parent of nodes with ids " + std::to_string(left->id) + " and " + std::to_string(right->id) +
+				fail("expected parent of nodes with ids " + std::to_string(left->id) + " and " + std::to_string(right->id) +
 					" to have volume enclosing its children");
 			}
 
@@ -156,19 +156,23 @@ void setup_bvh_tests() {
 				objects.insert(3, s3);
 				objects.insert(4, s4);
 
-				expect_msg("size is 4", objects.size() == 4);
+				expect(objects.size()).to_be(4);
 
-				expect_msg("root is an internal node", ! objects.root->id);
-				expect_msg("root->left is an internal node", ! objects.root->left->id);
-				expect_msg("root->right is an internal node", ! objects.root->right->id);
-				expect_msg("root->left->left is s1 (id)", objects.root->left->left->id == 1);
-				expect_msg("root->left->left is s1 (vol)", objects.root->left->left->vol == s1);
-				expect_msg("root->left->right is s3 (id)", objects.root->left->right->id == 3);
-				expect_msg("root->left->right is s3 (vol)", objects.root->left->right->vol == s3);
-				expect_msg("root->right->left is s2 (id)", objects.root->right->left->id == 2);
-				expect_msg("root->right->left is s2 (vol)", objects.root->right->left->vol == s2);
-				expect_msg("root->right->right is s4 (id)", objects.root->right->right->id == 4);
-				expect_msg("root->right->right is s4 (vol)", objects.root->right->right->vol == s4);
+				expect(objects.root->id).to_be(0);
+				expect(objects.root->left->id).to_be(0);
+				expect(objects.root->right->id).to_be(0);
+
+				expect(objects.root->left->left->id).to_be(1);
+				expect(objects.root->left->left->vol).to_be(s1);
+
+				expect(objects.root->left->right->id).to_be(3);
+				expect(objects.root->left->right->vol).to_be(s3);
+
+				expect(objects.root->right->left->id).to_be(2);
+				expect(objects.root->right->left->vol).to_be(s2);
+
+				expect(objects.root->right->right->id).to_be(4);
+				expect(objects.root->right->right->vol).to_be(s4);
 
 				bvh_checks(objects);
 			});
@@ -181,23 +185,17 @@ void setup_bvh_tests() {
 				objects.insert(3, s3);
 				objects.insert(4, s4);
 
-				bool was_present = objects.remove(2);
-				expect_msg("object was present", was_present);
-				expect_msg("size is 3", objects.size() == 3);
+				expect(objects.remove(2)).to_be(true);
+				expect(objects.size()).to_be(3);
 
-				was_present = objects.remove(4);
-				expect_msg("object was present", was_present);
-				expect_msg("size is 2", objects.size() == 2);
+				expect(objects.remove(4)).to_be(true);
+				expect(objects.size()).to_be(2);
 
-				was_present = objects.remove(1);
+				expect(objects.remove(1)).to_be(true);
+				expect(objects.size()).to_be(1);
 
-				expect_msg("object was present", was_present);
-				expect_msg("size is 1", objects.size() == 1);
-
-				was_present = objects.remove(3);
-
-				expect_msg("object was present", was_present);
-				expect_msg("size is 0", objects.size() == 0);
+				expect(objects.remove(3)).to_be(true);
+				expect(objects.size()).to_be(0);
 			});
 
 			it("size does not underflow", []() {
@@ -208,20 +206,20 @@ void setup_bvh_tests() {
 				objects.insert(3, s3);
 				objects.insert(4, s4);
 
-				expect_cond(objects.size() == 4);
+				expect(objects.size()).to_be(4);
 
 				objects.remove(1);
 				objects.remove(2);
 				objects.remove(3);
 				objects.remove(4);
 
-				expect_cond(objects.size() == 0);
+				expect(objects.size()).to_be(0);
 
 				for (int i = 0; i < 10; i++) {
-					objects.remove(i);
+					expect(objects.remove(i)).to_be(false);
 				}
 
-				expect_cond(objects.size() == 0);
+				expect(objects.size()).to_be(0);
 			});
 
 			it("inserts and deletes many objects", []() {
@@ -238,7 +236,7 @@ void setup_bvh_tests() {
 
 				for (int i = 1999; i > 1000; i--) {
 					if (! objects.remove(i)) {
-						fail_msg("object " + std::to_string(i) + " was not present");
+						fail("object " + std::to_string(i) + " was not present");
 					}
 				}
 
@@ -254,7 +252,7 @@ void setup_bvh_tests() {
 
 				for (int i = 1000; i > 0; i--) {
 					if (! objects.remove(i)) {
-						fail_msg("object " + std::to_string(i) + " was not present");
+						fail("object " + std::to_string(i) + " was not present");
 					}
 				}
 
@@ -263,7 +261,7 @@ void setup_bvh_tests() {
 
 				for (int i = 3000; i > 2000; i--) {
 					if (! objects.remove(i)) {
-						fail_msg("object " + std::to_string(i) + " was not present");
+						fail("object " + std::to_string(i) + " was not present");
 					}
 				}
 
@@ -278,27 +276,27 @@ void setup_bvh_tests() {
 				objects.insert(2, s2);
 				objects.insert(4, s4);
 
-				expect_msg("size is 3", objects.size() == 3);
+				expect(objects.size()).to_be(3);
 
-				expect_msg("root is an internal node", ! objects.root->id);
-				expect_msg("root->left is s1", objects.root->left->vol == s1);
-				expect_msg("root->right is an internal node", ! objects.root->right->id);
-				expect_msg("root->right->left is s2", objects.root->right->left->vol == s2);
-				expect_msg("root->right->right is s4", objects.root->right->right->vol == s4);
+				expect(objects.root->id).to_be(0);
+				expect(objects.root->left->vol).to_be(s1);
+				expect(objects.root->right->id).to_be(0);
+				expect(objects.root->right->left->vol).to_be(s2);
+				expect(objects.root->right->right->vol).to_be(s4);
 
 				objects.update(2, s3);
 
-				expect_msg("size is 3", objects.size() == 3);
+				expect(objects.size()).to_be(3);
 
 				bvh_checks(objects);
 				volume_check(objects);
 
-				expect_msg("root is an internal node", ! objects.root->id);
-				expect_msg("root->left is s1", objects.root->left->vol == s1);
-				expect_msg("root->right is an internal node", ! objects.root->right->id);
-				expect_msg("root->right->left is s4", objects.root->right->left->vol == s4);
-				expect_msg("root->right->right is s3", objects.root->right->right->vol == s3);
-				expect_msg("root->right->right has id 2", objects.root->right->right->id == 2);
+				expect(objects.root->id).to_be(0);
+				expect(objects.root->left->vol).to_be(s1);
+				expect(objects.root->right->id).to_be(0);
+				expect(objects.root->right->left->vol).to_be(s4);
+				expect(objects.root->right->right->vol).to_be(s3);
+				expect(objects.root->right->right->id).to_be(2);
 			});
 
 			it("does not delete objects that don't exist", []() {
@@ -308,10 +306,10 @@ void setup_bvh_tests() {
 				objects.insert(2, s2);
 				objects.insert(4, s4);
 
-				expect_msg("size is 3", objects.size() == 3);
+				expect(objects.size()).to_be(3);
 
-				expect_msg("fails to delete nonexistent object with id 3", ! objects.remove(3));
-				expect_msg("size is 3", objects.size() == 3);
+				expect(objects.remove(3)).to_be(false);
+				expect(objects.size()).to_be(3);
 			});
 
 			it("indicates whether objects are present or not", []() {
@@ -321,12 +319,12 @@ void setup_bvh_tests() {
 				objects.insert(2, s2);
 				objects.insert(4, s4);
 
-				expect_msg("size is 3", objects.size() == 3);
-				expect_msg("s1 is present", objects.has(1));
-				expect_msg("s2 is present", objects.has(2));
-				expect_msg("s4 is present", objects.has(4));
-				expect_msg("s3 is not present", ! objects.has(3));
-				expect_msg("object with id 1000 is not present", ! objects.has(1000));
+				expect(objects.size()).to_be(3);
+				expect(objects.has(1)).to_be(true);
+				expect(objects.has(2)).to_be(true);
+				expect(objects.has(4)).to_be(true);
+				expect(objects.has(3)).to_be(false);
+				expect(objects.has(1000)).to_be(false);
 			});
 
 			it("generates coarse collision pairs", []() {
@@ -359,13 +357,14 @@ void setup_bvh_tests() {
 				std::vector<sphere_bvh::coarse_collision_pair> collision_pairs{};
 
 				objects.generate_coarse_collisions(collision_pairs);
-				expect_msg("contains 6 collision pairs", collision_pairs.size() == 6);
-				expect_msg("contains collision between a1 and a2", contains_collision(collision_pairs, 1, 2));
-				expect_msg("contains collision between a2 and a3", contains_collision(collision_pairs, 2, 3));
-				expect_msg("contains collision between a1 and a3", contains_collision(collision_pairs, 1, 3));
-				expect_msg("contains collision between b1 and b2", contains_collision(collision_pairs, 11, 12));
-				expect_msg("contains collision between b2 and b3", contains_collision(collision_pairs, 12, 13));
-				expect_msg("contains collision between b1 and b3", contains_collision(collision_pairs, 11, 13));
+
+				expect(collision_pairs.size()).to_be(6);
+				expect(contains_collision(collision_pairs, 1, 2)).to_be(true);
+				expect(contains_collision(collision_pairs, 2, 3)).to_be(true);
+				expect(contains_collision(collision_pairs, 1, 3)).to_be(true);
+				expect(contains_collision(collision_pairs, 11, 12)).to_be(true);
+				expect(contains_collision(collision_pairs, 12, 13)).to_be(true);
+				expect(contains_collision(collision_pairs, 11, 13)).to_be(true);
 			});
 		});
 	});
