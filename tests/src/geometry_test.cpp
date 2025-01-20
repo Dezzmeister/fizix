@@ -19,7 +19,7 @@ void setup_geometry_tests() {
 						vec3(0.0_r, 0.0_r, 1.0_r)
 					);
 
-					expect(result).to_have_value(vec2(0.5_r, 0.5_r));
+					expect(result).to_be(vec2(0.5_r, 0.5_r));
 				});
 
 				it("reports intersection for lines (XZ) (2)", []() {
@@ -30,7 +30,7 @@ void setup_geometry_tests() {
 						vec3(-2.0_r, 0.0_r, 2.0_r)
 					);
 
-					expect(result).to_have_value(vec2(0.5_r, 0.5_r));
+					expect(result).to_be(vec2(0.5_r, 0.5_r));
 				});
 
 				it("reports intersection for lines (XY)", []() {
@@ -41,7 +41,7 @@ void setup_geometry_tests() {
 						vec3(-1.0_r, 1.0_r, 0.0_r)
 					);
 
-					expect(result).to_have_value(vec2(1.0_r, 1.0_r));
+					expect(result).to_be(vec2(1.0_r, 1.0_r));
 				});
 
 				it("reports intersection for lines (YZ)", []() {
@@ -52,7 +52,7 @@ void setup_geometry_tests() {
 						vec3(0.0_r, 2.0_r, -2.0_r)
 					);
 
-					expect(result).to_have_value(vec2(0.5_r, 0.5_r));
+					expect(result).to_be(vec2(0.5_r, 0.5_r));
 				});
 
 				it("reports intersection for lines (YZ) (2)", []() {
@@ -63,7 +63,7 @@ void setup_geometry_tests() {
 						vec3(0.0_r, 1.0_r, 0.0_r)
 					);
 
-					expect(result).to_have_value(vec2(1.0_r, 1.0_r));
+					expect(result).to_be(vec2(1.0_r, 1.0_r));
 				});
 
 				it("reports intersection for lines (not aligned to axes)", []() {
@@ -74,7 +74,7 @@ void setup_geometry_tests() {
 						vec3(2.0_r, 2.0_r, -2.0_r)
 					);
 
-					expect(result).to_have_value(vec2(0.5_r, 0.5_r));
+					expect(result).to_be(vec2(0.5_r, 0.5_r));
 				});
 
 				it("reports non-intersection for lines that meet each other at t_i > 1 (XZ)", []() {
@@ -85,7 +85,7 @@ void setup_geometry_tests() {
 						vec3(-0.5_r, 0.0_r, 0.5_r)
 					);
 
-					expect(result).to_have_value(vec2(2.0_r, 2.0_r));
+					expect(result).to_be(vec2(2.0_r, 2.0_r));
 				});
 
 				it("reports non-intersection for lines that meet each other at t_i > 1 (XY)", []() {
@@ -96,7 +96,7 @@ void setup_geometry_tests() {
 						vec3(-0.5_r, 0.5_r, 0.0_r)
 					);
 
-					expect(result).to_have_value(vec2(2.0_r, 2.0_r));
+					expect(result).to_be(vec2(2.0_r, 2.0_r));
 				});
 
 				it("reports non-intersection for lines that meet each other at t_i > 1 (YZ)", []() {
@@ -107,7 +107,7 @@ void setup_geometry_tests() {
 						vec3(0.0_r, 0.5_r, -0.5_r)
 					);
 
-					expect(result).to_have_value(vec2(2.0_r, 2.0_r));
+					expect(result).to_be(vec2(2.0_r, 2.0_r));
 				});
 
 				it("reports non-intersection for lines that meet each other at t_i > 1 "
@@ -120,7 +120,7 @@ void setup_geometry_tests() {
 						vec3(0.5_r, 0.5_r, -0.5_r)
 					);
 
-					expect(result).to_have_value(vec2(2.0_r, 2.0_r));
+					expect(result).to_be(vec2(2.0_r, 2.0_r));
 				});
 
 				it("reports non-intersection for lines that meet each other at 0 < t1 < 1 "
@@ -132,7 +132,7 @@ void setup_geometry_tests() {
 						vec3(1.0_r, 0.0_r, 0.0_r)
 					);
 
-					expect(result).to_have_value(vec2(0.5_r, 5.0_r));
+					expect(result).to_be(vec2(0.5_r, 5.0_r));
 				});
 
 				it("reports no solution for parallel lines", []() {

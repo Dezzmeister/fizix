@@ -190,7 +190,7 @@ namespace test {
 	public:
 		matchers(const std::optional<T> &_actual, const char * const _file, int _line);
 
-		auto to_have_value(const T &expected) -> decltype(*this)&;
+		auto to_be(const T &expected) -> decltype(*this)&;
 		auto to_be_empty() -> decltype(*this)&;
 
 	private:
@@ -434,7 +434,7 @@ test::matchers<std::optional<T>>::matchers(
 {}
 
 template <typename T>
-auto test::matchers<std::optional<T>>::to_have_value(const T &expected) -> decltype(*this)& {
+auto test::matchers<std::optional<T>>::to_be(const T &expected) -> decltype(*this)& {
 	using traits::to_string;
 
 	if (this->is_done()) {

@@ -94,7 +94,7 @@ void setup_uri_tests() {
 
 				expect(result.authority.userinfo).to_be_empty();
 				expect(result.authority.host).to_be(L"localhost");
-				expect(result.authority.port).to_have_value(1234);
+				expect(result.authority.port).to_be(1234);
 				expect(result.path_and_rest).to_be(L"/path");
 			});
 
@@ -103,7 +103,7 @@ void setup_uri_tests() {
 
 				expect(result.authority.userinfo).to_be_empty();
 				expect(result.authority.host).to_be(ipv4_addr(127, 0, 0, 1));
-				expect(result.authority.port).to_have_value(8000);
+				expect(result.authority.port).to_be(8000);
 				expect(result.path_and_rest).to_be(L"/path");
 			});
 
@@ -112,14 +112,14 @@ void setup_uri_tests() {
 
 				expect(result.authority.userinfo).to_be_empty();
 				expect(result.authority.host).to_be(ipv6_addr(0xfeeb, 0xbeef, 0x1234, 0, 0, 0, 0, 0x9));
-				expect(result.authority.port).to_have_value(65535);
+				expect(result.authority.port).to_be(65535);
 				expect(result.path_and_rest).to_be(L"/path?query");
 			});
 
 			it("Parses a reg-name host with a userinfo but no port", []() {
 				uri result = parse_uri_helper(L"https://username@google.com?query=string");
 
-				expect(result.authority.userinfo).to_have_value(L"username");
+				expect(result.authority.userinfo).to_be(L"username");
 				expect(result.authority.host).to_be(L"google.com");
 				expect(result.authority.port).to_be_empty();
 				expect(result.path_and_rest).to_be(L"?query=string");
@@ -128,7 +128,7 @@ void setup_uri_tests() {
 			it("Parses an IPv4 host with a userinfo but no port", []() {
 				uri result = parse_uri_helper(L"https://username:password@127.0.0.1/path");
 
-				expect(result.authority.userinfo).to_have_value(L"username:password");
+				expect(result.authority.userinfo).to_be(L"username:password");
 				expect(result.authority.host).to_be(ipv4_addr(127, 0, 0, 1));
 				expect(result.authority.port).to_be_empty();
 				expect(result.path_and_rest).to_be(L"/path");
@@ -137,7 +137,7 @@ void setup_uri_tests() {
 			it("Parses an IPv6 host with a userinfo but no port", []() {
 				uri result = parse_uri_helper(L"https://username:password@[feeb:beef:1234::9]/path");
 
-				expect(result.authority.userinfo).to_have_value(L"username:password");
+				expect(result.authority.userinfo).to_be(L"username:password");
 				expect(result.authority.host).to_be(ipv6_addr(0xfeeb, 0xbeef, 0x1234, 0, 0, 0, 0, 0x9));
 				expect(result.authority.port).to_be_empty();
 				expect(result.path_and_rest).to_be(L"/path");
@@ -146,27 +146,27 @@ void setup_uri_tests() {
 			it("Parses a reg-name host with a port and a userinfo", []() {
 				uri result = parse_uri_helper(L"http://userinfo@localhost:1234/path");
 
-				expect(result.authority.userinfo).to_have_value(L"userinfo");
+				expect(result.authority.userinfo).to_be(L"userinfo");
 				expect(result.authority.host).to_be(L"localhost");
-				expect(result.authority.port).to_have_value(1234);
+				expect(result.authority.port).to_be(1234);
 				expect(result.path_and_rest).to_be(L"/path");
 			});
 
 			it("Parses an IPv4 host with a port and a userinfo", []() {
 				uri result = parse_uri_helper(L"https://1234:5678@127.0.0.1:8000/path");
 
-				expect(result.authority.userinfo).to_have_value(L"1234:5678");
+				expect(result.authority.userinfo).to_be(L"1234:5678");
 				expect(result.authority.host).to_be(ipv4_addr(127, 0, 0, 1));
-				expect(result.authority.port).to_have_value(8000);
+				expect(result.authority.port).to_be(8000);
 				expect(result.path_and_rest).to_be(L"/path");
 			});
 
 			it("Parses an IPv6 host with a port and a userinfo", []() {
 				uri result = parse_uri_helper(L"https://u:p:p:p@[feeb:beef:1234::9]:65535/path?query");
 
-				expect(result.authority.userinfo).to_have_value(L"u:p:p:p");
+				expect(result.authority.userinfo).to_be(L"u:p:p:p");
 				expect(result.authority.host).to_be(ipv6_addr(0xfeeb, 0xbeef, 0x1234, 0, 0, 0, 0, 0x9));
-				expect(result.authority.port).to_have_value(65535);
+				expect(result.authority.port).to_be(65535);
 				expect(result.path_and_rest).to_be(L"/path?query");
 			});
 
