@@ -59,3 +59,9 @@ class delete_group_impl : public noop_action_impl {
 
 	void on_accept(char c) override;
 };
+
+class vertex_info_impl : public noop_action_impl {
+	using noop_action_impl::noop_action_impl;
+
+	void on_accept(char c) override;
+};

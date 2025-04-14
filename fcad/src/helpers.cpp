@@ -57,3 +57,7 @@ void write_help_rtf_header(std::ostream &os, const std::string &header) {
 	os << header;
 	os << R"(\par})";
 }
+
+std::string fmt_vec3(const phys::vec3 &v) {
+	return std::format("({} {} {})", v.x, v.y, v.z);
+}

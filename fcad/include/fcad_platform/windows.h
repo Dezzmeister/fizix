@@ -19,6 +19,7 @@ public:
 	);
 
 	void set_cue_text(const std::wstring &text) const;
+	void set_cue_text(const std::string &text) const;
 	void create_help_dialog(const std::string &help_text);
 	void destroy_help_dialog();
 

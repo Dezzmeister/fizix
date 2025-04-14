@@ -70,6 +70,8 @@ public:
 		world &_mesh_world
 	);
 
+	std::optional<vec3> get_vertex_pos(size_t vertex_idx) const;
+
 	bool create_vertex(const vec3 &pos, bool send_event = true);
 	bool create_edge(const edge &e, bool send_event = true);
 	bool create_face(const face &f, bool send_event = true);

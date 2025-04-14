@@ -264,6 +264,7 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 	std::unique_ptr<paste_impl> paste = std::make_unique<paste_impl>(events);
 	std::unique_ptr<move_group_impl> move_group = std::make_unique<move_group_impl>(events);
 	std::unique_ptr<delete_group_impl> delete_group = std::make_unique<delete_group_impl>(events);
+	std::unique_ptr<vertex_info_impl> vertex_info = std::make_unique<vertex_info_impl>(events);
 
 	std::unique_ptr<action> delete_actions[] = {
 		std::make_unique<char_seq_action>("v", *delete_vertex),
@@ -324,6 +325,9 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 		),
 		std::make_unique<char_seq_action>("mg", *move_group,
 			"Shortcut for the {\\b\\f1 :mg} command to move a group of features."
+		),
+		std::make_unique<char_seq_action>("n", *vertex_info,
+			"Shortcut for the {\\b\\f1 :n} command to print the position of a vertex."
 		)
 	};
 
@@ -343,7 +347,8 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 		std::move(yank_group),
 		std::move(paste),
 		std::move(move_group),
-		std::move(delete_group)
+		std::move(delete_group),
+		std::move(vertex_info)
 	};
 
 	action_group actions(

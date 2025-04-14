@@ -308,6 +308,13 @@ void platform_bridge::set_cue_text(const std::wstring &text) const {
 	is_cue_banner_set = true;
 }
 
+void platform_bridge::set_cue_text(const std::string &text) const {
+	const std::wstring wstr = util::to_wstring(text);
+
+	SendMessageW(command_input, EM_SETCUEBANNER, FALSE, (LPARAM)wstr.data());
+	is_cue_banner_set = true;
+}
+
 void platform_bridge::create_help_dialog(const std::string &help_text) {
 	if (help_dialog) {
 		return;

@@ -38,3 +38,7 @@ void move_group_impl::on_accept(char) {
 void delete_group_impl::on_accept(char) {
 	mode->set_mode(edit_mode::Command, L":dg ");
 }
+
+void vertex_info_impl::on_accept(char) {
+	mode->set_mode(edit_mode::Command, L":n ");
+}

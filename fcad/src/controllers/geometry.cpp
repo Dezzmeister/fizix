@@ -354,6 +354,14 @@ geometry_controller::geometry_controller(
 	glLineWidth(2);
 }
 
+std::optional<vec3> geometry_controller::get_vertex_pos(size_t vertex_idx) const {
+	if (vertex_idx >= poly.vertices.size()) {
+		return std::nullopt;
+	}
+
+	return poly.vertices[vertex_idx].v;
+}
+
 void geometry_controller::reset() {
 	for (const auto &rf : face_meshes) {
 		rf->remove_from_world(mesh_world);
