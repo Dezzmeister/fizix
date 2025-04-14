@@ -6,8 +6,6 @@ simple CAD files with the keyboard.
 
 ## TODO
 
-- Make 't' action cycle through labeltypes
-- Add a command to describe a vertex
 - Variables, functions, parametric features
 - Creation of boxes with one command
 - Boolean operations on faces

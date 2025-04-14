@@ -477,12 +477,8 @@ void geometry_controller::set_vert_label_type(vert_label_type _label_type) {
 	label_type = _label_type;
 }
 
-void geometry_controller::set_vert_labels_visible(bool _visible) {
-	show_vert_labels = _visible;
-}
-
-bool geometry_controller::are_vert_labels_visible() const {
-	return show_vert_labels;
+vert_label_type geometry_controller::get_vert_label_type() const {
+	return label_type;
 }
 
 const polyhedron& geometry_controller::get_poly() const {
@@ -1140,7 +1136,7 @@ int geometry_controller::handle(post_processing_event &event) {
 	assert(vert_label_font);
 	axes.draw_labels(event.draw2d, *axis_label_font);
 
-	if (! show_vert_labels) {
+	if (label_type == vert_label_type::None) {
 		return 0;
 	}
 

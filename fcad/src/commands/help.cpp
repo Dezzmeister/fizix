@@ -38,7 +38,7 @@ Some commands take arguments. In this table, required arguments are marked with 
 {\f1\fs14 f(8 2 0)}\tab\tab The face with vertices 8, 2, and 0 in that order\line
 If an argument can only accept one type of feature, then the feature can be specified implicitly:\line
 {\f1\fs14 1}\tab\tab The vertex with index 1\line
-{\f1\fs14 4 9}\tab\tab The egde connecting vertex 4 and vertex 9\line
+{\f1\fs14 4 9}\tab\tab The edge connecting vertex 4 and vertex 9\line
 {\f1\fs14 8 2 0}\tab\tab The face with vertices 8, 2, and 0 in that order\line
 Some arguments accept vectors which can usually be specified implicitly, but in cases where an argument can
  be either a vector or a feature, the vector must be specified explicitly:\line

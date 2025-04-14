@@ -16,7 +16,17 @@ void redo_edit_impl::on_accept(char) {
 }
 
 void toggle_labels_impl::on_accept(char) {
-	geom->set_vert_labels_visible(! geom->are_vert_labels_visible());
+	switch (geom->get_vert_label_type()) {
+		case vert_label_type::IndexAndPos:
+			geom->set_vert_label_type(vert_label_type::IndexOnly);
+			break;
+		case vert_label_type::IndexOnly:
+			geom->set_vert_label_type(vert_label_type::None);
+			break;
+		case vert_label_type::None:
+			geom->set_vert_label_type(vert_label_type::IndexAndPos);
+			break;
+	}
 }
 
 void yank_face_impl::on_accept(char) {

@@ -309,7 +309,7 @@ window_actions make_window_actions(event_buses&, fcad_event_bus &events) {
 			"Redoes the last undone edit."
 		),
 		std::make_unique<char_seq_action>("t", *toggle_labels,
-			"Toggles vertex labels."
+			"Cycles the vertex label type."
 		),
 		std::make_unique<action_tree>(
 			char_seq_action("y", *noop),

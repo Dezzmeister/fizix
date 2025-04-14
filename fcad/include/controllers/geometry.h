@@ -46,7 +46,8 @@ private:
 
 enum class vert_label_type {
 	IndexOnly,
-	IndexAndPos
+	IndexAndPos,
+	None
 };
 
 struct triangle {
@@ -89,8 +90,7 @@ public:
 	void flip(const face &f);
 
 	void set_vert_label_type(vert_label_type _label_type);
-	void set_vert_labels_visible(bool _visible);
-	bool are_vert_labels_visible() const;
+	vert_label_type get_vert_label_type() const;
 
 	const polyhedron& get_poly() const;
 
@@ -144,7 +144,6 @@ private:
 	const font * axis_label_font{};
 	axes_controller axes;
 	vert_label_type label_type{ vert_label_type::IndexAndPos };
-	bool show_vert_labels{};
 
 	void remove_face_geoms(const std::vector<face> &faces);
 	aabb calculate_aabb() const;
