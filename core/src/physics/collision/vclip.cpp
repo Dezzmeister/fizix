@@ -73,6 +73,7 @@ namespace phys {
 			out.is_clipped = true;
 			return out;
 		}
+
 		std::optional<feature> deriv_check(
 			const polyhedron &p_e,
 			const polyhedron &p_f,
@@ -1035,6 +1036,10 @@ namespace phys {
 
 			norm = normalize(cross(e1, e2));
 			return norm;
+		}
+
+		void face::invalidate_normal() {
+			norm_needs_update = true;
 		}
 
 		edge face::get_ccw(const edge &_e) const {

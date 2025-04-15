@@ -12,7 +12,7 @@ file_controller::file_controller(fcad_event_bus &_events) :
 
 void file_controller::write_file(const std::wstring &_path_str) {
 	std::wstring trimmed_path = trim(_path_str);
-	std::optional<std::filesystem::path> path = active_file;
+	std::optional<std::filesystem::path> path = last_touched_file;
 
 	if (! trimmed_path.empty()) {
 		path = std::filesystem::absolute(trimmed_path);
@@ -30,12 +30,12 @@ void file_controller::write_file(const std::wstring &_path_str) {
 		write_replay_file(*path);
 	}
 
-	active_file = path;
+	last_touched_file = path;
 }
 
-void file_controller::read_file(const std::wstring &path_str, bool make_active) {
+void file_controller::read_file(const std::wstring &path_str, bool make_last_touched) {
 	std::wstring trimmed_path = trim(path_str);
-	std::optional<std::filesystem::path> path = active_file;
+	std::optional<std::filesystem::path> path = last_touched_file;
 
 	if (! trimmed_path.empty()) {
 		path = std::filesystem::absolute(trimmed_path);
@@ -45,10 +45,10 @@ void file_controller::read_file(const std::wstring &path_str, bool make_active) 
 		return;
 	}
 
-	read_file(*path, make_active);
+	read_file(*path, make_last_touched);
 }
 
-void file_controller::read_file(const std::filesystem::path &path, bool make_active) {
+void file_controller::read_file(const std::filesystem::path &path, bool make_last_touched) {
 	std::wstring path_str = path.wstring();
 
 	if (path_str.ends_with(L".stl") || path_str.ends_with(L".STL")) {
@@ -57,8 +57,8 @@ void file_controller::read_file(const std::filesystem::path &path, bool make_act
 		read_replay_file(path);
 	}
 
-	if (make_active) {
-		active_file = path;
+	if (make_last_touched) {
+		last_touched_file = path;
 	}
 }
 

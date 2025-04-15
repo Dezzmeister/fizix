@@ -126,6 +126,8 @@ command_controller make_commands(event_buses&, fcad_event_bus &events) {
 	impls.emplace(std::make_pair(L"mg", std::make_unique<move_group_command_impl>(events)));
 	impls.emplace(std::make_pair(L"dg", std::make_unique<delete_group_command_impl>(events)));
 	impls.emplace(std::make_pair(L"n", std::make_unique<vertex_info_command_impl>(events)));
+	impls.emplace(std::make_pair(L"let", std::make_unique<let_command_impl>(events)));
+	impls.emplace(std::make_pair(L"set", std::make_unique<set_command_impl>(events)));
 
 	return command_controller(events, std::move(impls));
 }

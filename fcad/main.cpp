@@ -27,6 +27,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include "controllers/file.h"
 #include "controllers/geometry.h"
 #include "controllers/mode.h"
+#include "controllers/parameter.h"
 #include "controllers/preferences.h"
 
 // TODO: Check command line and possibly load file
@@ -104,6 +105,7 @@ int main(int, const char * const * const) {
 	geometry_controller geom(buses, events, mesh_world);
 	preferences_controller prefs(events);
 	clipboard_controller clipboard(events);
+	parameter_controller params(events);
 	fcad_start_event fcad_start(
 		platform,
 		geom,
@@ -115,7 +117,8 @@ int main(int, const char * const * const) {
 		commands,
 		prefs,
 		mesh_world,
-		clipboard
+		clipboard,
+		params
 	);
 
 	platform.set_cue_text(L"Type :h and press ENTER for help");

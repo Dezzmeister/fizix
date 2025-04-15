@@ -42,10 +42,6 @@ namespace parsing {
 	// number of chars parsed.
 	size_t parse_dec_digits(parser_state &state, std::wstringstream &out);
 
-	// Tries to parse an "alpha" as defined by RFC2234 ("A-Z / a-z").
-	// Returns the alpha if successful; otherwise returns -1.
-	int8_t parse_alpha(parser_state &state);
-
 	// Tries to parse a single digit as defined by RFC2234 ("0-9").
 	// Returns the numeric representation of the digit if successful;
 	// otherwise returns -1.

@@ -14,6 +14,8 @@ namespace phys {
 	// convex polyhedra as described in https://merl.com/publications/TR97-05.
 	// Mitsubishi's patent on this algorithm expired in 2012:
 	// https://patentcenter.uspto.gov/applications/08921162
+	// See `closest_features()` for the top-level function implementing
+	// the algorithm.
 	namespace vclip {
 		struct polyhedron;
 		struct vertex;
@@ -129,6 +131,9 @@ namespace phys {
 			// it points in the direction of whatever side has the vertices in CCW
 			// winding order.
 			vec3 normal(const polyhedron &p, bool force_recompute = false) const;
+			// Marks the cached normal as invalid. Use this if you move the face's
+			// vertices.
+			void invalidate_normal();
 			// Returns a copy of `e` with its two vertices arranged in CCW winding
 			// order around the face
 			edge get_ccw(const edge &e) const;
@@ -273,6 +278,9 @@ namespace phys {
 			feature f1;
 			feature f2;
 			algorithm_step step;
+			// A measure of the distance between the two features. Will be > 0 iff
+			// the features are not interpenetrating; < 0 iff they are.
+			// TODO: Rename this
 			real penetration{};
 
 			friend bool operator==(
@@ -281,6 +289,9 @@ namespace phys {
 			);
 		};
 
+		// The result of running the algorithm for two convex polyhedra. At termination,
+		// `state.step` will either be `Done` or `Penetration`. The algorithm only reports
+		// penetration for a vertex and a face, or an edge and a face.
 		struct algorithm_result {
 			const polyhedron &p1;
 			const polyhedron &p2;

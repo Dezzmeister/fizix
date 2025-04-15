@@ -8,6 +8,7 @@
 #include <util.h>
 #include "commands.h"
 #include "helpers.h"
+#include "parameter/parser.h"
 #include "parsing.h"
 
 using namespace phys;
@@ -129,16 +130,21 @@ void create_vertex_command_impl::on_submit(const std::wstring &args) {
 	std::wstringstream wss{};
 	wss << args;
 	parsing::parser_state state(wss);
+	error_log log{};
 	parsing::parse_whitespace(state);
 
-	partial_vec3 pos_opt = parse_vec3(state);
-	std::optional<vec3> vertex_opt = pos_opt.try_as_vec3();
+	std::optional<std::unique_ptr<vector_expr>> expr_opt = parse_vector_expr(
+		state,
+		log,
+		true
+	);
 
-	if (! vertex_opt) {
+	if (! expr_opt) {
+		platform->set_cue_text(log.to_wstr(args));
 		return;
 	}
 
-	if (geom->create_vertex(*vertex_opt)) {
+	if (params->create_vertex(std::move(*expr_opt))) {
 		history->add_command(L":v " + args);
 	}
 }

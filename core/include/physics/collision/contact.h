@@ -2,6 +2,7 @@
 #include "../../traits.h"
 #include "../math.h"
 #include "../rigid_body.h"
+#include "vclip.h"
 
 namespace phys {
 	struct contact {
@@ -18,6 +19,12 @@ namespace phys {
 			const vec3 &_point,
 			const vec3 &_normal,
 			real _penetration
+		);
+
+		static contact from_vclip(
+			rigid_body * _a,
+			rigid_body * _b,
+			vclip::algorithm_result &_result
 		);
 
 		friend bool operator==(const contact &a, const contact &b);

@@ -25,6 +25,7 @@ class action_controller;
 class command_controller;
 class preferences_controller;
 class clipboard_controller;
+class parameter_controller;
 
 struct fcad_start_event {
 	platform_bridge &platform;
@@ -38,6 +39,7 @@ struct fcad_start_event {
 	preferences_controller &prefs;
 	world &mesh_world;
 	clipboard_controller &clipboard;
+	parameter_controller &params;
 
 	fcad_start_event(
 		platform_bridge &_platform,
@@ -50,7 +52,8 @@ struct fcad_start_event {
 		command_controller &_commands,
 		preferences_controller &_prefs,
 		world &_mesh_world,
-		clipboard_controller &_clipboard
+		clipboard_controller &_clipboard,
+		parameter_controller &_params
 	) :
 		platform(_platform),
 		gc(_gc),
@@ -62,7 +65,8 @@ struct fcad_start_event {
 		commands(_commands),
 		prefs(_prefs),
 		mesh_world(_mesh_world),
-		clipboard(_clipboard)
+		clipboard(_clipboard),
+		params(_params)
 	{}
 };
 

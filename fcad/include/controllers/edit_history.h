@@ -1,7 +1,10 @@
 #pragma once
 #include <fstream>
 #include "fcad_events.h"
-#include "geometry.h"
+
+class platform_bridge;
+class geometry_controller;
+class parameter_controller;
 
 class edit_history_controller :
 	traits::pinned<edit_history_controller>,
@@ -20,7 +23,9 @@ public:
 
 private:
 	fcad_event_bus &events;
+	platform_bridge * platform{};
 	geometry_controller * geom{};
+	parameter_controller * params{};
 	// TODO: Max command history, restorable states
 	std::vector<std::wstring> commands{};
 	size_t curr_pos{};

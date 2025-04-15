@@ -23,7 +23,7 @@ int preferences_controller::handle(fcad_start_event &event) {
 
 	std::filesystem::path base_dir(userprofile);
 
-	event.fc.read_file(base_dir / L".fcadrc", false);
+	event.fc.read_file((base_dir / L".fcadrc").wstring(), false);
 
 	return 0;
 }

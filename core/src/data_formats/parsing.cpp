@@ -141,26 +141,13 @@ namespace parsing {
 		}
 	}
 
-	int8_t parse_alpha(parser_state &state) {
-		wchar_t curr_char = state.peek();
-
-		if (
-			(curr_char >= L'A' && curr_char <= L'Z') ||
-			(curr_char >= L'z' && curr_char <= L'z')
-			) {
-			return curr_char & 0xFF;
-		}
-
-		return -1;
-	}
-
 	bool parse_alpha(parser_state &state, std::wstringstream &out) {
 		wchar_t curr_char = state.peek();
 
 		if (
 			(curr_char >= L'A' && curr_char <= L'Z') ||
 			(curr_char >= L'a' && curr_char <= L'z')
-			) {
+		) {
 			out << state.get();
 			return true;
 		}

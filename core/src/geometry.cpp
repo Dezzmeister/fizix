@@ -248,6 +248,10 @@ vbo_entry * geometry::get_vertex(size_t vertex_idx) {
 	return (vbo_entry *)(vbo_data.data() + vertex_idx * stride);
 }
 
+void geometry::invalidate_vbo() {
+	vbo_needs_update = true;
+}
+
 const vbo_entry * geometry::get_vertex(size_t vertex_idx) const {
 	// TODO: Consolidate strides
 	constexpr size_t stride = (3 + 3 + 2 + 3 + 3);

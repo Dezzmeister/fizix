@@ -5,6 +5,7 @@
 #include "controllers/edit_history.h"
 #include "controllers/file.h"
 #include "controllers/geometry.h"
+#include "controllers/parameter.h"
 #include "fcad_events.h"
 #include "fcad_platform/platform.h"
 
@@ -30,6 +31,7 @@ protected:
 	camera_controller * camera{};
 	platform_bridge * platform{};
 	clipboard_controller * clipboard{};
+	parameter_controller * params{};
 };
 
 struct create_vertex_preview :
@@ -197,6 +199,20 @@ class delete_group_command_impl : public noop_command_impl {
 };
 
 class vertex_info_command_impl : public noop_command_impl {
+	using noop_command_impl::noop_command_impl;
+
+	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
+};
+
+class let_command_impl : public noop_command_impl {
+	using noop_command_impl::noop_command_impl;
+
+	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
+};
+
+class set_command_impl : public noop_command_impl {
 	using noop_command_impl::noop_command_impl;
 
 	void on_submit(const std::wstring &args) override;

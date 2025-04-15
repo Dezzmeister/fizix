@@ -1,5 +1,8 @@
 #include <filesystem>
 #include "controllers/edit_history.h"
+#include "controllers/geometry.h"
+#include "controllers/parameter.h"
+#include "fcad_platform/platform.h"
 
 edit_history_controller::edit_history_controller(
 	fcad_event_bus &_events
@@ -37,6 +40,7 @@ void edit_history_controller::undo() {
 	// TODO: Be smarter about undos. Either make each command reversible, or keep
 	// a base state with N subsequent edits
 	geom->reset();
+	params->reset();
 
 	curr_pos--;
 	assert(curr_pos < commands.size());
@@ -49,6 +53,9 @@ void edit_history_controller::undo() {
 	}
 
 	is_history_locked = false;
+
+	const std::wstring last_edit = commands[curr_pos];
+	platform->set_cue_text(L"Undid \"" + last_edit + L"\"");
 }
 
 void edit_history_controller::redo() {
@@ -65,6 +72,9 @@ void edit_history_controller::redo() {
 	curr_pos++;
 
 	is_history_locked = false;
+
+	const std::wstring last_edit = commands[curr_pos - 1];
+	platform->set_cue_text(L"Redid \"" + last_edit + L"\"");
 }
 
 void edit_history_controller::clear() {
@@ -73,7 +83,9 @@ void edit_history_controller::clear() {
 }
 
 int edit_history_controller::handle(fcad_start_event &event) {
+	platform = &event.platform;
 	geom = &event.gc;
+	params = &event.params;
 
 	return 0;
 }

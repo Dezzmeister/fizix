@@ -73,7 +73,7 @@ public:
 
 	std::optional<vec3> get_vertex_pos(size_t vertex_idx) const;
 
-	bool create_vertex(const vec3 &pos, bool send_event = true);
+	int64_t create_vertex(const vec3 &pos, bool send_event = true);
 	bool create_edge(const edge &e, bool send_event = true);
 	bool create_face(const face &f, bool send_event = true);
 
@@ -114,6 +114,7 @@ public:
 
 	void move_features(const polyhedron &p, const vec3 &offset);
 	void delete_features(const polyhedron &p);
+	bool move_vertex(size_t vertex_idx, const vec3 &new_pos, bool show_feedback = true);
 
 	int handle(program_start_event &event) override;
 	int handle(fcad_start_event &event) override;

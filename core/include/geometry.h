@@ -56,6 +56,7 @@ public:
 	);
 	void remove_vertex(size_t vertex_idx);
 	vbo_entry * get_vertex(size_t vertex_idx);
+	void invalidate_vbo();
 	const vbo_entry * get_vertex(size_t vertex_idx) const;
 	void clear_vertices();
 	size_t get_num_vertices() const;

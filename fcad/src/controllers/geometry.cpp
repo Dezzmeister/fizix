@@ -913,6 +913,48 @@ void geometry_controller::delete_features(const polyhedron &p) {
 	regenerate_edge_geom();
 }
 
+bool geometry_controller::move_vertex(
+	size_t vertex_idx,
+	const vec3 &new_pos,
+	bool show_feedback
+) {
+	if (! is_valid_vertex(vertex_idx, show_feedback)) {
+		return false;
+	}
+
+	const vec3 old_pos = poly.vertices[vertex_idx].v;
+
+	poly.vertices[vertex_idx].v = new_pos;
+	vert_geom.set_vertex(
+		vertex_idx,
+		new_pos,
+		vec3(0.0_r),
+		vec2(0.0_r)
+	);
+
+	using traits::to_string;
+
+	// TODO: Optimize this, reduce time complexity
+	// TODO: Fix normals?
+	for (auto const &rf : face_meshes) {
+		for (size_t i = 0; i < rf->geom.get_num_vertices(); i++) {
+			vbo_entry * ent = rf->geom.get_vertex(i);
+			const vec3 pos(ent->vertex[0], ent->vertex[1], ent->vertex[2]);
+
+			if (util::eq_within_epsilon(pos, old_pos)) {
+				ent->vertex[0] = new_pos.x;
+				ent->vertex[1] = new_pos.y;
+				ent->vertex[2] = new_pos.z;
+				rf->geom.invalidate_vbo();
+			}
+		}
+	}
+
+	regenerate_edge_geom();
+
+	return true;
+}
+
 int geometry_controller::handle(program_start_event &event) {
 	vert_label_font = &event.draw2d->get_font("spleen_6x12");
 	axis_label_font = &event.draw2d->get_font("spleen_12x24");
@@ -926,7 +968,7 @@ int geometry_controller::handle(fcad_start_event &event) {
 	return 0;
 }
 
-bool geometry_controller::create_vertex(const vec3 &pos, bool send_event) {
+int64_t geometry_controller::create_vertex(const vec3 &pos, bool send_event) {
 	if (! can_create_vertex(pos)) {
 		return false;
 	}
@@ -935,7 +977,7 @@ bool geometry_controller::create_vertex(const vec3 &pos, bool send_event) {
 		create_vertex_event event(pos);
 
 		if (events.fire(event)) {
-			return false;
+			return -1;
 		}
 	}
 
@@ -951,7 +993,7 @@ bool geometry_controller::create_vertex(const vec3 &pos, bool send_event) {
 
 	axes.set_max_axis(max / 2.0f);
 
-	return true;
+	return poly.vertices.size() - 1;
 }
 
 void geometry_controller::add_poly_at(const polyhedron &p, const vec3 &at) {
