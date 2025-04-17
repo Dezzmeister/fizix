@@ -42,10 +42,12 @@ void let_command_impl::on_submit(const std::wstring &args) {
 	parsing::parse_whitespace(state);
 
 	if (! state.eof()) {
-		log.errors.push_back(parse_error(
-			L"Unexpected trailing chars",
-			state.get_col_num()
-		));
+		if (log.errors.empty()) {
+			log.errors.push_back(parse_error(
+				L"Unexpected trailing chars",
+				state.get_col_num()
+			));
+		}
 		platform->set_cue_text(log.to_wstr(args));
 		return;
 	}

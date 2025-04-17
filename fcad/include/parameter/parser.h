@@ -25,7 +25,6 @@ std::optional<std::wstring> parse_scalar_ident(
 	parsing::parser_state &state,
 	error_log &log
 );
-
 std::optional<std::unique_ptr<scalar_expr>> parse_scalar_expr(
 	parsing::parser_state &state,
 	error_log &log

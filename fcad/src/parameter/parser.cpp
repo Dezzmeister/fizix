@@ -2,9 +2,19 @@
 #include "parameter/parser.h"
 #include "util.h"
 
-const wchar_t SCALAR_SIGIL = L'$';
+// Grammar
+// S' -> + Sc S' | - Sc S' | epsilon
+// S -> Lit S' | $ Ident S'
+// Sc -> (S) | S
+
+// Vec -> (Ident {,} Ident {,} Ident) | vIdx
+
+// TODO: Fix let $y = (1*2)/$x
+// Sc -> (S) S' | S S'
 
 namespace {
+	const wchar_t SCALAR_SIGIL = L'$';
+
 	std::optional<std::wstring> parse_ident(wchar_t sigil, parsing::parser_state &state) {
 		std::wstringstream out{};
 		out << sigil;
@@ -27,6 +37,66 @@ namespace {
 		}
 
 		return ident;
+	}
+
+	std::optional<std::unique_ptr<scalar_expr>> parse_scalar_p(
+		parsing::parser_state &state,
+		error_log &log,
+		std::unique_ptr<scalar_expr> &prev_s
+	) {
+		wchar_t op = state.peek();
+
+		if (op == L'+' || op == L'-' || op == L'*' || op == L'/') {
+			state.get();
+		} else {
+			// epsilon
+			return std::nullopt;
+		}
+
+		parsing::parse_whitespace(state);
+
+		std::optional<std::unique_ptr<scalar_expr>> op2_opt = parse_scalar_expr(state, log);
+
+		if (! op2_opt) {
+			log.errors.push_back(parse_error(
+				L"Expected scalar expression",
+				state.get_col_num()
+			));
+			return std::nullopt;
+		}
+
+		parsing::parse_whitespace(state);
+
+		std::unique_ptr<scalar_expr> new_op1{};
+
+		switch (op) {
+			case L'+': {
+				new_op1 = std::make_unique<scalar_add_expr>(std::move(prev_s), std::move(*op2_opt));
+				break;
+			}
+			case L'-': {
+				new_op1 = std::make_unique<scalar_sub_expr>(std::move(prev_s), std::move(*op2_opt));
+				break;
+			}
+			case L'*': {
+				new_op1 = std::make_unique<scalar_mul_expr>(std::move(prev_s), std::move(*op2_opt));
+				break;
+			}
+			case L'/': {
+				new_op1 = std::make_unique<scalar_div_expr>(std::move(prev_s), std::move(*op2_opt));
+				break;
+			}
+			default:
+				std::unreachable();
+		}
+
+		std::optional<std::unique_ptr<scalar_expr>> sp = parse_scalar_p(state, log, new_op1);
+
+		if (sp) {
+			return sp;
+		}
+
+		return new_op1;
 	}
 
 	std::optional<std::unique_ptr<vector_literal_expr>> parse_vector_literal(
@@ -122,6 +192,60 @@ namespace {
 			std::move(*z_opt)
 		);
 	}
+
+	std::optional<std::unique_ptr<scalar_expr>> parse_s(
+		parsing::parser_state &state,
+		error_log &log
+	) {
+		std::optional<std::unique_ptr<scalar_expr>> op1_opt{};
+
+		parsing::parse_whitespace(state);
+
+		if (state.peek() == SCALAR_SIGIL) {
+			std::optional<std::wstring> ident_opt = parse_scalar_ident(state, log);
+
+			if (! ident_opt) {
+				log.errors.push_back(parse_error(
+					L"Expected identifier",
+					state.get_col_num()
+				));
+				return std::nullopt;
+			}
+
+			op1_opt = std::make_unique<scalar_ident_expr>(*ident_opt);
+		} else {
+			std::optional<real> lit_opt = parse_real(state);
+
+			if (! lit_opt) {
+				log.errors.push_back(parse_error(
+					L"Expected scalar literal",
+					state.get_col_num()
+				));
+				return std::nullopt;
+			}
+
+			op1_opt = std::make_unique<scalar_literal_expr>(*lit_opt);
+		}
+
+		if (! op1_opt) {
+			// Should be unreachable
+			log.errors.push_back(parse_error(
+				L"Expected scalar expression",
+				state.get_col_num()
+			));
+			return std::nullopt;
+		}
+
+		parsing::parse_whitespace(state);
+
+		std::optional<std::unique_ptr<scalar_expr>> sp = parse_scalar_p(state, log, *op1_opt);
+
+		if (! sp) {
+			return op1_opt;
+		}
+
+		return sp;
+	}
 }
 
 parse_error::parse_error(const std::wstring &_err, size_t _char_pos) :
@@ -166,33 +290,36 @@ std::optional<std::unique_ptr<scalar_expr>> parse_scalar_expr(
 	parsing::parser_state &state,
 	error_log &log
 ) {
+	bool parens = false;
+
 	parsing::parse_whitespace(state);
 
-	if (state.peek() == SCALAR_SIGIL) {
-		std::optional<std::wstring> ident_opt = parse_scalar_ident(state, log);
+	if (state.peek() == L'(') {
+		parens = true;
+		state.get();
+	}
 
-		if (! ident_opt) {
+	parsing::parse_whitespace(state);
+
+	std::optional<std::unique_ptr<scalar_expr>> s = parse_s(state, log);
+
+	parsing::parse_whitespace(state);
+
+	if (parens) {
+		if (state.peek() == L')') {
+			state.get();
+		} else {
 			log.errors.push_back(parse_error(
-				L"Expected identifier",
+				L"Expected ')'",
 				state.get_col_num()
 			));
 			return std::nullopt;
 		}
-
-		return std::make_unique<scalar_ident_expr>(*ident_opt);
 	}
 
-	std::optional<real> literal_opt = parse_real(state);
+	parsing::parse_whitespace(state);
 
-	if (literal_opt) {
-		return std::make_unique<scalar_literal_expr>(*literal_opt);
-	}
-
-	log.errors.push_back(parse_error(
-		L"Expected scalar literal",
-		state.get_col_num()
-	));
-	return std::nullopt;
+	return s;
 }
 
 std::optional<std::unique_ptr<vector_expr>> parse_vector_expr(
