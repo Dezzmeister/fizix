@@ -2,7 +2,17 @@
 #include "parameter/ast.h"
 #include "parameter/eval.h"
 
+std::wstring type_err_log::to_wstr() const {
+	if (errors.empty()) {
+		return L"";
+	}
+
+	return errors[errors.size() - 1];
+}
+
 expr::expr(expr_type _type) : type(_type) {}
+
+void expr::typecheck(const eval_context&, type_err_log&) const {}
 
 expr_class scalar_expr::get_expr_class() const {
 	return expr_class::Scalar;
@@ -158,4 +168,92 @@ phys::vec3 vector_literal_expr::eval(const eval_context &ctx) const {
 
 bool vector_literal_expr::is_const() const {
 	return x->is_const() && y->is_const() && z->is_const();
+}
+
+scalar_func_expr::scalar_func_expr(
+	const std::wstring &_name,
+	std::vector<std::unique_ptr<expr>> &&_args
+) :
+	scalar_expr(expr_type::ScalarFunc),
+	name(_name),
+	args(std::move(_args))
+{}
+
+phys::real scalar_func_expr::eval(const eval_context &ctx) const {
+	std::vector<func_arg> arg_vals{};
+
+	for (const auto &arg_expr : args) {
+		const expr_class arg_t = arg_expr->get_expr_class();
+
+		if (arg_t == expr_class::Scalar) {
+			const scalar_expr * expr = static_cast<scalar_expr *>(arg_expr.get());
+
+			arg_vals.push_back(expr->eval(ctx));
+		} else {
+			const vector_expr * expr = static_cast<vector_expr *>(arg_expr.get());
+
+			arg_vals.push_back(expr->eval(ctx));
+		}
+	}
+
+	const func_defn &defn = ctx.builtin_funcs->at(name);
+
+	return std::get<phys::real>(defn.body(arg_vals));
+}
+
+bool scalar_func_expr::is_const() const {
+	// Functions are pure
+	for (const auto &arg : args) {
+		if (! arg->is_const()) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void scalar_func_expr::typecheck(const eval_context &ctx, type_err_log &log) const {
+	using traits::to_string;
+	using util::to_wstring;
+	// TODO: traits::to_wstring
+
+	if (! ctx.builtin_funcs->count(name)) {
+		log.errors.push_back(L"\"" + name + L"\" is undefined");
+		return;
+	}
+
+	const func_defn &defn = ctx.builtin_funcs->at(name);
+
+	if (args.size() != defn.args_t.size()) {
+		log.errors.push_back(
+			L"Expected " + to_wstring(to_string(defn.args_t.size())) +
+			L" arguments, received " + to_wstring(to_string(args.size()))
+		);
+		return;
+	}
+
+	for (size_t i = 0; i < args.size(); i++) {
+		const expr_class exp_expr_t = defn.args_t.at(i);
+		const expr_class actual_expr_t = args.at(i)->get_expr_class();
+
+		if (actual_expr_t != exp_expr_t) {
+			if (exp_expr_t == expr_class::Scalar) {
+				log.errors.push_back(
+					L"Expected scalar argument, received vector"
+				);
+			} else {
+				log.errors.push_back(
+					L"Expected vector argument, received scalar"
+				);
+			}
+			return;
+		}
+	}
+
+	if (defn.ret_t != expr_class::Scalar) {
+		log.errors.push_back(
+			L"Expected scalar expression"
+		);
+		return;
+	}
 }

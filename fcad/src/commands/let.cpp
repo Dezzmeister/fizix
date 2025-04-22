@@ -15,7 +15,7 @@ void let_command_impl::on_submit(const std::wstring &args) {
 	std::optional<std::wstring> ident_opt = parse_scalar_ident(state, log);
 
 	if (! ident_opt) {
-		platform->set_cue_text(log.to_wstr(args));
+		set_output(log.to_wstr(args));
 		return;
 	}
 
@@ -26,7 +26,7 @@ void let_command_impl::on_submit(const std::wstring &args) {
 			L"Expected '='",
 			state.get_col_num()
 		));
-		platform->set_cue_text(log.to_wstr(args));
+		set_output(log.to_wstr(args));
 		return;
 	}
 
@@ -35,7 +35,7 @@ void let_command_impl::on_submit(const std::wstring &args) {
 	std::optional<std::unique_ptr<scalar_expr>> expr = parse_scalar_expr(state, log);
 
 	if (! expr) {
-		platform->set_cue_text(log.to_wstr(args));
+		set_output(log.to_wstr(args));
 		return;
 	}
 
@@ -48,18 +48,25 @@ void let_command_impl::on_submit(const std::wstring &args) {
 				state.get_col_num()
 			));
 		}
-		platform->set_cue_text(log.to_wstr(args));
+		set_output(log.to_wstr(args));
+		return;
+	}
+
+	type_err_log type_errs = params->typecheck(**expr);
+
+	if (! type_errs.errors.empty()) {
+		set_output(type_errs.to_wstr());
 		return;
 	}
 
 	try {
 		params->add_scalar_parameter(*ident_opt, std::move(*expr));
 	} catch (const param_exists_error&) {
-		platform->set_cue_text(L"Parameter \"" + *ident_opt + L"\" already exists");
+		set_output(L"Parameter \"" + *ident_opt + L"\" already exists");
 		return;
 	}
 
-	platform->set_cue_text(L"Created parameter \"" + *ident_opt + L"\"");
+	set_output(L"Created parameter \"" + *ident_opt + L"\"");
 	history->add_command(L":let " + args);
 }
 

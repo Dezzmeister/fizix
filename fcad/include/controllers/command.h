@@ -5,23 +5,26 @@
 #include "fcad_events.h"
 
 class command_controller :
+	public event_listener<fcad_start_event>,
 	public event_listener<command_cancel_event>,
 	public event_listener<command_input_event>,
 	public event_listener<command_submit_event>
 {
 public:
 	command_controller(
-		fcad_event_bus &_events,
+		fcad_event_bus &_fcad_events,
 		std::map<std::wstring, std::unique_ptr<command_impl>> &&_command_impls
 	);
 
 	void write_help_text(std::ostream &os) const;
 
+	int handle(fcad_start_event &event) override;
 	int handle(command_cancel_event &event) override;
 	int handle(command_input_event &event) override;
 	int handle(command_submit_event &event) override;
 
 private:
+	platform_bridge * platform{};
 	std::map<std::wstring, std::unique_ptr<command_impl>> command_impls;
 };
 

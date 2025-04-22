@@ -9,7 +9,7 @@ void paste_command_impl::on_submit(const std::wstring &args) {
 	std::optional<vec3_or_index_feature> vec3_or_index_opt = parse_explicit_vec3_or_feature(state);
 
 	if (! vec3_or_index_opt) {
-		platform->set_cue_text(L"Expected a vector or vertex");
+		set_output(L"Expected a vector or vertex");
 		return;
 	}
 
@@ -28,14 +28,14 @@ void paste_command_impl::on_submit(const std::wstring &args) {
 
 		pos = *pos_opt;
 	} else {
-		platform->set_cue_text(L"Expected a vector or vertex");
+		set_output(L"Expected a vector or vertex");
 		return;
 	}
 
 	const polyhedron * p = clipboard->get_poly(clipboard_controller::selection_name());
 
 	if (! p) {
-		platform->set_cue_text(L"Current selection is empty");
+		set_output(L"Current selection is empty");
 		return;
 	}
 

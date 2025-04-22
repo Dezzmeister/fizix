@@ -140,7 +140,7 @@ void create_vertex_command_impl::on_submit(const std::wstring &args) {
 	);
 
 	if (! expr_opt) {
-		platform->set_cue_text(log.to_wstr(args));
+		set_output(log.to_wstr(args));
 		return;
 	}
 

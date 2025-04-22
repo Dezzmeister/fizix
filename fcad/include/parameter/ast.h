@@ -2,6 +2,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <vector>
 #include "physics/math.h"
 
 struct eval_context;
@@ -13,6 +14,7 @@ enum class expr_type {
 	ScalarSub,
 	ScalarMul,
 	ScalarDiv,
+	ScalarFunc,
 	VertexIdx,
 	VectorLiteral
 };
@@ -20,6 +22,12 @@ enum class expr_type {
 enum class expr_class {
 	Scalar,
 	Vector
+};
+
+struct type_err_log {
+	std::vector<std::wstring> errors{};
+
+	std::wstring to_wstr() const;
 };
 
 class expr {
@@ -30,6 +38,7 @@ public:
 
 	virtual bool is_const() const = 0;
 	virtual expr_class get_expr_class() const = 0;
+	virtual void typecheck(const eval_context &ctx, type_err_log &log) const;
 
 protected:
 	expr(expr_type _type);
@@ -165,4 +174,19 @@ public:
 
 	phys::vec3 eval(const eval_context &ctx) const override;
 	bool is_const() const override;
+};
+
+class scalar_func_expr : public scalar_expr {
+public:
+	const std::wstring name;
+	const std::vector<std::unique_ptr<expr>> args;
+
+	scalar_func_expr(
+		const std::wstring &_name,
+		std::vector<std::unique_ptr<expr>> &&_args
+	);
+
+	phys::real eval(const eval_context &ctx) const override;
+	bool is_const() const override;
+	virtual void typecheck(const eval_context &ctx, type_err_log &log) const override;
 };

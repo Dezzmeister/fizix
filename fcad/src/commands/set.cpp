@@ -16,7 +16,7 @@ void set_command_impl::on_submit(const std::wstring &args) {
 	std::optional<std::wstring> ident_opt = parse_scalar_ident(state, log);
 
 	if (! vert_idx_opt && ! ident_opt) {
-		platform->set_cue_text(log.to_wstr(args));
+		set_output(log.to_wstr(args));
 		return;
 	}
 
@@ -27,7 +27,7 @@ void set_command_impl::on_submit(const std::wstring &args) {
 			L"Expected '='",
 			state.get_col_num()
 		));
-		platform->set_cue_text(log.to_wstr(args));
+		set_output(log.to_wstr(args));
 		return;
 	}
 
@@ -40,7 +40,7 @@ void set_command_impl::on_submit(const std::wstring &args) {
 		scalar_expr_opt = parse_scalar_expr(state, log);
 
 		if (! scalar_expr_opt) {
-			platform->set_cue_text(log.to_wstr(args));
+			set_output(log.to_wstr(args));
 			return;
 		}
 	} else {
@@ -49,7 +49,7 @@ void set_command_impl::on_submit(const std::wstring &args) {
 		vector_expr_opt = parse_vector_expr(state, log, false);
 
 		if (! vector_expr_opt) {
-			platform->set_cue_text(log.to_wstr(args));
+			set_output(log.to_wstr(args));
 			return;
 		}
 	}
@@ -61,19 +61,33 @@ void set_command_impl::on_submit(const std::wstring &args) {
 			L"Unexpected trailing chars",
 			state.get_col_num()
 		));
-		platform->set_cue_text(log.to_wstr(args));
+		set_output(log.to_wstr(args));
 		return;
 	}
 
 	if (ident_opt) {
+		type_err_log type_errs = params->typecheck(**scalar_expr_opt);
+
+		if (! type_errs.errors.empty()) {
+			set_output(type_errs.to_wstr());
+			return;
+		}
+
 		try {
 			params->set_scalar_parameter(*ident_opt, std::move(*scalar_expr_opt));
 		} catch (const param_does_not_exist_error&) {
-			platform->set_cue_text(L"Parameter \"" + *ident_opt + L"\" does not exist");
+			set_output(L"Parameter \"" + *ident_opt + L"\" does not exist");
 			return;
 		}
 	} else {
 		assert(vert_idx_opt);
+
+		type_err_log type_errs = params->typecheck(**vector_expr_opt);
+
+		if (! type_errs.errors.empty()) {
+			set_output(type_errs.to_wstr());
+			return;
+		}
 
 		if (! params->bind_vertex(*vert_idx_opt, std::move(*vector_expr_opt))) {
 			return;

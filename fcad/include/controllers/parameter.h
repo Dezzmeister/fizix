@@ -36,6 +36,7 @@ public:
 		const std::wstring &name,
 		std::unique_ptr<scalar_expr> &&defn
 	);
+	type_err_log typecheck(const expr &e) const;
 	bool create_vertex(std::unique_ptr<vector_expr> &&defn);
 	bool bind_vertex(size_t vertex_idx, std::unique_ptr<vector_expr> &&defn);
 	void remove_vertex(size_t vertex_idx);

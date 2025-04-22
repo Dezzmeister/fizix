@@ -13,7 +13,7 @@ void move_group_command_impl::on_submit(const std::wstring &args) {
 	parsing::parse_whitespace(state);
 
 	if (! group_feat_idx_opt) {
-		platform->set_cue_text(L"Expected an explicit feature");
+		set_output(L"Expected an explicit feature");
 		return;
 	}
 
@@ -28,7 +28,7 @@ void move_group_command_impl::on_submit(const std::wstring &args) {
 	parsing::parse_whitespace(state);
 
 	if (! ref_opt) {
-		platform->set_cue_text(L"Expected an explicit feature");
+		set_output(L"Expected an explicit feature");
 		return;
 	}
 
@@ -41,14 +41,14 @@ void move_group_command_impl::on_submit(const std::wstring &args) {
 	std::optional<vec3_or_index_feature> to_opt = parse_explicit_vec3_or_feature(state);
 
 	if (! to_opt) {
-		platform->set_cue_text(L"Expected an explicit feature or vector");
+		set_output(L"Expected an explicit feature or vector");
 		return;
 	}
 
 	parsing::parse_whitespace(state);
 
 	if (! state.eof()) {
-		platform->set_cue_text(L"Unexpected trailing chars");
+		set_output(L"Unexpected trailing chars");
 		return;
 	}
 

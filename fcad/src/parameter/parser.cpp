@@ -4,26 +4,43 @@
 
 // Grammar
 // S' -> + Sc S' | - Sc S' | epsilon
-// S -> Lit S' | $ Ident S'
-// Sc -> (S) | S
+// S -> Lit S' | $ Ident S' | FE
+// Sc -> (S) S' | S S'
 
 // Vec -> (Ident {,} Ident {,} Ident) | vIdx
 
-// TODO: Fix let $y = (1*2)/$x
-// Sc -> (S) S' | S S'
+// FE -> Ident FE'
+// FE' -> Sc FE' | Vec FE' | epsilon
 
 namespace {
+	const wchar_t NO_SIGIL = WEOF;
 	const wchar_t SCALAR_SIGIL = L'$';
 
 	std::optional<std::wstring> parse_ident(wchar_t sigil, parsing::parser_state &state) {
 		std::wstringstream out{};
-		out << sigil;
+
+		if (sigil != NO_SIGIL) {
+			out << sigil;
+		}
 
 		wchar_t c = state.peek();
 
+		if (
+			(c >= L'A' && c <= L'Z') ||
+			(c >= L'a' && c <= L'z') ||
+			c == L'_'
+		) {
+			out << state.get();
+			c = state.peek();
+		} else {
+			return std::nullopt;
+		}
+
 		while (
 			(c >= L'A' && c <= L'Z') ||
-			(c >= L'a' && c <= L'z')
+			(c >= L'a' && c <= L'z') ||
+			c == L'_' ||
+			(c >= L'0' && c <= L'9')
 		) {
 			out << state.get();
 			c = state.peek();
@@ -31,7 +48,7 @@ namespace {
 
 		std::wstring ident = out.str();
 
-		if (ident.size() == 1) {
+		if (sigil != NO_SIGIL && ident.size() == 1) {
 			// We only have the sigil
 			return std::nullopt;
 		}
@@ -193,6 +210,49 @@ namespace {
 		);
 	}
 
+	std::vector<std::unique_ptr<expr>> parse_fe_p(
+		parsing::parser_state &state,
+		error_log &log
+	) {
+		std::optional<std::unique_ptr<expr>> head_opt = parse_vector_expr(state, log, false);
+
+		if (! head_opt) {
+			head_opt = parse_scalar_expr(state, log);
+		}
+
+		if (! head_opt) {
+			return {};
+		}
+
+		std::vector<std::unique_ptr<expr>> rest = parse_fe_p(state, log);
+		std::vector<std::unique_ptr<expr>> out{};
+
+		out.push_back(std::move(*head_opt));
+
+		for (auto &&arg : rest) {
+			out.push_back(std::move(arg));
+		}
+
+		return out;
+	}
+
+	std::optional<std::unique_ptr<scalar_func_expr>> parse_fe(
+		parsing::parser_state &state,
+		error_log &log
+	) {
+		std::optional<std::wstring> ident_opt = parse_ident(NO_SIGIL, state);
+
+		if (! ident_opt) {
+			return std::nullopt;
+		}
+
+		parsing::parse_whitespace(state);
+
+		std::vector<std::unique_ptr<expr>> args = parse_fe_p(state, log);
+
+		return std::make_unique<scalar_func_expr>(*ident_opt, std::move(args));
+	}
+
 	std::optional<std::unique_ptr<scalar_expr>> parse_s(
 		parsing::parser_state &state,
 		error_log &log
@@ -216,19 +276,14 @@ namespace {
 		} else {
 			std::optional<real> lit_opt = parse_real(state);
 
-			if (! lit_opt) {
-				log.errors.push_back(parse_error(
-					L"Expected scalar literal",
-					state.get_col_num()
-				));
-				return std::nullopt;
+			if (lit_opt) {
+				op1_opt = std::make_unique<scalar_literal_expr>(*lit_opt);
+			} else {
+				op1_opt = parse_fe(state, log);
 			}
-
-			op1_opt = std::make_unique<scalar_literal_expr>(*lit_opt);
 		}
 
 		if (! op1_opt) {
-			// Should be unreachable
 			log.errors.push_back(parse_error(
 				L"Expected scalar expression",
 				state.get_col_num()
@@ -269,6 +324,13 @@ std::wstring error_log::to_wstr(const std::wstring &src) const {
 	return err.to_wstr() + L": " + preview;
 }
 
+std::optional<std::wstring> parse_bare_ident(
+	parsing::parser_state &state,
+	error_log&
+) {
+	return parse_ident(NO_SIGIL, state);
+}
+
 std::optional<std::wstring> parse_scalar_ident(
 	parsing::parser_state &state,
 	error_log &log
@@ -303,6 +365,10 @@ std::optional<std::unique_ptr<scalar_expr>> parse_scalar_expr(
 
 	std::optional<std::unique_ptr<scalar_expr>> s = parse_s(state, log);
 
+	if (! s) {
+		return std::nullopt;
+	}
+
 	parsing::parse_whitespace(state);
 
 	if (parens) {
@@ -318,6 +384,12 @@ std::optional<std::unique_ptr<scalar_expr>> parse_scalar_expr(
 	}
 
 	parsing::parse_whitespace(state);
+
+	std::optional<std::unique_ptr<scalar_expr>> sp_opt = parse_scalar_p(state, log, *s);
+
+	if (sp_opt) {
+		return sp_opt;
+	}
 
 	return s;
 }

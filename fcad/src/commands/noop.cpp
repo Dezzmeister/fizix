@@ -20,10 +20,19 @@ int noop_command_impl::handle(fcad_start_event &event) {
 	platform = &event.platform;
 	clipboard = &event.clipboard;
 	params = &event.params;
+	prefs = &event.prefs;
 
 	return 0;
 }
 
 void noop_command_impl::write_help_text(std::ostream &os) const {
 	write_help_rtf_row(os, "", "Does nothing.");
+}
+
+void noop_command_impl::set_output(const std::wstring &str) const {
+	if (prefs->log_cmd_output()) {
+		logger::info(L"Command output: " + str);
+	}
+
+	platform->set_cue_text(str);
 }

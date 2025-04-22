@@ -9,6 +9,14 @@ preferences_controller::preferences_controller(
 	event_listener<fcad_start_event>::subscribe();
 }
 
+void preferences_controller::set_log_cmd_output(bool _log) {
+	_log_cmd_output = _log;
+}
+
+bool preferences_controller::log_cmd_output() const {
+	return _log_cmd_output;
+}
+
 int preferences_controller::handle(fcad_start_event &event) {
 	wchar_t * buf{};
 	size_t num_elems{};

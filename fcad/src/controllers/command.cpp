@@ -1,15 +1,18 @@
 #include "commands.h"
 #include "controllers/command.h"
+#include "fcad_platform/platform.h"
 
 command_controller::command_controller(
-	fcad_event_bus &_events,
+	fcad_event_bus &_fcad_events,
 	std::map<std::wstring, std::unique_ptr<command_impl>> &&_command_impls
 ) :
-	event_listener<command_cancel_event>(&_events),
-	event_listener<command_input_event>(&_events),
-	event_listener<command_submit_event>(&_events),
+	event_listener<fcad_start_event>(&_fcad_events),
+	event_listener<command_cancel_event>(&_fcad_events),
+	event_listener<command_input_event>(&_fcad_events),
+	event_listener<command_submit_event>(&_fcad_events),
 	command_impls(std::move(_command_impls))
 {
+	event_listener<fcad_start_event>::subscribe();
 	event_listener<command_cancel_event>::subscribe();
 	event_listener<command_input_event>::subscribe();
 	event_listener<command_submit_event>::subscribe();
@@ -19,6 +22,12 @@ void command_controller::write_help_text(std::ostream &os) const {
 	for (const auto &pair : command_impls) {
 		pair.second->write_help_text(os);
 	}
+}
+
+int command_controller::handle(fcad_start_event &event) {
+	platform = &event.platform;
+
+	return 0;
 }
 
 int command_controller::handle(command_cancel_event &event) {
@@ -90,11 +99,11 @@ int command_controller::handle(command_submit_event &event) {
 	auto pair = command_impls.find(command);
 
 	if (pair == std::end(command_impls)) {
-		// TODO: Show error message to user
 		logger::debug(
 			"User submitted nonexistent command: " +
 			traits::to_string(command)
 		);
+		platform->set_cue_text(L"\"" + command + L"\" does not exist");
 
 		return 0;
 	}
@@ -128,6 +137,7 @@ command_controller make_commands(event_buses&, fcad_event_bus &events) {
 	impls.emplace(std::make_pair(L"n", std::make_unique<vertex_info_command_impl>(events)));
 	impls.emplace(std::make_pair(L"let", std::make_unique<let_command_impl>(events)));
 	impls.emplace(std::make_pair(L"set", std::make_unique<set_command_impl>(events)));
+	impls.emplace(std::make_pair(L"pref", std::make_unique<pref_command_impl>(events)));
 
 	return command_controller(events, std::move(impls));
 }

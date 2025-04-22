@@ -6,6 +6,7 @@
 #include "controllers/file.h"
 #include "controllers/geometry.h"
 #include "controllers/parameter.h"
+#include "controllers/preferences.h"
 #include "fcad_events.h"
 #include "fcad_platform/platform.h"
 
@@ -16,10 +17,10 @@ class noop_command_impl :
 public:
 	noop_command_impl(fcad_event_bus &_events);
 
-	void on_cancel(const std::wstring &args_buf) override;
-	void on_input(const std::wstring &args_buf) override;
-	void on_submit(const std::wstring &args) override;
-	void write_help_text(std::ostream &os) const override;
+	virtual void on_cancel(const std::wstring &args_buf) override;
+	virtual void on_input(const std::wstring &args_buf) override;
+	virtual void on_submit(const std::wstring &args) override;
+	virtual void write_help_text(std::ostream &os) const override;
 
 	int handle(fcad_start_event &event) override;
 
@@ -32,6 +33,9 @@ protected:
 	platform_bridge * platform{};
 	clipboard_controller * clipboard{};
 	parameter_controller * params{};
+	preferences_controller * prefs{};
+
+	virtual void set_output(const std::wstring &str) const;
 };
 
 struct create_vertex_preview :
@@ -217,4 +221,17 @@ class set_command_impl : public noop_command_impl {
 
 	void on_submit(const std::wstring &args) override;
 	void write_help_text(std::ostream &os) const override;
+};
+
+class pref_command_impl : public noop_command_impl {
+	using noop_command_impl::noop_command_impl;
+
+	void on_submit(const std::wstring &args) override;
+	void write_help_text(std::ostream &os) const override;
+
+private:
+	bool has_trailing_chars(
+		parsing::parser_state &state,
+		const std::wstring &args
+	) const;
 };

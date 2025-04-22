@@ -1,4 +1,5 @@
 #pragma once
+#include <codecvt>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <iomanip>
@@ -46,6 +47,9 @@ namespace traits {
 	template <const size_t N>
 	std::string to_string(const char(&s)[N], size_t indent = 0);
 
+	template <const size_t N>
+	std::string to_string(const wchar_t(&s)[N], size_t indent = 0);
+
 	template <typename ...Ts>
 	std::string to_string(const std::variant<Ts...> &v, size_t indent = 0);
 
@@ -57,6 +61,9 @@ namespace traits {
 
 	template <>
 	std::string to_string(const unsigned char * const &s, size_t indent);
+
+	template <>
+	std::string to_string(const wchar_t * const &s, size_t indent);
 
 	template <>
 	std::string to_string(const std::string &s, size_t indent);
@@ -133,6 +140,14 @@ std::string traits::to_string(T const &p, size_t) {
 template <const size_t N>
 std::string traits::to_string(const char(&s)[N], size_t) {
 	return std::string(s);
+}
+
+template <const size_t N>
+std::string traits::to_string(const wchar_t(&s)[N], size_t) {
+	using convert_t = std::codecvt_utf8<wchar_t>;
+	std::wstring_convert<convert_t, wchar_t> converter{};
+
+	return converter.to_bytes(s);
 }
 
 template <typename ...Ts>

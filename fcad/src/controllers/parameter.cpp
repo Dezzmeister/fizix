@@ -2,6 +2,41 @@
 #include "controllers/parameter.h"
 #include "parameter/parser.h"
 
+namespace {
+	func_defn_map builtin_funcs{
+		{L"x", func_defn(
+			L"x",
+			{ expr_class::Vector },
+			expr_class::Scalar,
+			[](const args_obj &args) {
+				phys::vec3 v = std::get<phys::vec3>(args[0]);
+
+				return v.x;
+			}
+		)},
+		{L"y", func_defn(
+			L"y",
+			{ expr_class::Vector },
+			expr_class::Scalar,
+			[](const args_obj &args) {
+				phys::vec3 v = std::get<phys::vec3>(args[0]);
+
+				return v.y;
+			}
+		)},
+		{L"z", func_defn(
+			L"z",
+			{ expr_class::Vector },
+			expr_class::Scalar,
+			[](const args_obj &args) {
+				phys::vec3 v = std::get<phys::vec3>(args[0]);
+
+				return v.z;
+			}
+		)}
+	};
+}
+
 parameter_controller::parameter_controller(
 	fcad_event_bus &_events
 ) :
@@ -39,11 +74,20 @@ void parameter_controller::set_scalar_parameter(
 	scalar_move_verts(name);
 }
 
+type_err_log parameter_controller::typecheck(const expr &e) const {
+	type_err_log out{};
+	eval_context ctx(&scalars, &vert_defns, geom, &builtin_funcs);
+
+	e.typecheck(ctx, out);
+
+	return out;
+}
+
 bool parameter_controller::create_vertex(std::unique_ptr<vector_expr> &&defn) {
 	using traits::to_string;
 
 	phys::vec3 pos_now = defn->eval(eval_context(
-		&scalars, &vert_defns, geom
+		&scalars, &vert_defns, geom, &builtin_funcs
 	));
 
 	if (defn->is_const()) {
@@ -70,7 +114,7 @@ bool parameter_controller::bind_vertex(size_t vertex_idx, std::unique_ptr<vector
 	using traits::to_string;
 
 	phys::vec3 new_pos = defn->eval(eval_context(
-		&scalars, &vert_defns, geom
+		&scalars, &vert_defns, geom, &builtin_funcs
 	));
 
 	vert_defns[vertex_idx] = std::move(defn);
@@ -114,7 +158,7 @@ void parameter_controller::scalar_move_verts(const std::wstring&) const {
 	using traits::to_string;
 
 	eval_context ctx(
-		&scalars, &vert_defns, geom
+		&scalars, &vert_defns, geom, &builtin_funcs
 	);
 
 	for (auto const &pair : vert_defns) {

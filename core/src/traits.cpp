@@ -1,4 +1,3 @@
-#include <codecvt>
 #include "traits.h"
 
 template <>
@@ -14,6 +13,14 @@ std::string traits::to_string<const char *>(const char * const &s, size_t) {
 template <>
 std::string traits::to_string<const unsigned char *>(const unsigned char * const &s, size_t) {
 	return std::string((const char *)s);
+}
+
+template <>
+std::string traits::to_string<const wchar_t *>(const wchar_t * const &s, size_t) {
+	using convert_t = std::codecvt_utf8<wchar_t>;
+	std::wstring_convert<convert_t, wchar_t> converter{};
+
+	return converter.to_bytes(s);
 }
 
 template <>
@@ -63,5 +70,5 @@ std::string traits::to_string<std::wstring>(const std::wstring &s, size_t) {
 	using convert_t = std::codecvt_utf8<wchar_t>;
 	std::wstring_convert<convert_t, wchar_t> converter{};
 
-	return converter.to_bytes(s);
+	return converter.to_bytes(s.c_str());
 }

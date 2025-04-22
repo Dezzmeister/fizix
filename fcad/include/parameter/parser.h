@@ -21,6 +21,11 @@ public:
 	std::wstring to_wstr(const std::wstring &src) const;
 };
 
+std::optional<std::wstring> parse_bare_ident(
+	parsing::parser_state &state,
+	error_log &log
+);
+
 std::optional<std::wstring> parse_scalar_ident(
 	parsing::parser_state &state,
 	error_log &log

@@ -101,7 +101,7 @@ void file_controller::read_replay_file(const std::filesystem::path &path) {
 		return;
 	}
 
-	logger::info("Reading replay file from " + path.string());
+	logger::info(L"Reading replay file from " + path.wstring());
 
 	std::wifstream wfs(path);
 	parsing::parser_state state(wfs);

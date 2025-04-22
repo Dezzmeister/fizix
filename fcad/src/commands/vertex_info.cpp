@@ -30,7 +30,7 @@ void vertex_info_command_impl::on_submit(const std::wstring &args) {
 		return;
 	}
 
-	platform->set_cue_text("Vertex " + to_string(*vert_idx_opt) + ": " + fmt_vec3(*pos));
+	set_output(util::to_wstring("Vertex " + to_string(*vert_idx_opt) + ": " + fmt_vec3(*pos)));
 }
 
 void vertex_info_command_impl::write_help_text(std::ostream &os) const {
