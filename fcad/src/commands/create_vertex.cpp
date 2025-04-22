@@ -135,8 +135,7 @@ void create_vertex_command_impl::on_submit(const std::wstring &args) {
 
 	std::optional<std::unique_ptr<vector_expr>> expr_opt = parse_vector_expr(
 		state,
-		log,
-		true
+		log
 	);
 
 	if (! expr_opt) {

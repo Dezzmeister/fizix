@@ -13,9 +13,10 @@ void set_command_impl::on_submit(const std::wstring &args) {
 	parsing::parse_whitespace(state);
 
 	std::optional<size_t> vert_idx_opt = parse_explicit_vertex(state);
-	std::optional<std::wstring> ident_opt = parse_scalar_ident(state, log);
+	std::optional<std::wstring> s_ident_opt = parse_scalar_ident(state, log);
+	std::optional<std::wstring> v_ident_opt = parse_vector_ident(state, log);
 
-	if (! vert_idx_opt && ! ident_opt) {
+	if (! vert_idx_opt && ! s_ident_opt && ! v_ident_opt) {
 		set_output(log.to_wstr(args));
 		return;
 	}
@@ -36,7 +37,7 @@ void set_command_impl::on_submit(const std::wstring &args) {
 	std::optional<std::unique_ptr<scalar_expr>> scalar_expr_opt{};
 	std::optional<std::unique_ptr<vector_expr>> vector_expr_opt{};
 
-	if (ident_opt) {
+	if (s_ident_opt) {
 		scalar_expr_opt = parse_scalar_expr(state, log);
 
 		if (! scalar_expr_opt) {
@@ -44,9 +45,7 @@ void set_command_impl::on_submit(const std::wstring &args) {
 			return;
 		}
 	} else {
-		assert(vert_idx_opt);
-
-		vector_expr_opt = parse_vector_expr(state, log, false);
+		vector_expr_opt = parse_vector_expr(state, log);
 
 		if (! vector_expr_opt) {
 			set_output(log.to_wstr(args));
@@ -65,8 +64,12 @@ void set_command_impl::on_submit(const std::wstring &args) {
 		return;
 	}
 
-	if (ident_opt) {
-		type_err_log type_errs = params->typecheck(**scalar_expr_opt);
+	if (s_ident_opt || v_ident_opt) {
+		std::wstring ident = s_ident_opt ? *s_ident_opt : *v_ident_opt;
+
+		type_err_log type_errs = s_ident_opt ?
+			params->typecheck(**scalar_expr_opt) :
+			params->typecheck(**vector_expr_opt);
 
 		if (! type_errs.errors.empty()) {
 			set_output(type_errs.to_wstr());
@@ -74,9 +77,13 @@ void set_command_impl::on_submit(const std::wstring &args) {
 		}
 
 		try {
-			params->set_scalar_parameter(*ident_opt, std::move(*scalar_expr_opt));
+			if (s_ident_opt) {
+				params->set_scalar_parameter(ident, std::move(*scalar_expr_opt));
+			} else {
+				params->set_vector_parameter(ident, std::move(*vector_expr_opt));
+			}
 		} catch (const param_does_not_exist_error&) {
-			set_output(L"Parameter \"" + *ident_opt + L"\" does not exist");
+			set_output(L"Parameter \"" + ident + L"\" does not exist");
 			return;
 		}
 	} else {

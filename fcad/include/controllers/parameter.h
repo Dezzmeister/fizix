@@ -36,6 +36,14 @@ public:
 		const std::wstring &name,
 		std::unique_ptr<scalar_expr> &&defn
 	);
+	void add_vector_parameter(
+		const std::wstring &name,
+		std::unique_ptr<vector_expr> &&defn
+	);
+	void set_vector_parameter(
+		const std::wstring &name,
+		std::unique_ptr<vector_expr> &&defn
+	);
 	type_err_log typecheck(const expr &e) const;
 	bool create_vertex(std::unique_ptr<vector_expr> &&defn);
 	bool bind_vertex(size_t vertex_idx, std::unique_ptr<vector_expr> &&defn);
@@ -49,7 +57,9 @@ private:
 	fcad_event_bus &events;
 	geometry_controller * geom{};
 	scalar_symbol_map scalars{};
+	vector_symbol_map vectors{};
 	std::map<size_t, std::unique_ptr<vector_expr>> vert_defns{};
 
 	void scalar_move_verts(const std::wstring &name) const;
+	const eval_context make_eval_context() const;
 };

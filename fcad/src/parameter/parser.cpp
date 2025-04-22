@@ -4,10 +4,13 @@
 
 // Grammar
 // S' -> + Sc S' | - Sc S' | epsilon
-// S -> Lit S' | $ Ident S' | FE
+// S -> ScLit S' | $ Ident S' | FE
 // Sc -> (S) S' | S S'
 
-// Vec -> (Ident {,} Ident {,} Ident) | vIdx
+// VecLit -> [Sc , Sc , Sc]
+// V' -> + Vec V' | - Vec V' | x Vec V' | epsilon
+// V -> VecLit V' | @ Ident V' | FE
+// Vec -> (V) V' | V V'
 
 // FE -> Ident FE'
 // FE' -> Sc FE' | Vec FE' | epsilon
@@ -15,6 +18,7 @@
 namespace {
 	const wchar_t NO_SIGIL = WEOF;
 	const wchar_t SCALAR_SIGIL = L'$';
+	const wchar_t VECTOR_SIGIL = L'@';
 
 	std::optional<std::wstring> parse_ident(wchar_t sigil, parsing::parser_state &state) {
 		std::wstringstream out{};
@@ -116,24 +120,73 @@ namespace {
 		return new_op1;
 	}
 
-	std::optional<std::unique_ptr<vector_literal_expr>> parse_vector_literal(
+	std::optional<std::unique_ptr<vector_expr>> parse_vector_p(
 		parsing::parser_state &state,
 		error_log &log,
-		bool allow_implicit
+		std::unique_ptr<vector_expr> &prev_v
+	) {
+		wchar_t op = state.peek();
+
+		if (op == L'+' || op == L'-' || op == L'x') {
+			state.get();
+		} else {
+			// epsilon
+			return std::nullopt;
+		}
+
+		parsing::parse_whitespace(state);
+
+		std::optional<std::unique_ptr<vector_expr>> op2_opt = parse_vector_expr(state, log);
+
+		if (! op2_opt) {
+			log.errors.push_back(parse_error(
+				L"Expected vector expression",
+				state.get_col_num()
+			));
+			return std::nullopt;
+		}
+
+		parsing::parse_whitespace(state);
+
+		std::unique_ptr<vector_expr> new_op1{};
+
+		switch (op) {
+			case L'+': {
+				new_op1 = std::make_unique<vector_add_expr>(std::move(prev_v), std::move(*op2_opt));
+				break;
+			}
+			case L'-': {
+				new_op1 = std::make_unique<vector_sub_expr>(std::move(prev_v), std::move(*op2_opt));
+				break;
+			}
+			case L'x': {
+				new_op1 = std::make_unique<vector_cross_expr>(std::move(prev_v), std::move(*op2_opt));
+				break;
+			}
+			default:
+				std::unreachable();
+		}
+
+		std::optional<std::unique_ptr<vector_expr>> vp = parse_vector_p(state, log, new_op1);
+
+		if (vp) {
+			return vp;
+		}
+
+		return new_op1;
+	}
+
+	std::optional<std::unique_ptr<vector_literal_expr>> parse_vector_literal(
+		parsing::parser_state &state,
+		error_log &log
 	) {
 		std::wstringstream sink{};
-		bool has_open_paren = false;
-
-		if (! allow_implicit) {
-			if (! parsing::parse_one_char(state, L'(', sink)) {
-				log.errors.push_back(parse_error(
-					L"Expected '('",
-					state.get_col_num()
-				));
-				return std::nullopt;
-			}
-		} else {
-			has_open_paren = parsing::parse_one_char(state, L'(', sink);
+		if (! parsing::parse_one_char(state, L'[', sink)) {
+			log.errors.push_back(parse_error(
+				L"Expected '['",
+				state.get_col_num()
+			));
+			return std::nullopt;
 		}
 
 		parsing::parse_whitespace(state);
@@ -177,30 +230,12 @@ namespace {
 
 		parsing::parse_whitespace(state);
 
-		if (! allow_implicit) {
-			if (! parsing::parse_one_char(state, L')', sink)) {
-				log.errors.push_back(parse_error(
-					L"Expected ')'",
-					state.get_col_num()
-				));
-				return std::nullopt;
-			}
-		} else {
-			bool has_close_paren = parse_one_char(state, L')', sink);
-
-			if (has_open_paren && ! has_close_paren) {
-				log.errors.push_back(parse_error(
-					L"Expected ')'",
-					state.get_col_num()
-				));
-				return std::nullopt;
-			} else if (! has_open_paren && has_close_paren) {
-				log.errors.push_back(parse_error(
-					L"Unexpected ')'",
-					state.get_col_num()
-				));
-				return std::nullopt;
-			}
+		if (! parse_one_char(state, L']', sink)) {
+			log.errors.push_back(parse_error(
+				L"Expected ']'",
+				state.get_col_num()
+			));
+			return std::nullopt;
 		}
 
 		return std::make_unique<vector_literal_expr>(
@@ -214,7 +249,7 @@ namespace {
 		parsing::parser_state &state,
 		error_log &log
 	) {
-		std::optional<std::unique_ptr<expr>> head_opt = parse_vector_expr(state, log, false);
+		std::optional<std::unique_ptr<expr>> head_opt = parse_vector_expr(state, log);
 
 		if (! head_opt) {
 			head_opt = parse_scalar_expr(state, log);
@@ -236,7 +271,8 @@ namespace {
 		return out;
 	}
 
-	std::optional<std::unique_ptr<scalar_func_expr>> parse_fe(
+	template <typename ExprT>
+	std::optional<std::unique_ptr<ExprT>> parse_fe(
 		parsing::parser_state &state,
 		error_log &log
 	) {
@@ -250,7 +286,7 @@ namespace {
 
 		std::vector<std::unique_ptr<expr>> args = parse_fe_p(state, log);
 
-		return std::make_unique<scalar_func_expr>(*ident_opt, std::move(args));
+		return std::make_unique<ExprT>(*ident_opt, std::move(args));
 	}
 
 	std::optional<std::unique_ptr<scalar_expr>> parse_s(
@@ -279,7 +315,7 @@ namespace {
 			if (lit_opt) {
 				op1_opt = std::make_unique<scalar_literal_expr>(*lit_opt);
 			} else {
-				op1_opt = parse_fe(state, log);
+				op1_opt = parse_fe<scalar_func_expr>(state, log);
 			}
 		}
 
@@ -300,6 +336,53 @@ namespace {
 		}
 
 		return sp;
+	}
+
+	std::optional<std::unique_ptr<vector_expr>> parse_v(
+		parsing::parser_state &state,
+		error_log &log
+	) {
+		std::optional<std::unique_ptr<vector_expr>> op1_opt{};
+
+		parsing::parse_whitespace(state);
+
+		if (state.peek() == VECTOR_SIGIL) {
+			std::optional<std::wstring> ident_opt = parse_vector_ident(state, log);
+
+			if (! ident_opt) {
+				log.errors.push_back(parse_error(
+					L"Expected identifier",
+					state.get_col_num()
+				));
+				return std::nullopt;
+			}
+
+			op1_opt = std::make_unique<vector_ident_expr>(*ident_opt);
+		} else {
+			op1_opt = parse_vector_literal(state, log);
+
+			if (! op1_opt) {
+				op1_opt = parse_fe<vector_func_expr>(state, log);
+			}
+		}
+
+		if (! op1_opt) {
+			log.errors.push_back(parse_error(
+				L"Expected vector expression",
+				state.get_col_num()
+			));
+			return std::nullopt;
+		}
+
+		parsing::parse_whitespace(state);
+
+		std::optional<std::unique_ptr<vector_expr>> vp = parse_vector_p(state, log, *op1_opt);
+
+		if (! vp) {
+			return op1_opt;
+		}
+
+		return vp;
 	}
 }
 
@@ -348,6 +431,23 @@ std::optional<std::wstring> parse_scalar_ident(
 	return parse_ident(SCALAR_SIGIL, state);
 }
 
+std::optional<std::wstring> parse_vector_ident(
+	parsing::parser_state &state,
+	error_log &log
+) {
+	std::wstringstream sink{};
+
+	if (! parsing::parse_one_char(state, VECTOR_SIGIL, sink)) {
+		log.errors.push_back(parse_error(
+			L"Expected '" + std::wstring(1, VECTOR_SIGIL) + L"'",
+			state.get_col_num()
+		));
+		return std::nullopt;
+	}
+
+	return parse_ident(VECTOR_SIGIL, state);
+}
+
 std::optional<std::unique_ptr<scalar_expr>> parse_scalar_expr(
 	parsing::parser_state &state,
 	error_log &log
@@ -366,6 +466,7 @@ std::optional<std::unique_ptr<scalar_expr>> parse_scalar_expr(
 	std::optional<std::unique_ptr<scalar_expr>> s = parse_s(state, log);
 
 	if (! s) {
+		// TODO: Test with open paren
 		return std::nullopt;
 	}
 
@@ -396,8 +497,47 @@ std::optional<std::unique_ptr<scalar_expr>> parse_scalar_expr(
 
 std::optional<std::unique_ptr<vector_expr>> parse_vector_expr(
 	parsing::parser_state &state,
-	error_log &log,
-	bool allow_implicit_literals
+	error_log &log
 ) {
-	return parse_vector_literal(state, log, allow_implicit_literals);
+	bool parens = false;
+
+	parsing::parse_whitespace(state);
+
+	if (state.peek() == L'(') {
+		parens = true;
+		state.get();
+	}
+
+	parsing::parse_whitespace(state);
+
+	std::optional<std::unique_ptr<vector_expr>> v = parse_v(state, log);
+
+	if (! v) {
+		// TODO: Test with open paren
+		return std::nullopt;
+	}
+
+	parsing::parse_whitespace(state);
+
+	if (parens) {
+		if (state.peek() == L')') {
+			state.get();
+		} else {
+			log.errors.push_back(parse_error(
+				L"Expected ')'",
+				state.get_col_num()
+			));
+			return std::nullopt;
+		}
+	}
+
+	parsing::parse_whitespace(state);
+
+	std::optional<std::unique_ptr<vector_expr>> vp_opt = parse_vector_p(state, log, *v);
+
+	if (vp_opt) {
+		return vp_opt;
+	}
+
+	return v;
 }

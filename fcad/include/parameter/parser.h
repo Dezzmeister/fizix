@@ -25,8 +25,11 @@ std::optional<std::wstring> parse_bare_ident(
 	parsing::parser_state &state,
 	error_log &log
 );
-
 std::optional<std::wstring> parse_scalar_ident(
+	parsing::parser_state &state,
+	error_log &log
+);
+std::optional<std::wstring> parse_vector_ident(
 	parsing::parser_state &state,
 	error_log &log
 );
@@ -36,6 +39,5 @@ std::optional<std::unique_ptr<scalar_expr>> parse_scalar_expr(
 );
 std::optional<std::unique_ptr<vector_expr>> parse_vector_expr(
 	parsing::parser_state &state,
-	error_log &log,
-	bool allow_implicit_literals = false
+	error_log &log
 );

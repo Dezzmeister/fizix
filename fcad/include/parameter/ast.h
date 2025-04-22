@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -16,7 +17,13 @@ enum class expr_type {
 	ScalarDiv,
 	ScalarFunc,
 	VertexIdx,
-	VectorLiteral
+	VectorLiteral,
+	VectorIdent,
+	VectorAdd,
+	VectorSub,
+	VectorCross,
+	VectorDot,
+	VectorFunc
 };
 
 enum class expr_class {
@@ -188,5 +195,99 @@ public:
 
 	phys::real eval(const eval_context &ctx) const override;
 	bool is_const() const override;
-	virtual void typecheck(const eval_context &ctx, type_err_log &log) const override;
+	void typecheck(const eval_context &ctx, type_err_log &log) const override;
+};
+
+// TODO: Remove type information from grammar, unite scalar_func and vector_func
+// Vector indices are actually impure vector functions named like v0, v1, etc.
+class vector_func_expr : public vector_expr {
+public:
+	const std::wstring name;
+	const std::vector<std::unique_ptr<expr>> args;
+	const std::optional<size_t> vert_idx_opt;
+
+	vector_func_expr(
+		const std::wstring &_name,
+		std::vector<std::unique_ptr<expr>> &&_args
+	);
+
+	phys::vec3 eval(const eval_context &ctx) const override;
+	bool is_const() const override;
+	void typecheck(const eval_context &ctx, type_err_log &log) const override;
+};
+
+class vector_ident_expr : public vector_expr {
+public:
+	const std::wstring name;
+
+	vector_ident_expr(const std::wstring &_name);
+
+	phys::vec3 eval(const eval_context &ctx) const override;
+	bool is_const() const override;
+};
+
+// TODO: Generalized infix expr
+class vector_infix_expr : public vector_expr {
+public:
+	const std::unique_ptr<vector_expr> op1;
+	const std::unique_ptr<vector_expr> op2;
+
+	vector_infix_expr(
+		expr_type _type,
+		std::unique_ptr<vector_expr> &&_op1,
+		std::unique_ptr<vector_expr> &&_op2
+	);
+
+	virtual phys::vec3 eval(const eval_context &ctx) const override;
+	virtual bool is_const() const override;
+
+protected:
+	virtual phys::vec3 impl(const phys::vec3 &r1, const phys::vec3 &r2) const = 0;
+};
+
+class vector_add_expr : public vector_infix_expr {
+public:
+	vector_add_expr(
+		std::unique_ptr<vector_expr> &&_op1,
+		std::unique_ptr<vector_expr> &&_op2
+	);
+
+protected:
+	phys::vec3 impl(const phys::vec3 &r1, const phys::vec3 &r2) const;
+};
+
+class vector_sub_expr : public vector_infix_expr {
+public:
+	vector_sub_expr(
+		std::unique_ptr<vector_expr> &&_op1,
+		std::unique_ptr<vector_expr> &&_op2
+	);
+
+protected:
+	phys::vec3 impl(const phys::vec3 &r1, const phys::vec3 &r2) const;
+};
+
+class vector_cross_expr : public vector_infix_expr {
+public:
+	vector_cross_expr(
+		std::unique_ptr<vector_expr> &&_op1,
+		std::unique_ptr<vector_expr> &&_op2
+	);
+
+protected:
+	phys::vec3 impl(const phys::vec3 &r1, const phys::vec3 &r2) const;
+};
+
+class vector_dot_expr : public scalar_expr {
+public:
+	const std::unique_ptr<vector_expr> op1;
+	const std::unique_ptr<vector_expr> op2;
+
+	vector_dot_expr(
+		std::unique_ptr<vector_expr> &&_op1,
+		std::unique_ptr<vector_expr> &&_op2
+	);
+
+	phys::real eval(const eval_context &ctx) const override;
+	bool is_const() const override;
 };
