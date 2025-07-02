@@ -47,6 +47,7 @@ R"(Controls:
 int main(int, const char * const * const) {
 	logger::init();
 	platform::enable_fp_exceptions();
+	platform::set_gpu_preference(platform::gpu_preference::Discrete);
 	platform::state platform_state{};
 	platform::window main_window(platform_state, 800, 600, L"Physics Demo");
 	event_buses buses;
